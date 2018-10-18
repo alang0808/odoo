@@ -242,8 +242,8 @@
                     <group>
                         <group>
                             <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}"/>
-                            <field name="location_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('picking_type_code', '=', 'outgoing')]}"/>
-                            <field name="location_dest_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('picking_type_code', '=', 'incoming')]}"/>
+                            <field name="location_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('picking_type_code', '=', 'incoming')]}"/>
+                            <field name="location_dest_id" groups="stock.group_stock_multi_locations" attrs="{'invisible': [('picking_type_code', '=', 'outgoing')]}"/>
                             <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>
                         </group>
                         <group>
@@ -326,6 +326,7 @@
                                     <field name="group_id" groups="base.group_no_one"/>
                                     <field name="priority" attrs="{'invisible': [('picking_type_code', '=', 'incoming')]}"/>
                                 </group>
+                                <field name="note" string="Note" placeholder="Add an internal note that will be printed on the Picking Operations sheet"/>
                             </group>
                         </page>
                     </notebook>

@@ -81,6 +81,9 @@ class SaleOrder(models.Model):
 
     def _create_delivery_line(self, carrier, price_unit):
         SaleOrderLine = self.env['sale.order.line']
+        if self.partner_id:
+            # set delivery detail in the customer language
+            carrier = carrier.with_context(lang=self.partner_id.lang)
 
         # Apply fiscal position
         taxes = carrier.product_id.taxes_id.filtered(lambda t: t.company_id.id == self.company_id.id)
@@ -89,10 +92,9 @@ class SaleOrder(models.Model):
             taxes_ids = self.fiscal_position_id.map_tax(taxes, carrier.product_id, self.partner_id).ids
 
         # Create the sales order line
-        carrier_name = carrier.product_id.with_context(lang=self.partner_id.lang).name_get()[0][1]
         values = {
             'order_id': self.id,
-            'name': carrier_name,
+            'name': carrier.with_context(lang=self.partner_id.lang).name,
             'product_uom_qty': 1,
             'product_uom': carrier.product_id.uom_id.id,
             'product_id': carrier.product_id.id,
@@ -118,3 +120,7 @@ class SaleOrderLine(models.Model):
             if not line.product_id or not line.product_uom or not line.product_uom_qty:
                 return 0.0
             line.product_qty = line.product_uom._compute_quantity(line.product_uom_qty, line.product_id.uom_id)
+
+    def _is_delivery(self):
+        self.ensure_one()
+        return self.is_delivery

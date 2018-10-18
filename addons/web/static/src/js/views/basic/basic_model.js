@@ -573,13 +573,16 @@ var BasicModel = AbstractModel.extend({
     /**
      * Returns true if a record can be abandoned.
      *
-     * A record can be abandonned if it is a new record, except if
-     * this datapoint has been specifically tagged as "do not abandon".
+     * Case for not abandoning the record:
      *
-     * Example:
+     *  1. flagged as 'no abandon' (i.e. during a `default_get`, including any
+     *     `onchange` from a `default_get`)
+     *  2. registered in a list on addition
+     *      2.1. registered as non-new addition
+     *      2.2. registered as new additon on update
+     *  3. record is not new
      *
-     *  - Discard record from "Add an item" => "New" record => abandon
-     *  - Discard record from `default_get`/`onchange` => do not abandon
+     * Otherwise, the record can be abandoned.
      *
      * This is useful when discarding changes on this record, as it means that
      * we must keep the record even if some fields are invalids (e.g. required
@@ -589,7 +592,29 @@ var BasicModel = AbstractModel.extend({
      * @returns {boolean}
      */
     canBeAbandoned: function (id) {
-        return !this.localData[id]._noAbandon && this.isNew(id);
+        // 1. no drop if flagged
+        if (this.localData[id]._noAbandon) {
+            return false;
+        }
+        // 2. no drop in a list on "ADD in some cases
+        var record = this.localData[id];
+        var parent = this.localData[record.parentID];
+        if (parent) {
+            var entry = _.findWhere(parent._savePoint, {operation: 'ADD', id: id});
+            if (entry) {
+                // 2.1. no drop on non-new addition in list
+                if (!entry.isNew) {
+                    return false;
+                }
+                // 2.2. no drop on new addition on "UPDATE"
+                var lastEntry = _.last(parent._savePoint);
+                if (lastEntry.operation === 'UPDATE' && lastEntry.id === id) {
+                    return false;
+                }
+            }
+        }
+        // 3. drop new records
+        return this.isNew(id);
     },
     /**
      * Returns true if a record is dirty. A record is considered dirty if it has
@@ -789,7 +814,8 @@ var BasicModel = AbstractModel.extend({
         return this.mutex.exec(this._applyChange.bind(this, record_id, changes, options));
     },
     /**
-     * Reload all data for a given resource
+     * Reload all data for a given resource. At any time there is at most one
+     * reload operation active.
      *
      * @param {string} id local id for a resource
      * @param {Object} [options]
@@ -798,64 +824,7 @@ var BasicModel = AbstractModel.extend({
      * @returns {Deferred<string>} resolves to the id of the resource
      */
     reload: function (id, options) {
-        options = options || {};
-        var element = this.localData[id];
-
-        if (element.type === 'record') {
-            if (!options.currentId && (('currentId' in options) || this.isNew(id))) {
-                var params = {
-                    context: element.context,
-                    fieldsInfo: element.fieldsInfo,
-                    fields: element.fields,
-                    viewType: element.viewType,
-                };
-                return this._makeDefaultRecord(element.model, params);
-            }
-            if (!options.keepChanges) {
-                this.discardChanges(id, {rollback: false});
-            }
-        } else if (element._changes) {
-            delete element.tempLimitIncrement;
-            _.each(element._changes, function (change) {
-                delete change.isNew;
-            });
-        }
-
-        if (options.context !== undefined) {
-            element.context = options.context;
-        }
-        if (options.domain !== undefined) {
-            element.domain = options.domain;
-        }
-        if (options.groupBy !== undefined) {
-            element.groupedBy = options.groupBy;
-        }
-        if (options.limit !== undefined) {
-            element.limit = options.limit;
-        }
-        if (options.offset !== undefined) {
-            this._setOffset(element.id, options.offset);
-        }
-        if (options.loadMoreOffset !== undefined) {
-            element.loadMoreOffset = options.loadMoreOffset;
-        } else {
-            // reset if not specified
-            element.loadMoreOffset = 0;
-        }
-        if (options.currentId !== undefined) {
-            element.res_id = options.currentId;
-        }
-        if (options.ids !== undefined) {
-            element.res_ids = options.ids;
-            element.count = element.res_ids.length;
-        }
-        if (element.type === 'record') {
-            element.offset = _.indexOf(element.res_ids, element.res_id);
-        }
-        var loadOptions = _.pick(options, 'fieldNames', 'viewType');
-        return this._load(element, loadOptions).then(function (result) {
-            return result.id;
-        });
+        return this.mutex.exec(this._reload.bind(this, id, options));
     },
     /**
      * In some case, we may need to remove an element from a list, without going
@@ -875,6 +844,15 @@ var BasicModel = AbstractModel.extend({
             // x2Many case: the new record has been stored in _changes, as a
             // command so we remove the command(s) related to that record
             parent._changes = _.filter(parent._changes, function (change) {
+                if (change.id === elementID &&
+                    change.operation === 'ADD' && // For now, only an ADD command increases limits
+                    parent.tempLimitIncrement) {
+                        // The record will be deleted from the _changes.
+                        // So we won't be passing into the logic of _applyX2ManyOperations anymore
+                        // implying that we have to cancel out the effects of an ADD command here
+                        parent.tempLimitIncrement--;
+                        parent.limit--;
+                }
                 return change.id !== elementID;
             });
         } else {
@@ -915,21 +893,51 @@ var BasicModel = AbstractModel.extend({
                 route: '/web/dataset/resequence',
                 params: params,
             })
-            .then(function () {
-                data.data = _.sortBy(data.data, function (d) {
-                    return _.indexOf(resIDs, self.localData[d].res_id);
-                });
-                data.res_ids = [];
-                _.each(data.data, function (d) {
-                    var dataPoint = self.localData[d];
-                    if (dataPoint.type === 'record') {
-                        data.res_ids.push(dataPoint.res_id);
-                    } else {
-                        data.res_ids = data.res_ids.concat(dataPoint.res_ids);
+            .then(function (wasResequenced) {
+                if (!wasResequenced) {
+                    // the field on which the resequence was triggered does not
+                    // exist, so no resequence happened server-side
+                    return $.when();
+                }
+                var field = params.field ? params.field : 'sequence';
+
+                return self._rpc({
+                    model: modelName,
+                    method: 'read',
+                    args: [resIDs, [field]],
+                }).then(function (records) {
+                    if (data.data.length) {
+                        var dataType = self.localData[data.data[0]].type;
+                        if (dataType === 'record') {
+                            _.each(data.data, function (dataPoint) {
+                                var recordData = self.localData[dataPoint].data;
+                                var inRecords = _.findWhere(records, {id: recordData.id});
+                                if (inRecords) {
+                                    recordData[field] = inRecords[field];
+                                }
+                            });
+                            data.data = _.sortBy(data.data, function (d) {
+                                return self.localData[d].data[field];
+                            });
+                        }
+                        if (dataType === 'list') {
+                            data.data = _.sortBy(data.data, function (d) {
+                                return _.indexOf(resIDs, self.localData[d].res_id)
+                            });
+                        }
                     }
-                });
-                self._updateParentResIDs(data);
-                return parentID;
+                    data.res_ids = [];
+                    _.each(data.data, function (d) {
+                        var dataPoint = self.localData[d];
+                        if (dataPoint.type === 'record') {
+                            data.res_ids.push(dataPoint.res_id);
+                        } else {
+                            data.res_ids = data.res_ids.concat(dataPoint.res_ids);
+                        }
+                    });
+                    self._updateParentResIDs(data);
+                    return parentID;
+                })
             });
     },
     /**
@@ -1542,8 +1550,10 @@ var BasicModel = AbstractModel.extend({
                             rec = self._makeDataPoint(params);
                             list._cache[rec.res_id] = rec.id;
                         }
-
-                        rec._noAbandon = true;
+                        // Do not abandon the record if it has been created
+                        // from `default_get`. The list has a savepoint only
+                        // after having fully executed `default_get`.
+                        rec._noAbandon = !list._savePoint;
                         list._changes.push({operation: 'ADD', id: rec.id});
                         if (command[0] === 1) {
                             list._changes.push({operation: 'UPDATE', id: rec.id});
@@ -1961,6 +1971,7 @@ var BasicModel = AbstractModel.extend({
         var records = [];
         var ids = [];
         list = this._applyX2ManyOperations(list);
+
         _.each(list.data, function (localId) {
             var record = self.localData[localId];
             var data = record._changes || record.data;
@@ -1971,6 +1982,9 @@ var BasicModel = AbstractModel.extend({
             ids.push(many2oneRecord.res_id);
             model = many2oneRecord.model;
         });
+        if (!ids.length) {
+            return $.when();
+        }
         return this._rpc({
                 model: model,
                 method: 'name_get',
@@ -2439,11 +2453,11 @@ var BasicModel = AbstractModel.extend({
         }
 
         var def = $.Deferred();
-
+        var evalContext = this._getEvalContext(record);
         this._rpc({
                 model: domainModel,
                 method: 'search_count',
-                args: [Domain.prototype.stringToArray(domainValue)],
+                args: [Domain.prototype.stringToArray(domainValue, evalContext)],
                 context: context
             })
             .then(_.identity, function (error, e) {
@@ -2538,6 +2552,11 @@ var BasicModel = AbstractModel.extend({
                     relationField: field.relation_field,
                     viewType: view ? view.type : fieldInfo.viewType,
                 });
+                // set existing changes to the list
+                if (record._changes && record._changes[fieldName]) {
+                    list._changes = self.localData[record._changes[fieldName]]._changes;
+                    record._changes[fieldName] = list.id;
+                }
                 record.data[fieldName] = list.id;
                 if (!fieldInfo.__no_fetch) {
                     var def = self._readUngroupedList(list).then(function () {
@@ -2871,13 +2890,10 @@ var BasicModel = AbstractModel.extend({
                                 continue;
                             }
                             changes = this._generateChanges(relRecord, options);
-                            if (changes.id) {
+                            if (!this.isNew(relRecord.id)) {
                                 // the subrecord already exists in db
+                                commands[fieldName].push(x2ManyCommands.link_to(relRecord.res_id));
                                 delete changes.id;
-                                if (this.isNew(record.id)) {
-                                    // if the main record is new, link the subrecord to it
-                                    commands[fieldName].push(x2ManyCommands.link_to(relRecord.res_id));
-                                }
                                 if (!_.isEmpty(changes)) {
                                     commands[fieldName].push(x2ManyCommands.update(relRecord.res_id, changes));
                                 }
@@ -3115,6 +3131,15 @@ var BasicModel = AbstractModel.extend({
                     // when sent to the server, the x2manys values must be a list
                     // of commands in a context, but the list of ids in a domain
                     ids.toJSON = _generateX2ManyCommands.bind(null, fieldName);
+                } else if (field.type === 'one2many') { // Ids are evaluated as a list of ids
+                    /* Filtering out virtual ids from the ids list
+                     * The server will crash if there are virtual ids in there
+                     * The webClient doesn't do literal id list comparison like ids == list
+                     * Only relevant in o2m: m2m does create actual records in db
+                     */
+                    ids = _.filter(ids, function (id) {
+                        return typeof id !== 'string';
+                    });
                 }
                 context[fieldName] = ids;
             }
@@ -3952,6 +3977,76 @@ var BasicModel = AbstractModel.extend({
                 }
                 return list;
             });
+        });
+    },
+    /**
+     * Reload all data for a given resource
+     *
+     * @private
+     * @param {string} id local id for a resource
+     * @param {Object} [options]
+     * @param {boolean} [options.keepChanges=false] if true, doesn't discard the
+     *   changes on the record before reloading it
+     * @returns {Deferred<string>} resolves to the id of the resource
+     */
+    _reload: function (id, options) {
+        options = options || {};
+        var element = this.localData[id];
+
+        if (element.type === 'record') {
+            if (!options.currentId && (('currentId' in options) || this.isNew(id))) {
+                var params = {
+                    context: element.context,
+                    fieldsInfo: element.fieldsInfo,
+                    fields: element.fields,
+                    viewType: element.viewType,
+                };
+                return this._makeDefaultRecord(element.model, params);
+            }
+            if (!options.keepChanges) {
+                this.discardChanges(id, {rollback: false});
+            }
+        } else if (element._changes) {
+            delete element.tempLimitIncrement;
+            _.each(element._changes, function (change) {
+                delete change.isNew;
+            });
+        }
+
+        if (options.context !== undefined) {
+            element.context = options.context;
+        }
+        if (options.domain !== undefined) {
+            element.domain = options.domain;
+        }
+        if (options.groupBy !== undefined) {
+            element.groupedBy = options.groupBy;
+        }
+        if (options.limit !== undefined) {
+            element.limit = options.limit;
+        }
+        if (options.offset !== undefined) {
+            this._setOffset(element.id, options.offset);
+        }
+        if (options.loadMoreOffset !== undefined) {
+            element.loadMoreOffset = options.loadMoreOffset;
+        } else {
+            // reset if not specified
+            element.loadMoreOffset = 0;
+        }
+        if (options.currentId !== undefined) {
+            element.res_id = options.currentId;
+        }
+        if (options.ids !== undefined) {
+            element.res_ids = options.ids;
+            element.count = element.res_ids.length;
+        }
+        if (element.type === 'record') {
+            element.offset = _.indexOf(element.res_ids, element.res_id);
+        }
+        var loadOptions = _.pick(options, 'fieldNames', 'viewType');
+        return this._load(element, loadOptions).then(function (result) {
+            return result.id;
         });
     },
     /**

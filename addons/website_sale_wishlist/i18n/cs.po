@@ -26,6 +26,8 @@ msgid ""
 "<i class=\"fa fa-heart\"/>\n"
 "                        Wishlist"
 msgstr ""
+"<i class=\"fa fa-heart\"/>\n"
+"Seznam přání"
 
 #. module: website_sale_wishlist
 #: model:ir.ui.view,arch_db:website_sale_wishlist.product_wishlist
@@ -45,7 +47,7 @@ msgstr ""
 #. module: website_sale_wishlist
 #: model:ir.ui.view,arch_db:website_sale_wishlist.product_wishlist
 msgid "Add product to my cart but keep it in my wishlist"
-msgstr ""
+msgstr "Přidat produkt do košíku, ale nechat si jej v seznamu přání"
 
 #. module: website_sale_wishlist
 #: model:ir.ui.view,arch_db:website_sale_wishlist.add_to_wishlist
@@ -76,7 +78,7 @@ msgstr "Měna"
 #. module: website_sale_wishlist
 #: model:ir.model.fields,field_description:website_sale_wishlist.field_res_users_current_session
 msgid "Current Session"
-msgstr ""
+msgstr "Aktuální relace"
 
 #. module: website_sale_wishlist
 #: model:ir.model.fields,field_description:website_sale_wishlist.field_product_wishlist_price_new
@@ -121,7 +123,7 @@ msgstr ""
 #. module: website_sale_wishlist
 #: model:ir.model.fields,field_description:website_sale_wishlist.field_product_wishlist_partner_id
 msgid "Owner"
-msgstr ""
+msgstr "Majitel"
 
 #. module: website_sale_wishlist
 #: model:ir.model.fields,field_description:website_sale_wishlist.field_product_wishlist_price
@@ -151,7 +153,7 @@ msgstr "Výrobek"
 #. module: website_sale_wishlist
 #: model:ir.model.fields,field_description:website_sale_wishlist.field_product_wishlist_session
 msgid "Session"
-msgstr ""
+msgstr "Sezení"
 
 #. module: website_sale_wishlist
 #: model:ir.ui.view,arch_db:website_sale_wishlist.product_wishlist

@@ -4,16 +4,17 @@
 # 
 # Translators:
 # Martin Trigaux, 2017
-# Jan Horzinka <jan.horzinka@centrum.cz>, 2018
 # Michal Veselý <michal@veselyberanek.net>, 2018
-# trendspotter, 2018
+# J. Podhorecky <j.podhorecky@volny.cz>, 2018
+# Adam Kettner <cetnerix@gmail.com>, 2018
+# Jaroslav Helemik Nemec <nemec@helemik.cz>, 2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 11.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-02-19 13:43+0000\n"
 "PO-Revision-Date: 2018-02-19 13:43+0000\n"
-"Last-Translator: trendspotter, 2018\n"
+"Last-Translator: Jaroslav Helemik Nemec <nemec@helemik.cz>, 2018\n"
 "Language-Team: Czech (https://www.transifex.com/odoo/teams/41243/cs/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -177,7 +178,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/snippets.xml:32
 #, python-format
 msgid "Background Color"
-msgstr ""
+msgstr "Barva pozadí"
 
 #. module: web_editor
 #. openerp-web
@@ -229,7 +230,7 @@ msgstr ""
 #. module: web_editor
 #: model:ir.ui.view,arch_db:web_editor.colorpicker
 msgid "Black"
-msgstr ""
+msgstr "Černá"
 
 #. module: web_editor
 #. openerp-web
@@ -294,7 +295,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:265
 #, python-format
 msgid "Color"
-msgstr ""
+msgstr "Barva"
 
 #. module: web_editor
 #. openerp-web
@@ -367,7 +368,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:198
 #, python-format
 msgid "Dailymotion"
-msgstr ""
+msgstr "Dailymotion"
 
 #. module: web_editor
 #: model:ir.ui.view,arch_db:web_editor.colorpicker
@@ -379,7 +380,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/summernote.js:1899
 #, python-format
 msgid "Default"
-msgstr ""
+msgstr "Výchozí"
 
 #. module: web_editor
 #. openerp-web
@@ -415,7 +416,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:140
 #, python-format
 msgid "Discard"
-msgstr "Vyřadit"
+msgstr "Zrušit"
 
 #. module: web_editor
 #: model:ir.model.fields,field_description:web_editor.field_web_editor_converter_test_sub_display_name
@@ -448,7 +449,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:903
 #, python-format
 msgid "Drag an image here"
-msgstr ""
+msgstr "Přetáhněte obrázek zde"
 
 #. module: web_editor
 #. openerp-web
@@ -470,7 +471,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:912
 #, python-format
 msgid "Edit"
-msgstr ""
+msgstr "Upravit"
 
 #. module: web_editor
 #: model:ir.ui.view,arch_db:web_editor.colorpicker
@@ -594,7 +595,7 @@ msgstr ""
 #. module: web_editor
 #: model:ir.model,name:web_editor.model_ir_http
 msgid "HTTP routing"
-msgstr ""
+msgstr "HTTP routování"
 
 #. module: web_editor
 #. openerp-web
@@ -643,21 +644,21 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:947
 #, python-format
 msgid "Help"
-msgstr ""
+msgstr "Pomoc"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/xml/translator.xml:5
 #, python-format
 msgid "Here are the visuals used to help you translate efficiently:"
-msgstr ""
+msgstr "Zde jsou vizuály, které vám pomohou efektivně překládat:"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/xml/editor.xml:219
 #, python-format
 msgid "Hide Dailymotion logo"
-msgstr ""
+msgstr "Skrýt logo Dailymotion"
 
 #. module: web_editor
 #. openerp-web
@@ -692,7 +693,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:367
 #, python-format
 msgid "Horizontal"
-msgstr ""
+msgstr "Horizontální"
 
 #. module: web_editor
 #: model:ir.model.fields,field_description:web_editor.field_web_editor_converter_test_sub_id
@@ -764,7 +765,7 @@ msgstr ""
 #. module: web_editor
 #: model:ir.ui.view,arch_db:web_editor.colorpicker
 msgid "Info"
-msgstr ""
+msgstr "Informace"
 
 #. module: web_editor
 #. openerp-web
@@ -792,14 +793,14 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:920
 #, python-format
 msgid "Insert Video"
-msgstr ""
+msgstr "Vložit video"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/xml/editor.xml:198
 #, python-format
 msgid "Instagram"
-msgstr ""
+msgstr "Instagram"
 
 #. module: web_editor
 #. openerp-web
@@ -813,7 +814,7 @@ msgstr "Instalovat"
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:884
 #, python-format
 msgid "Italic"
-msgstr ""
+msgstr "Kurzíva"
 
 #. module: web_editor
 #. openerp-web
@@ -878,7 +879,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:909
 #, python-format
 msgid "Link"
-msgstr ""
+msgstr "Odkaz"
 
 #. module: web_editor
 #. openerp-web
@@ -907,7 +908,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:259
 #, python-format
 msgid "Medium"
-msgstr ""
+msgstr "Střední"
 
 #. module: web_editor
 #. openerp-web
@@ -926,7 +927,7 @@ msgstr "Název"
 #: code:addons/web_editor/static/src/xml/editor.xml:60
 #, python-format
 msgid "Next"
-msgstr ""
+msgstr "Další"
 
 #. module: web_editor
 #. openerp-web
@@ -948,7 +949,7 @@ msgstr "Nic"
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:932
 #, python-format
 msgid "Normal"
-msgstr ""
+msgstr "Normální"
 
 #. module: web_editor
 #. openerp-web
@@ -956,7 +957,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/translator.js:94
 #, python-format
 msgid "Ok"
-msgstr ""
+msgstr "Ok"
 
 #. module: web_editor
 #. openerp-web
@@ -971,14 +972,14 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:286
 #, python-format
 msgid "Open in new window"
-msgstr ""
+msgstr "Otevřít v novém okně"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/xml/editor.xml:201
 #, python-format
 msgid "Options"
-msgstr ""
+msgstr "Možnosti"
 
 #. module: web_editor
 #. openerp-web
@@ -1028,14 +1029,14 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:294
 #, python-format
 msgid "Preview"
-msgstr ""
+msgstr "Náhled"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/xml/editor.xml:57
 #, python-format
 msgid "Previous"
-msgstr ""
+msgstr "Předchozí"
 
 #. module: web_editor
 #: model:ir.ui.view,arch_db:web_editor.colorpicker
@@ -1075,7 +1076,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:155
 #, python-format
 msgid "Remove"
-msgstr ""
+msgstr "Odebrat"
 
 #. module: web_editor
 #. openerp-web
@@ -1103,7 +1104,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:329
 #, python-format
 msgid "Repeat"
-msgstr ""
+msgstr "Opakovat"
 
 #. module: web_editor
 #. openerp-web
@@ -1132,7 +1133,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/ace.xml:36
 #, python-format
 msgid "Reset"
-msgstr ""
+msgstr "Resetovat"
 
 #. module: web_editor
 #. openerp-web
@@ -1190,7 +1191,7 @@ msgstr "Uložit"
 #: code:addons/web_editor/static/src/xml/snippets.xml:49
 #, python-format
 msgid "Search"
-msgstr ""
+msgstr "Hledání"
 
 #. module: web_editor
 #. openerp-web
@@ -1269,7 +1270,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:254
 #, python-format
 msgid "Size"
-msgstr ""
+msgstr "Velikost"
 
 #. module: web_editor
 #. openerp-web
@@ -1503,7 +1504,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:107
 #, python-format
 msgid "Uploading..."
-msgstr ""
+msgstr "Nahrávání..."
 
 #. module: web_editor
 #. openerp-web
@@ -1525,7 +1526,7 @@ msgstr ""
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:919
 #, python-format
 msgid "Video Link"
-msgstr ""
+msgstr "Video odkaz"
 
 #. module: web_editor
 #. openerp-web
@@ -1546,14 +1547,14 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/editor.xml:198
 #, python-format
 msgid "Vimeo"
-msgstr ""
+msgstr "Vimeo"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/xml/editor.xml:198
 #, python-format
 msgid "Vine.co"
-msgstr ""
+msgstr "Vine.co"
 
 #. module: web_editor
 #: model:ir.ui.view,arch_db:web_editor.colorpicker
@@ -1571,14 +1572,14 @@ msgstr ""
 #: code:addons/web_editor/static/src/xml/ace.xml:10
 #, python-format
 msgid "XML (HTML)"
-msgstr ""
+msgstr "XML (HTML)"
 
 #. module: web_editor
 #. openerp-web
 #: code:addons/web_editor/static/src/js/editor/rte.summernote.js:110
 #, python-format
 msgid "Xl"
-msgstr ""
+msgstr "Xl"
 
 #. module: web_editor
 #. openerp-web

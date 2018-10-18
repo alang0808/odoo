@@ -317,8 +317,10 @@ class MrpWorkorder(models.Model):
                 if self.product_id.tracking != 'none':
                     qty_to_add = float_round(self.qty_producing * move.unit_factor, precision_rounding=rounding)
                     move._generate_consumed_move_line(qty_to_add, self.final_lot_id)
-                else:
+                elif len(move._get_move_lines()) < 2:
                     move.quantity_done += float_round(self.qty_producing * move.unit_factor, precision_rounding=rounding)
+                else:
+                    move._set_quantity_done(move.quantity_done + float_round(self.qty_producing * move.unit_factor, precision_rounding=rounding))
 
         # Transfer quantities from temporary to final move lots or make them final
         for move_line in self.active_move_line_ids:
@@ -358,6 +360,7 @@ class MrpWorkorder(models.Model):
                 move_line = production_move.move_line_ids.filtered(lambda x: x.lot_id.id == self.final_lot_id.id)
                 if move_line:
                     move_line.product_uom_qty += self.qty_producing
+                    move_line.qty_done += self.qty_producing
                 else:
                     move_line.create({'move_id': production_move.id,
                              'product_id': production_move.product_id.id,

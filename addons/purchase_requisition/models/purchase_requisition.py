@@ -34,8 +34,8 @@ class PurchaseRequisition(models.Model):
 
     def _get_picking_in(self):
         pick_in = self.env.ref('stock.picking_type_in')
-        if not pick_in:
-            company = self.env['res.company']._company_default_get('purchase.requisition')
+        company = self.env['res.company']._company_default_get('purchase.requisition')
+        if not pick_in or pick_in.sudo().warehouse_id.company_id.id != company.id:
             pick_in = self.env['stock.picking.type'].search(
                 [('warehouse_id.company_id', '=', company.id), ('code', '=', 'incoming')],
                 limit=1,
@@ -203,8 +203,12 @@ class PurchaseOrder(models.Model):
         self.payment_term_id = payment_term.id,
         self.company_id = requisition.company_id.id
         self.currency_id = currency.id
-        self.origin = requisition.name
-        self.partner_ref = requisition.name # to control vendor bill based on agreement reference
+        if not self.origin or requisition.name not in self.origin.split(', '):
+            if self.origin:
+                if requisition.name:
+                    self.origin = self.origin + ', ' + requisition.name
+            else:
+                self.origin = requisition.name
         self.notes = requisition.description
         self.date_order = requisition.date_end or fields.Datetime.now()
         self.picking_type_id = requisition.picking_type_id.id
@@ -308,6 +312,18 @@ class ProductTemplate(models.Model):
         [('rfq', 'Create a draft purchase order'),
          ('tenders', 'Propose a call for tenders')],
         string='Procurement', default='rfq')
+
+class StockMove(models.Model):
+    _inherit = "stock.move"
+
+    requistion_line_ids =  fields.One2many('purchase.requisition.line', 'move_dest_id')
+
+class ProcurementGroup(models.Model):
+    _inherit = 'procurement.group'
+
+    @api.model
+    def _get_exceptions_domain(self):
+        return super(ProcurementGroup, self)._get_exceptions_domain() + [('requistion_line_ids', '=', False)]
 
 
 class ProcurementRule(models.Model):

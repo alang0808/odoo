@@ -8,6 +8,7 @@
 # Rytis Štreimikis <r.streimikis@hotmail.lt>, 2017
 # Antanas Muliuolis <an.muliuolis@gmail.com>, 2017
 # Monika Raciunaite <monika.raciunaite@gmail.com>, 2017
+# Linas Versada <paulius.sladkevicius@gmail.com>, 2017
 # Rolandas <info@paninfo.lt>, 2017
 # UAB "Draugiški sprendimai" <transifex@draugiskisprendimai.lt>, 2017
 # Audrius Palenskis <audrius.palenskis@gmail.com>, 2017
@@ -485,12 +486,12 @@ msgstr "Palikti kanalą"
 #. module: im_livechat
 #: model:ir.model,name:im_livechat.model_mail_channel_partner
 msgid "Listeners of a Channel"
-msgstr ""
+msgstr "Kanalo klausytojai"
 
 #. module: im_livechat
 #: model:ir.ui.menu,name:im_livechat.menu_livechat_root
 msgid "Live Chat"
-msgstr ""
+msgstr "Gyvas susirašinėjimas"
 
 #. module: im_livechat
 #: model:ir.module.category,name:im_livechat.module_category_im_livechat
@@ -611,7 +612,7 @@ msgstr ""
 #: code:addons/im_livechat/static/src/xml/im_livechat.xml:12
 #, python-format
 msgid "OK"
-msgstr "Gerai"
+msgstr "OK"
 
 #. module: im_livechat
 #: model:ir.model.fields,field_description:im_livechat.field_im_livechat_report_channel_partner_id
@@ -769,6 +770,8 @@ msgid ""
 "image, with aspect ratio preserved. Use this field anywhere a small image is"
 " required."
 msgstr ""
+"Mažo dydžio grupės nuotrauka. Ji automatiškai pakeičiama į 64x64px dydį, "
+"išsaugant proporciją. Naudokite šį lauką visur, kur reikia mažos nuotraukos."
 
 #. module: im_livechat
 #: model:ir.model.fields,field_description:im_livechat.field_im_livechat_report_channel_start_date
