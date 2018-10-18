@@ -4,6 +4,7 @@
 # 
 # Translators:
 # Martin Trigaux, 2016
+# Maria Boyadjieva <marabo2000@gmail.com>, 2018
 # Albena Mincheva <albena_vicheva@abv.bg>, 2018
 msgid ""
 msgstr ""
@@ -22,8 +23,7 @@ msgstr ""
 #. module: pos_discount
 #: model:ir.model.fields,help:pos_discount.field_pos_config_iface_discount
 msgid "Allow the cashier to give discounts on the whole order."
-msgstr ""
-"Позволи на касиера да дава отстъпка върху цялата стойност на продажбата."
+msgstr "Позволете на касиера да прави отстъпка върху цялата поръчка."
 
 #. module: pos_discount
 #. openerp-web
@@ -53,17 +53,17 @@ msgstr "Отстъпки"
 #. module: pos_discount
 #: model:ir.model.fields,field_description:pos_discount.field_pos_config_iface_discount
 msgid "Order Discounts"
-msgstr "Отстъпка на продажба"
+msgstr "Поръчайте отстъпки "
 
 #. module: pos_discount
 #: model:ir.model.fields,help:pos_discount.field_pos_config_discount_pc
 msgid "The default discount percentage"
-msgstr "Процент отстъпка по подразбиране"
+msgstr "Стандартният процент отстъпка"
 
 #. module: pos_discount
 #: model:ir.model.fields,help:pos_discount.field_pos_config_discount_product_id
 msgid "The product used to model the discount"
-msgstr ""
+msgstr "Продуктът се използва за модел на отстъпката"
 
 #. module: pos_discount
 #: model:ir.model,name:pos_discount.model_pos_config

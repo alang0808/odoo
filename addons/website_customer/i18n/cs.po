@@ -23,7 +23,7 @@ msgstr ""
 #. module: website_customer
 #: model:ir.ui.view,arch_db:website_customer.opt_tag_list
 msgid "<span class=\"fa fa-1x fa-tags\"/> All"
-msgstr ""
+msgstr "<span class=\"fa fa-1x fa-tags\"/> Vše"
 
 #. module: website_customer
 #: model:ir.model.fields,field_description:website_customer.field_res_partner_tag_active
@@ -34,12 +34,12 @@ msgstr "Aktivní"
 #: code:addons/website_customer/controllers/main.py:65
 #, python-format
 msgid "All Countries"
-msgstr ""
+msgstr "Všechny země"
 
 #. module: website_customer
 #: model:ir.model.fields,help:website_customer.field_res_partner_tag_classname
 msgid "Bootstrap class to customize the color"
-msgstr ""
+msgstr "Bootstrap class pro přizpůsobení barvy"
 
 #. module: website_customer
 #: model:ir.model.fields,field_description:website_customer.field_res_partner_tag_name

@@ -169,7 +169,7 @@ msgstr "Vytvořeno"
 #: code:addons/pos_mercury/models/pos_mercury.py:15
 #, python-format
 msgid "Credit Card"
-msgstr ""
+msgstr "Kreditní karta"
 
 #. module: pos_mercury
 #. openerp-web
@@ -968,7 +968,7 @@ msgstr ""
 #: code:addons/pos_mercury/static/src/xml/pos_mercury.xml:50
 #, python-format
 msgid "X______________________________"
-msgstr ""
+msgstr "X______________________________"
 
 #. module: pos_mercury
 #: model:ir.model,name:pos_mercury.model_barcode_rule

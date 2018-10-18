@@ -3,10 +3,10 @@
 # * hr
 # 
 # Translators:
-# Martin Trigaux <mat@odoo.com>, 2016
+# Martin Trigaux, 2016
 # Matjaž Mozetič <m.mozetic@matmoz.si>, 2016
 # jl2035 <jaka.luthar@gmail.com>, 2016
-# Borut Jures <inactive+borut@transifex.com>, 2016
+# Borut Jures, 2016
 # Dejan Sraka <dejan.sraka@picolabs.si>, 2016
 msgid ""
 msgstr ""
@@ -829,7 +829,7 @@ msgstr "Sporočila"
 #. module: hr
 #: model:ir.ui.view,arch_db:hr.hr_department_view_kanban
 msgid "More <i class=\"fa fa-caret-down\"/>"
-msgstr ""
+msgstr "Več <i class=\"fa fa-caret-down\"/>"
 
 #. module: hr
 #: model:hr.job,website_description:hr.job_ceo
@@ -1190,7 +1190,7 @@ msgid ""
 "show a load of 100% for this phase by default, but if we put a efficiency of"
 " 200%, then his load will only be 50%."
 msgstr ""
-"Polje prikazuje učinkovitost vira za zaključek nalog. Npr.: uporaba samo "
+"Polje prikazuje učinkovitost vira za zaključek opravil. Npr.: uporaba samo "
 "tega vira na fazi 5 dni s 5 prirejenimi nalogami, bo prikazala 100% "
 "zasedenost za to fazo; če pa vpišemo učinkovitost 200%, bo njegova "
 "zasedenost samo 50%."

@@ -5,13 +5,14 @@
 # Translators:
 # Martin Trigaux, 2016
 # Chris <krystof.reklamy13@gmail.com>, 2016
+# trendspotter, 2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 10.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-01-11 13:04+0000\n"
 "PO-Revision-Date: 2017-01-11 13:04+0000\n"
-"Last-Translator: Chris <krystof.reklamy13@gmail.com>, 2016\n"
+"Last-Translator: trendspotter, 2018\n"
 "Language-Team: Czech (https://www.transifex.com/odoo/teams/41243/cs/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -72,7 +73,7 @@ msgstr "Země"
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.details
 msgid "Country..."
-msgstr ""
+msgstr "Země..."
 
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.custom_panel
@@ -93,7 +94,7 @@ msgstr "Email"
 #: code:addons/website_portal/controllers/main.py:103
 #, python-format
 msgid "Invalid Email! Please enter a valid email address."
-msgstr ""
+msgstr "Neplatný e-mail! Prosím zadejte platnou emailovou adresu."
 
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.my_account_link
@@ -120,12 +121,12 @@ msgstr "Pokladník"
 #: code:addons/website_portal/controllers/main.py:120
 #, python-format
 msgid "Some required fields are empty."
-msgstr ""
+msgstr "Některá povinná pole jsou prázdná."
 
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.details
 msgid "State / Province"
-msgstr ""
+msgstr "Stát / provincie"
 
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.details
@@ -145,12 +146,12 @@ msgstr ""
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.details
 msgid "Your Name"
-msgstr ""
+msgstr "Vaše jméno"
 
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.details
 msgid "Zip / Postal Code"
-msgstr ""
+msgstr "PSČ"
 
 #. module: website_portal
 #: model:ir.ui.view,arch_db:website_portal.details

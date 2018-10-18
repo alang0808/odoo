@@ -617,7 +617,7 @@ msgstr "Koncept"
 #. module: survey
 #: model:ir.model.fields,field_description:survey.field_survey_user_input_email
 msgid "E-mail"
-msgstr ""
+msgstr "E-mail"
 
 #. module: survey
 #: model:ir.ui.view,arch_db:survey.survey_form
@@ -1142,7 +1142,7 @@ msgstr "Možnosti"
 #: model:ir.ui.view,arch_db:survey.survey_page_search
 #: model:ir.ui.view,arch_db:survey.survey_question_search
 msgid "Page"
-msgstr ""
+msgstr "Strana"
 
 #. module: survey
 #: model:ir.model.fields,field_description:survey.field_survey_page_title
@@ -1167,7 +1167,7 @@ msgstr "Stránky"
 #: model:ir.ui.view,arch_db:survey.survey_user_input_search
 #: selection:survey.user_input,state:0
 msgid "Partially completed"
-msgstr ""
+msgstr "Částečně dokončeno"
 
 #. module: survey
 #: model:ir.model.fields,field_description:survey.field_survey_user_input_partner_id
@@ -1282,7 +1282,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:survey.field_survey_page_question_ids
 #: model:ir.ui.menu,name:survey.menu_survey_question_form1
 msgid "Questions"
-msgstr ""
+msgstr "Otázky"
 
 #. module: survey
 #: model:survey.page,title:survey.feedback_4
@@ -1621,7 +1621,7 @@ msgstr "Průzkumy"
 #: model:ir.ui.view,arch_db:survey.survey_kanban
 #: model:ir.ui.view,arch_db:survey.survey_user_input_search
 msgid "Test"
-msgstr ""
+msgstr "Test"
 
 #. module: survey
 #: model:ir.ui.view,arch_db:survey.survey_form

@@ -22,7 +22,7 @@
 # Jan-Erik Finlander, 2016
 # Timo Soronen <tisonen@gmail.com>, 2016
 # Atte Isopuro <atte.isopuro@web-veistamo.fi>, 2016
-# Melina Mantyla <melina.mantyla@web-veistamo.fi>, 2016
+# Melina Mäntylä <melina.mantyla@web-veistamo.fi>, 2016
 # Jussi Lehto <jussi@gulfeo.com>, 2016
 # artol <arto.leskinen@tek.fi>, 2017
 # MIka Pakkanen <mika.pakkanen@gmail.com>, 2017
@@ -434,7 +434,7 @@ msgid ""
 "                                    </span>"
 msgstr ""
 "<span class=\"panel-title\">\n"
-"<strong>Laskuttaja</strong> (rajoitettu köyttö)\n"
+"<strong>Laskuttaja</strong> (rajoitettu käyttö)\n"
 "</span>"
 
 #. module: account
@@ -3221,7 +3221,7 @@ msgstr "Luo hyvitysehdotus"
 #. module: account
 #: model:ir.ui.view,arch_db:account.tax_adjustments_wizard
 msgid "Create and post move"
-msgstr ""
+msgstr "Luo ja kirjaa siirto"
 
 #. module: account
 #: code:addons/account/models/account_journal_dashboard.py:248
@@ -6328,17 +6328,17 @@ msgstr ""
 #: model:ir.ui.view,arch_db:account.view_account_move_filter
 #: model:ir.ui.view,arch_db:account.view_account_move_line_filter
 msgid "Move"
-msgstr "Siirrä"
+msgstr "Siirto"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_analytic_line_move_id
 msgid "Move Line"
-msgstr "Kirjausrivi"
+msgstr "Siirtorivi"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_payment_move_line_ids
 msgid "Move line ids"
-msgstr ""
+msgstr "Siirtorivien id:t"
 
 #. module: account
 #: code:addons/account/models/account_move.py:1155
@@ -7120,7 +7120,7 @@ msgstr "Maksutavat"
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_invoice_payment_move_line_ids
 msgid "Payment Move Lines"
-msgstr ""
+msgstr "Maksun siirtorivit"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_invoice_reference_type
@@ -8009,7 +8009,7 @@ msgstr "Vastakirjaus"
 #: model:ir.ui.view,arch_db:account.view_account_move_reversal
 #, python-format
 msgid "Reverse Moves"
-msgstr ""
+msgstr "Käänteiset siirrot"
 
 #. module: account
 #: selection:account.financial.report,sign:0
@@ -10751,14 +10751,12 @@ msgstr "ensin)"
 #. module: account
 #: model:ir.ui.view,arch_db:account.invoice_form
 msgid "for this customer. You can allocate them to mark this invoice as paid."
-msgstr ""
-"tälle asiakkaalle. Voit pyytää heitä kirjaamaan tämän laskun maksetuksi."
+msgstr "tälle asiakkaalle. Voit kohdistaa niitä tähän laskuun."
 
 #. module: account
 #: model:ir.ui.view,arch_db:account.invoice_supplier_form
 msgid "for this supplier. You can allocate them to mark this bill as paid."
-msgstr ""
-"tälle toimittajalle. Voit pyytää heitä kirjaamaan tämän laskun maksetuksi."
+msgstr "tälle toimittajalle. Voit kohdistaa niitä tähän laskuun."
 
 #. module: account
 #: model:ir.ui.view,arch_db:account.account_invoice_report_duplicate
@@ -10780,7 +10778,7 @@ msgstr ""
 #. module: account
 #: model:ir.ui.view,arch_db:account.invoice_form
 msgid "outstanding payments"
-msgstr ""
+msgstr "täsmäyttämättömiä maksuja"
 
 #. module: account
 #. openerp-web

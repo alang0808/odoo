@@ -18,6 +18,7 @@
 # Carles Antoli <carlesantoli@hotmail.com>, 2016
 # Miguel Orueta <mo@landoo.es>, 2016
 # Luis Pomar <luis.pomar@gmail.com>, 2016
+# Carlos Dauden <carlos.dauden@tecnativa.com>, 2016
 # Alejandro Die Sanchis <marketing@domatix.com>, 2016
 # Luis M. Triana <luis.triana@jarsa.com.mx>, 2016
 # Martin Mendoza del Solar <martin@mendozadelsolar.com>, 2016
@@ -298,7 +299,7 @@ msgstr "<strong>Subtotal: </strong>"
 #. module: sale
 #: model:ir.ui.view,arch_db:sale.report_saleorder_document
 msgid "<strong>Total Without Taxes</strong>"
-msgstr "<strong>Total Sin Impuestos</strong>"
+msgstr "<strong>Total base</strong>"
 
 #. module: sale
 #: model:ir.ui.view,arch_db:sale.report_saleorder_document
@@ -398,6 +399,11 @@ msgstr ""
 #: model:ir.model.fields,help:sale.field_account_config_settings_group_analytic_account_for_sales
 msgid "Allows you to specify an analytic account on sales orders."
 msgstr "Permite especificar una cuenta analítica en pedidos de venta."
+
+#. module: sale
+#: model:ir.ui.view,arch_db:sale.report_invoice_layouted
+msgid "Amount"
+msgstr "Importe"
 
 #. module: sale
 #: model:ir.model.fields,field_description:sale.field_crm_team_sales_to_invoice_amount
@@ -2191,14 +2197,29 @@ msgid "Terms and conditions"
 msgstr "Términos y condiciones"
 
 #. module: sale
-#: code:addons/sale/models/sale_analytic.py:84
+#: code:addons/sale/models/sale_analytic.py:117
 #, python-format
 msgid ""
-"The Sale Order %s linked to the Analytic Account must be validated before "
-"registering expenses."
+"The Sales Order %s linked to the Analytic Account %s is cancelled. You "
+"cannot register an expense on a cancelled Sales Order."
 msgstr ""
-"El pedido de venta %s enlazado a la cuenta analítica debe ser validado antes"
-" de registrar gastos."
+
+#. module: sale
+#: code:addons/sale/models/sale_analytic.py:112
+#, python-format
+msgid ""
+"The Sales Order %s linked to the Analytic Account %s must be validated "
+"before registering expenses."
+msgstr ""
+
+#. module: sale
+#: code:addons/sale/models/sale_analytic.py:115
+#, python-format
+msgid ""
+"The Sales Order %s linked to the Analytic Account %s is currently locked. "
+"You cannot register an expense on a locked Sales Order. Please create a new "
+"SO linked to this Analytic Account."
+msgstr ""
 
 #. module: sale
 #: model:ir.model.fields,help:sale.field_sale_advance_payment_inv_amount

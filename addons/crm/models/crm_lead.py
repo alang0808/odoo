@@ -504,7 +504,8 @@ class Lead(FormatAddress, models.Model):
         for field in fields:
             value = getattr(self, field.name, False)
             if field.ttype == 'selection':
-                value = dict(field.get_values(self.env)).get(value, value)
+                selections = self.fields_get()[field.name]['selection']
+                value = next((v[1] for v in selections if v[0] == value), value)
             elif field.ttype == 'many2one':
                 if value:
                     value = value.sudo().name_get()[0][1]
@@ -657,6 +658,8 @@ class Lead(FormatAddress, models.Model):
     @api.model
     def _get_duplicated_leads_by_emails(self, partner_id, email, include_lost=False):
         """ Search for opportunities that have the same partner and that arent done or cancelled """
+        if not email:
+            return self.env['crm.lead']
         partner_match_domain = []
         for email in set(email_split(email) + [email]):
             partner_match_domain.append(('email_from', '=ilike', email))
@@ -664,7 +667,7 @@ class Lead(FormatAddress, models.Model):
             partner_match_domain.append(('partner_id', '=', partner_id))
         partner_match_domain = ['|'] * (len(partner_match_domain) - 1) + partner_match_domain
         if not partner_match_domain:
-            return []
+            return self.env['crm.lead']
         domain = partner_match_domain
         if not include_lost:
             domain += ['&', ('active', '=', True), ('probability', '<', 100)]
@@ -868,7 +871,7 @@ class Lead(FormatAddress, models.Model):
 
     @api.model
     def get_empty_list_help(self, help):
-        if help:
+        if help and help.find("oe_view_nocontent_create") == -1:
             alias_record = self.env.ref("crm.mail_alias_lead_info", raise_if_not_found=False)
             if alias_record and alias_record.alias_domain and alias_record.alias_name:
                 email = '%s@%s' % (alias_record.alias_name, alias_record.alias_domain)
@@ -876,7 +879,9 @@ class Lead(FormatAddress, models.Model):
                 dynamic_help = _("""All email incoming to %s will automatically
                     create new opportunity. Update your business card, phone book, social media,...
                     Send an email right now and see it here.""") % (email_link,)
-                return '<p class="oe_view_nocontent_create">%s</p>%s<p>%s</p>' % (_('Click to add a new opportunity'), help, dynamic_help)
+                return '<p class="oe_view_nocontent_create">%s</p>%s<p class="oe_view_nocontent_alias>%s</p>' % (
+                    _('Click to add a new opportunity'), help, dynamic_help
+                )
         return super(Lead, self.with_context(
             empty_list_help_model='crm.team',
             empty_list_help_id=self._context.get('default_team_id', False),

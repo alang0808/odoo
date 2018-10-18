@@ -130,15 +130,18 @@ class FSWatcher(object):
         if isinstance(event, (FileCreatedEvent, FileModifiedEvent, FileMovedEvent)):
             if not event.is_directory:
                 path = getattr(event, 'dest_path', event.src_path)
-                if path.endswith('.py'):
+                if path.endswith('.py') and not os.path.basename(path).startswith('.~'):
                     try:
                         source = open(path, 'rb').read() + '\n'
                         compile(source, path, 'exec')
+                    except FileNotFoundError:
+                        _logger.error('autoreload: python code change detected, FileNotFound for %s', path)
                     except SyntaxError:
                         _logger.error('autoreload: python code change detected, SyntaxError in %s', path)
                     else:
-                        _logger.info('autoreload: python code updated, autoreload activated')
-                        restart()
+                        if not getattr(odoo, 'phoenix', False):
+                            _logger.info('autoreload: python code updated, autoreload activated')
+                            restart()
 
     def start(self):
         self.observer.start()
@@ -356,7 +359,10 @@ class GeventServer(CommonServer):
 
     def start(self):
         import gevent
-        from gevent.wsgi import WSGIServer
+        try:
+            from gevent.pywsgi import WSGIServer
+        except ImportError:
+            from gevent.wsgi import WSGIServer
 
 
         if os.name == 'posix':
@@ -809,7 +815,6 @@ class WorkerCron(Worker):
 
             import odoo.addons.base as base
             base.ir.ir_cron.ir_cron._acquire_job(db_name)
-            odoo.modules.registry.Registry.delete(db_name)
 
             # dont keep cursors in multi database mode
             if len(db_names) > 1:

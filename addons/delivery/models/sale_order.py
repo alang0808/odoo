@@ -75,6 +75,9 @@ class SaleOrder(models.Model):
 
     def _create_delivery_line(self, carrier, price_unit):
         SaleOrderLine = self.env['sale.order.line']
+        if self.partner_id:
+            # set delivery detail in the customer language
+            carrier = carrier.with_context(lang=self.partner_id.lang)
 
         # Apply fiscal position
         taxes = carrier.product_id.taxes_id.filtered(lambda t: t.company_id.id == self.company_id.id)
@@ -85,7 +88,7 @@ class SaleOrder(models.Model):
         # Create the sale order line
         values = {
             'order_id': self.id,
-            'name': carrier.name,
+            'name': carrier.with_context(lang=self.partner_id.lang).name,
             'product_uom_qty': 1,
             'product_uom': carrier.product_id.uom_id.id,
             'product_id': carrier.product_id.id,
