@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-from odoo import api, models, _
+from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import float_is_zero
 from datetime import datetime
@@ -11,6 +11,7 @@ from dateutil.relativedelta import relativedelta
 class ReportAgedPartnerBalance(models.AbstractModel):
 
     _name = 'report.account.report_agedpartnerbalance'
+    _description = 'Aged Partner Balance Report'
 
     def _get_partner_move_lines(self, account_type, date_from, target_move, period_length):
         # This method can receive the context key 'include_nullified_amount' {Boolean}
@@ -19,7 +20,8 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         # The context key allow it to appear
         ctx = self._context
         periods = {}
-        start = datetime.strptime(date_from, "%Y-%m-%d") - relativedelta(days=1)
+        date_from = fields.Date.from_string(date_from)
+        start = date_from - relativedelta(days=1)
         for i in range(5)[::-1]:
             stop = start - relativedelta(days=period_length)
             periods[str(i)] = {
@@ -77,42 +79,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         partner_ids = [partner['partner_id'] for partner in partners if partner['partner_id']]
         lines = dict((partner['partner_id'] or False, []) for partner in partners)
         if not partner_ids:
-            return [], [], []
-
-        # This dictionary will store the not due amount of all partners
-        undue_amounts = {}
-        query = '''SELECT l.id
-                FROM account_move_line AS l, account_account, account_move am
-                WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)
-                    AND (am.state IN %s)
-                    AND (account_account.internal_type IN %s)
-                    AND (COALESCE(l.date_maturity,l.date) >= %s)\
-                    AND ((l.partner_id IN %s) OR (l.partner_id IS NULL))
-                AND (l.date <= %s)
-                AND l.company_id IN %s'''
-        cr.execute(query, (tuple(move_state), tuple(account_type), date_from, tuple(partner_ids), date_from, tuple(company_ids)))
-        aml_ids = cr.fetchall()
-        aml_ids = aml_ids and [x[0] for x in aml_ids] or []
-        for line in self.env['account.move.line'].browse(aml_ids):
-            partner_id = line.partner_id.id or False
-            if partner_id not in undue_amounts:
-                undue_amounts[partner_id] = 0.0
-            line_amount = line.balance
-            if line.balance == 0:
-                continue
-            for partial_line in line.matched_debit_ids:
-                if partial_line.max_date <= date_from:
-                    line_amount += partial_line.amount
-            for partial_line in line.matched_credit_ids:
-                if partial_line.max_date <= date_from:
-                    line_amount -= partial_line.amount
-            if not self.env.user.company_id.currency_id.is_zero(line_amount):
-                undue_amounts[partner_id] += line_amount
-                lines[partner_id].append({
-                    'line': line,
-                    'amount': line_amount,
-                    'period': 6,
-                })
+            return [], [], {}
 
         # Use one query per period and store results in history (a list variable)
         # Each history will contain: history[1] = {'<partner_id>': <partner_debit-credit>}
@@ -140,7 +107,8 @@ class ReportAgedPartnerBalance(models.AbstractModel):
                         AND ((l.partner_id IN %s) OR (l.partner_id IS NULL))
                         AND ''' + dates_query + '''
                     AND (l.date <= %s)
-                    AND l.company_id IN %s'''
+                    AND l.company_id IN %s
+                    ORDER BY COALESCE(l.date_maturity, l.date)'''
             cr.execute(query, args_list)
             partners_amount = {}
             aml_ids = cr.fetchall()
@@ -167,6 +135,42 @@ class ReportAgedPartnerBalance(models.AbstractModel):
                         'period': i + 1,
                         })
             history.append(partners_amount)
+
+        # This dictionary will store the not due amount of all partners
+        undue_amounts = {}
+        query = '''SELECT l.id
+                FROM account_move_line AS l, account_account, account_move am
+                WHERE (l.account_id = account_account.id) AND (l.move_id = am.id)
+                    AND (am.state IN %s)
+                    AND (account_account.internal_type IN %s)
+                    AND (COALESCE(l.date_maturity,l.date) >= %s)\
+                    AND ((l.partner_id IN %s) OR (l.partner_id IS NULL))
+                AND (l.date <= %s)
+                AND l.company_id IN %s
+                ORDER BY COALESCE(l.date_maturity, l.date)'''
+        cr.execute(query, (tuple(move_state), tuple(account_type), date_from, tuple(partner_ids), date_from, tuple(company_ids)))
+        aml_ids = cr.fetchall()
+        aml_ids = aml_ids and [x[0] for x in aml_ids] or []
+        for line in self.env['account.move.line'].browse(aml_ids):
+            partner_id = line.partner_id.id or False
+            if partner_id not in undue_amounts:
+                undue_amounts[partner_id] = 0.0
+            line_amount = line.balance
+            if line.balance == 0:
+                continue
+            for partial_line in line.matched_debit_ids:
+                if partial_line.max_date <= date_from:
+                    line_amount += partial_line.amount
+            for partial_line in line.matched_credit_ids:
+                if partial_line.max_date <= date_from:
+                    line_amount -= partial_line.amount
+            if not self.env.user.company_id.currency_id.is_zero(line_amount):
+                undue_amounts[partner_id] += line_amount
+                lines[partner_id].append({
+                    'line': line,
+                    'amount': line_amount,
+                    'period': 6,
+                })
 
         for partner in partners:
             if partner['partner_id'] is None:
@@ -203,13 +207,13 @@ class ReportAgedPartnerBalance(models.AbstractModel):
                 values['name'] = _('Unknown Partner')
                 values['trust'] = False
 
-            if at_least_one_amount or self._context.get('include_nullified_amount'):
+            if at_least_one_amount or (self._context.get('include_nullified_amount') and lines[partner['partner_id']]):
                 res.append(values)
 
         return res, total, lines
 
     @api.model
-    def get_report_values(self, docids, data=None):
+    def _get_report_values(self, docids, data=None):
         if not data.get('form') or not self.env.context.get('active_model') or not self.env.context.get('active_id'):
             raise UserError(_("Form content is missing, this report cannot be printed."))
 
@@ -218,7 +222,7 @@ class ReportAgedPartnerBalance(models.AbstractModel):
         docs = self.env[model].browse(self.env.context.get('active_id'))
 
         target_move = data['form'].get('target_move', 'all')
-        date_from = data['form'].get('date_from', time.strftime('%Y-%m-%d'))
+        date_from = fields.Date.from_string(data['form'].get('date_from')) or fields.Date.today()
 
         if data['form']['result_selection'] == 'customer':
             account_type = ['receivable']

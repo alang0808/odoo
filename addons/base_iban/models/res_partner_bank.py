@@ -28,7 +28,7 @@ def get_bban_from_iban(iban):
 def validate_iban(iban):
     iban = normalize_iban(iban)
     if not iban:
-        raise ValidationError(_("No IBAN !"))
+        raise ValidationError(_("There is no IBAN code."))
 
     country_code = iban[:2].lower()
     if country_code not in _map_iban_template:
@@ -48,16 +48,19 @@ def validate_iban(iban):
 class ResPartnerBank(models.Model):
     _inherit = "res.partner.bank"
 
-    acc_type = fields.Selection(selection_add=[("iban", "IBAN")])
+    @api.model
+    def _get_supported_account_types(self):
+        rslt = super(ResPartnerBank, self)._get_supported_account_types()
+        rslt.append(('iban', _('IBAN')))
+        return rslt
 
-    @api.one
-    @api.depends('acc_number')
-    def _compute_acc_type(self):
+    @api.model
+    def retrieve_acc_type(self, acc_number):
         try:
-            validate_iban(self.acc_number)
-            self.acc_type = 'iban'
+            validate_iban(acc_number)
+            return 'iban'
         except ValidationError:
-            super(ResPartnerBank, self)._compute_acc_type()
+            return super(ResPartnerBank, self).retrieve_acc_type(acc_number)
 
     def get_bban(self):
         if self.acc_type != 'iban':

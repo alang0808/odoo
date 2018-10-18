@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 try:
     from num2words import num2words
 except ImportError:
-    _logger.warning("The num2words python library is not installed, l10n_mx_edi features won't be fully available.")
+    _logger.warning("The num2words python library is not installed, amount-to-text features won't be fully available.")
     num2words = None
 
 CURRENCY_DISPLAY_PATTERN = re.compile(r'(\w+)\s*(?:\((.*)\))?')
@@ -32,7 +32,7 @@ class Currency(models.Model):
                         help='The rate of the currency to the currency of rate 1.')
     rate_ids = fields.One2many('res.currency.rate', 'currency_id', string='Rates')
     rounding = fields.Float(string='Rounding Factor', digits=(12, 6), default=0.01)
-    decimal_places = fields.Integer(compute='_compute_decimal_places')
+    decimal_places = fields.Integer(compute='_compute_decimal_places', store=True)
     active = fields.Boolean(default=True)
     position = fields.Selection([('after', 'After Amount'), ('before', 'Before Amount')], default='after',
         string='Symbol Position', help="Determines where the currency symbol should be placed after or before the amount.")
@@ -46,11 +46,12 @@ class Currency(models.Model):
     ]
 
     def _get_rates(self, company, date):
-        query = """SELECT c.id, (SELECT r.rate FROM res_currency_rate r
+        query = """SELECT c.id,
+                          COALESCE((SELECT r.rate FROM res_currency_rate r
                                   WHERE r.currency_id = c.id AND r.name <= %s
                                     AND (r.company_id IS NULL OR r.company_id = %s)
                                ORDER BY r.company_id, r.name DESC
-                                  LIMIT 1) AS rate
+                                  LIMIT 1), 1.0) AS rate
                    FROM res_currency c
                    WHERE c.id IN %s"""
         self._cr.execute(query, (date, company.id, tuple(self.ids)))
@@ -58,9 +59,10 @@ class Currency(models.Model):
         return currency_rates
 
     @api.multi
+    @api.depends('rate_ids.rate')
     def _compute_current_rate(self):
         date = self._context.get('date') or fields.Date.today()
-        company = self._context.get('company_id') or self.env['res.users']._get_company()
+        company = self.env['res.company'].browse(self._context.get('company_id')) or self.env['res.users']._get_company()
         # the subquery selects the last rate before 'date' for the given currency/company
         currency_rates = self._get_rates(company, date)
         for currency in self:
@@ -82,12 +84,12 @@ class Currency(models.Model):
             currency.date = currency.rate_ids[:1].name
 
     @api.model
-    def name_search(self, name='', args=None, operator='ilike', limit=100):
-        results = super(Currency, self).name_search(name, args, operator=operator, limit=limit)
+    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
+        results = super(Currency, self)._name_search(name, args, operator=operator, limit=limit, name_get_uid=name_get_uid)
         if not results:
             name_match = CURRENCY_DISPLAY_PATTERN.match(name)
             if name_match:
-                results = super(Currency, self).name_search(name_match.group(1), args, operator=operator, limit=limit)
+                results = super(Currency, self)._name_search(name_match.group(1), args, operator=operator, limit=limit, name_get_uid=name_get_uid)
         return results
 
     @api.multi
@@ -255,14 +257,14 @@ class CurrencyRate(models.Model):
     ]
 
     @api.model
-    def name_search(self, name, args=None, operator='ilike', limit=80):
+    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
         if operator in ['=', '!=']:
             try:
                 date_format = '%Y-%m-%d'
                 if self._context.get('lang'):
-                    langs = self.env['res.lang'].search([('code', '=', self._context['lang'])])
-                    if langs:
-                        date_format = langs.date_format
+                    lang_id = self.env['res.lang']._search([('code', '=', self._context['lang'])], access_rights_uid=name_get_uid)
+                    if lang_id:
+                        date_format = self.browse(lang_id).date_format
                 name = time.strftime('%Y-%m-%d', time.strptime(name, date_format))
             except ValueError:
                 try:
@@ -271,4 +273,4 @@ class CurrencyRate(models.Model):
                     return []
                 name = ''
                 operator = 'ilike'
-        return super(CurrencyRate, self).name_search(name, args=args, operator=operator, limit=limit)
+        return super(CurrencyRate, self)._name_search(name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)

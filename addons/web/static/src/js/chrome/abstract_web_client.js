@@ -85,8 +85,11 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
         },
         getScrollPosition: '_onGetScrollPosition',
         scrollTo: '_onScrollTo',
+        set_title_part: '_onSetTitlePart',
     },
     init: function (parent) {
+        // a flag to determine that odoo is fully loaded
+        odoo.isReady = false;
         this.client_options = {};
         this._super(parent);
         ServiceProviderMixin.init.call(this);
@@ -110,6 +113,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
 
         return session.is_bound
             .then(function () {
+                self.$el.toggleClass('o_rtl', _t.database.parameters.direction === "rtl");
                 self.bind_events();
                 return $.when(
                     self.set_action_manager(),
@@ -127,6 +131,10 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
                 // Listen to 'scroll' event and propagate it on main bus
                 self.action_manager.$el.on('scroll', core.bus.trigger.bind(core.bus, 'scroll'));
                 core.bus.trigger('web_client_ready');
+                odoo.isReady = true;
+                if (session.uid === 1) {
+                    self.$el.addClass('o_is_superuser');
+                }
             });
     },
 
@@ -170,7 +178,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
         core.bus.on('connection_restored', this, this._onConnectionRestored);
 
         // crash manager integration
-        session.on('error', crash_manager, crash_manager.rpc_error);
+        core.bus.on('rpc_error', crash_manager, crash_manager.rpc_error);
         window.onerror = function (message, file, line, col, error) {
             // Scripts injected in DOM (eg: google API's js files) won't return a clean error on window.onerror.
             // The browser will just give you a 'Script error.' as message and nothing else for security issue.
@@ -182,7 +190,9 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
             // If it is not handled, we should display something clearer than the common crash_manager error dialog
             // since it won't show anything except "Script error."
             // This link will probably explain it better: https://blog.sentry.io/2016/05/17/what-is-script-error.html
-            if (message === "Script error." && !file && !line && !col && !error) {
+            if (!file && !line && !col) {
+                // Chrome and Opera set "Script error." on the `message` and hide the `error`
+                // Firefox handles the "Script error." directly. It sets the error thrown by the CORS file into `error`
                 if (window.onOriginError) {
                     window.onOriginError();
                     delete window.onOriginError;
@@ -190,7 +200,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
                     crash_manager.show_error({
                         type: _t("Odoo Client Error"),
                         message: _t("Unknown CORS error"),
-                        data: {debug: _t("An unknown CORS error occured. The error probably originates from a JavaScript file served from a different origin.")},
+                        data: {debug: _t("An unknown CORS error occured. The error probably originates from a JavaScript file served from a different origin. (Opening your browser console might give you a hint on the error.)")},
                     });
                 }
             } else {
@@ -375,7 +385,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
                 size: 'medium',
                 title: data.title,
                 $content: qweb.render("CrashManager.warning", data),
-            }).open();
+            }).open({shouldFocusButtons: true});
         } else {
             this.call('notification', 'notify', e.data);
         }
@@ -426,6 +436,17 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
     _onScrollTo: function (ev) {
     },
     /**
+     * @private
+     * @param {OdooEvent} ev
+     * @param {string} ev.data.part
+     * @param {string} [ev.data.title]
+     */
+    _onSetTitlePart: function (ev) {
+        var part = ev.data.part;
+        var title = ev.data.title;
+        this.set_title_part(part, title);
+    },
+    /**
      * Displays a visual effect (for example, a rainbowman0
      *
      * @private
@@ -437,7 +458,12 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
         var data = e.data || {};
         var type = data.type || 'rainbow_man';
         if (type === 'rainbow_man') {
-            new RainbowMan(data).appendTo(this.$el);
+            if (session.show_effect) {
+                new RainbowMan(data).appendTo(this.$el);
+            } else {
+                // For instance keep title blank, as we don't have title in data
+                this.notification_manager.notify('', data.message, true);
+            }
         } else {
             throw new Error('Unknown effect type: ' + type);
         }

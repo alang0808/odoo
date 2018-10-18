@@ -21,6 +21,8 @@ var FormController = BasicController.extend({
         toggle_column_order: '_onToggleColumnOrder',
         focus_control_button: '_onFocusControlButton',
         form_dialog_discarded: '_onFormDialogDiscarded',
+        swipe_left: '_onSwipeLeft',
+        swipe_right: '_onSwipeRight',
     }),
     /**
      * @override
@@ -233,6 +235,16 @@ var FormController = BasicController.extend({
             return changedFields;
         });
     },
+    /**
+     * Overrides to force the viewType to 'form', so that we ensure that the
+     * correct fields are reloaded (this is only useful for one2many form views).
+     *
+     * @override
+     */
+    update: function (params, options) {
+        params = _.extend({viewType: 'form'}, params);
+        return this._super(params, options);
+    },
 
     //--------------------------------------------------------------------------
     // Private
@@ -349,12 +361,18 @@ var FormController = BasicController.extend({
     },
     /**
      * Calls unfreezeOrder when changing the mode.
+     * Also, when there is a change of mode, the tracking of last activated
+     * field is reset, so that the following field activation process starts
+     * with the 1st field.
      *
      * @override
      */
     _setMode: function (mode, recordID) {
         if ((recordID || this.handle) === this.handle) {
             this.model.unfreezeOrder(this.handle);
+        }
+        if (this.mode !== mode) {
+            this.renderer.resetLastActivatedField();
         }
         return this._super.apply(this, arguments);
     },
@@ -587,8 +605,10 @@ var FormController = BasicController.extend({
             fields_view: data.fields_view,
             model: this.model,
             on_saved: data.on_saved,
+            on_remove: data.on_remove,
             parentID: data.parentID,
             readonly: data.readonly,
+            deletable: data.deletable,
             recordID: record && record.id,
             res_id: record && record.res_id,
             res_model: data.field.relation,
@@ -610,7 +630,9 @@ var FormController = BasicController.extend({
             context: event.data.context,
             fields_view: event.data.fields_view,
             on_saved: event.data.on_saved,
+            on_remove: event.data.on_remove,
             readonly: event.data.readonly,
+            deletable: event.data.deletable,
             res_id: record.res_id,
             res_model: record.model,
             title: _t("Open: ") + event.data.string,
@@ -624,7 +646,35 @@ var FormController = BasicController.extend({
      */
     _onSave: function (ev) {
         ev.stopPropagation(); // Prevent x2m lines to be auto-saved
-        this.saveRecord();
+        var self = this;
+        this._disableButtons();
+        this.saveRecord().always(function () {
+            self._enableButtons();
+        });
+    },
+    /**
+     * Called when user swipes left. Move to next record.
+     *
+     * @private
+     * @param {OdooEvent} ev
+     */
+    _onSwipeLeft: function (ev) {
+        ev.stopPropagation();
+        if (this.pager) {
+            this.pager.next();
+        }
+    },
+    /**
+     * Called when user swipes right. Move to previous record.
+     *
+     * @private
+     * @param {OdooEvent} ev
+     */
+    _onSwipeRight: function (ev) {
+        ev.stopPropagation();
+        if (this.pager) {
+            this.pager.previous();
+        }
     },
     /**
      * This method is called when someone tries to sort a column, most likely

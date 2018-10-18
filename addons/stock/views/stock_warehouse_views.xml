@@ -31,10 +31,15 @@
                         <notebook colspan="4" groups="stock.group_adv_location">
                             <page string="Warehouse Configuration" colspan="4">
                                 <group colspan="4">
-                                    <field name="reception_steps" widget='radio'/>
-                                    <field name="delivery_steps" widget='radio'/>
-                                    <field name="default_resupply_wh_id" widget='selection'/>
-                                    <field name="resupply_wh_ids" domain="[('id', '!=', id)]" widget='many2many_checkboxes'/>
+                                    <group string="Shipments">
+                                        <field name="reception_steps" widget='radio'/>
+                                        <field name="delivery_steps" widget='radio'/>
+                                    </group>
+                                    <field name="show_resupply" invisible="1"/>
+                                    <group name="group_resupply" string="Resupply" attrs="{'invisible': [('show_resupply', '!=', True)]}">
+                                        <field name="warehouse_count" invisible="1"/>
+                                        <field name="resupply_wh_ids" attrs="{'invisible': [('show_resupply', '!=', True)]}" domain="[('id', '!=', id)]" widget='many2many_checkboxes'/>
+                                    </group>
                                 </group>
                             </page>
                             <page string="Technical Information" groups='base.group_no_one'>
@@ -135,14 +140,14 @@
                                     <div class="o_kanban_record_headings">
                                         <strong class="o_kanban_record_title"><t t-esc="record.name.value"/></strong>
                                     </div>
-                                    <span class="badge"><strong>Min qty :</strong><t t-esc="record.product_min_qty.value"/></span>
+                                    <span class="badge badge-pill"><strong>Min qty :</strong><t t-esc="record.product_min_qty.value"/></span>
                                 </div>
                                 <div class="o_kanban_record_bottom">
                                     <div class="oe_kanban_bottom_left">
                                         <span><t t-esc="record.product_id.value"/></span>
                                     </div>
                                     <div class="oe_kanban_bottom_right">
-                                        <span class="badge"><strong>Max qty :</strong><t t-esc="record.product_max_qty.value"/></span>
+                                        <span class="badge badge-pill"><strong>Max qty :</strong><t t-esc="record.product_max_qty.value"/></span>
                                     </div>
                                 </div>
                             </div>
@@ -199,6 +204,11 @@
                                 <field name="active" widget="boolean_button" options='{"terminology": "archive"}'/>
                             </button>
                         </div>
+                        <group>
+                            <div class="alert alert-info" role="alert">
+                                <a style="cursor: pointer" class="alert-link o_form_uri" type="action" name="%(action_procurement_compute)d">Run the scheduler</a> manually to trigger the reordering rules right now.
+                            </div>
+                        </group>
                         <group>
                             <group>
                                 <field name="name" />

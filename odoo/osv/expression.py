@@ -120,6 +120,7 @@ import traceback
 from functools import partial
 from zlib import crc32
 
+from datetime import date, datetime, time
 import odoo.modules
 from odoo.tools import pycompat
 from ..models import MAGIC_COLUMNS, BaseModel
@@ -712,7 +713,7 @@ class expression(object):
         """
         cr, uid, context = self.root_model.env.args
 
-        def to_ids(value, comodel):
+        def to_ids(value, comodel, leaf):
             """ Normalize a single id or name, or a list of those, into a list of ids
                 :param {int,long,basestring,list,tuple} value:
                     if int, long -> return [value]
@@ -727,6 +728,12 @@ class expression(object):
             elif value and isinstance(value, (tuple, list)) and all(isinstance(item, pycompat.string_types) for item in value):
                 names = value
             elif isinstance(value, pycompat.integer_types):
+                if not value:
+                    # given this nonsensical domain, it is generally cheaper to
+                    # interpret False as [], so that "X child_of False" will
+                    # match nothing
+                    _logger.warning("Unexpected domain [%s], interpreted as False", leaf)
+                    return []
                 return [value]
             if names:
                 return list({
@@ -853,7 +860,7 @@ class expression(object):
                 push(leaf)
 
             elif left == 'id' and operator in HIERARCHY_FUNCS:
-                ids2 = to_ids(right, model)
+                ids2 = to_ids(right, model, leaf.leaf)
                 dom = HIERARCHY_FUNCS[operator](left, ids2, model)
                 for dom_leaf in reversed(dom):
                     new_leaf = create_substitution_leaf(leaf, dom_leaf, model)
@@ -931,7 +938,7 @@ class expression(object):
 
             # Applying recursivity on field(one2many)
             elif field.type == 'one2many' and operator in HIERARCHY_FUNCS:
-                ids2 = to_ids(right, comodel)
+                ids2 = to_ids(right, comodel, leaf.leaf)
                 if field.comodel_name != model._name:
                     dom = HIERARCHY_FUNCS[operator](left, ids2, comodel, prefix=field.comodel_name)
                 else:
@@ -992,7 +999,7 @@ class expression(object):
 
                 if operator in HIERARCHY_FUNCS:
                     # determine ids2 in comodel
-                    ids2 = to_ids(right, comodel)
+                    ids2 = to_ids(right, comodel, leaf.leaf)
                     domain = HIERARCHY_FUNCS[operator]('id', ids2, comodel)
                     ids2 = comodel.search(domain).ids
 
@@ -1033,7 +1040,7 @@ class expression(object):
 
             elif field.type == 'many2one':
                 if operator in HIERARCHY_FUNCS:
-                    ids2 = to_ids(right, comodel)
+                    ids2 = to_ids(right, comodel, leaf.leaf)
                     if field.comodel_name != model._name:
                         dom = HIERARCHY_FUNCS[operator](left, ids2, comodel, prefix=field.comodel_name)
                     else:
@@ -1089,12 +1096,22 @@ class expression(object):
             # -------------------------------------------------
 
             else:
-                if field.type == 'datetime' and right and len(right) == 10:
-                    if operator in ('>', '<='):
-                        right += ' 23:59:59'
+                if field.type == 'datetime' and right:
+                    if isinstance(right, pycompat.string_types) and len(right) == 10:
+                        if operator in ('>', '<='):
+                            right += ' 23:59:59'
+                        else:
+                            right += ' 00:00:00'
+                        push(create_substitution_leaf(leaf, (left, operator, right), model))
+                    elif isinstance(right, date) and not isinstance(right, datetime):
+                        if operator in ('>', '<='):
+                            right = datetime.combine(right, time.max)
+                        else:
+                            right = datetime.combine(right, time.min)
+                        push(create_substitution_leaf(leaf, (left, operator, right), model))
                     else:
-                        right += ' 00:00:00'
-                    push(create_substitution_leaf(leaf, (left, operator, right), model))
+                        push_result(leaf)
+
 
                 elif field.translate is True and right:
                     need_wildcard = operator in ('like', 'ilike', 'not like', 'not ilike')

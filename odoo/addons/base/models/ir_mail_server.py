@@ -22,6 +22,8 @@ from odoo.tools import ustr, pycompat
 _logger = logging.getLogger(__name__)
 _test_logger = logging.getLogger('odoo.tests')
 
+SMTP_TIMEOUT = 60
+
 
 class MailDeliveryException(except_orm):
     """Specific exception subclass for mail delivery errors"""
@@ -126,6 +128,7 @@ def encode_rfc2822_address_header(header_text):
 class IrMailServer(models.Model):
     """Represents an SMTP server, able to send outgoing emails, with SSL and TLS capabilities."""
     _name = "ir.mail_server"
+    _description = 'Mail Server'
 
     NO_VALID_RECIPIENT = ("At least one valid recipient address should be "
                           "specified for outgoing emails (To/Cc/Bcc)")
@@ -156,12 +159,37 @@ class IrMailServer(models.Model):
             smtp = False
             try:
                 smtp = self.connect(mail_server_id=server.id)
+                # simulate sending an email from current user's address - without sending it!
+                email_from, email_to = self.env.user.email, 'noreply@odoo.com'
+                if not email_from:
+                    raise UserError(_('Please configure an email on the current user to simulate '
+                                      'sending an email message via this outgoing server'))
+                # Testing the MAIL FROM step should detect sender filter problems
+                (code, repl) = smtp.mail(email_from)
+                if code != 250:
+                    raise UserError(_('The server refused the sender address (%(email_from)s) '
+                                      'with error %(repl)s') % locals())
+                # Testing the RCPT TO step should detect most relaying problems
+                (code, repl) = smtp.rcpt(email_to)
+                if code not in (250, 251):
+                    raise UserError(_('The server refused the test recipient (%(email_to)s) '
+                                      'with error %(repl)s') % locals())
+                # Beginning the DATA step should detect some deferred rejections
+                # Can't use self.data() as it would actually send the mail!
+                smtp.putcmd("data")
+                (code, repl) = smtp.getreply()
+                if code != 354:
+                    raise UserError(_('The server refused the test connection '
+                                      'with error %(repl)s') % locals())
+            except UserError as e:
+                # let UserErrors (messages) bubble up
+                raise e
             except Exception as e:
                 raise UserError(_("Connection Test Failed! Here is what we got instead:\n %s") % ustr(e))
             finally:
                 try:
                     if smtp:
-                        smtp.quit()
+                        smtp.close()
                 except Exception:
                     # ignored, just a consequence of the previous exception
                     pass
@@ -221,9 +249,9 @@ class IrMailServer(models.Model):
                       "You could use STARTTLS instead. "
                        "If SSL is needed, an upgrade to Python 2.6 on the server-side "
                        "should do the trick."))
-            connection = smtplib.SMTP_SSL(smtp_server, smtp_port)
+            connection = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=SMTP_TIMEOUT)
         else:
-            connection = smtplib.SMTP(smtp_server, smtp_port)
+            connection = smtplib.SMTP(smtp_server, smtp_port, timeout=SMTP_TIMEOUT)
         connection.set_debuglevel(smtp_debug)
         if smtp_encryption == 'starttls':
             # starttls() will perform ehlo() if needed first
@@ -447,15 +475,13 @@ class IrMailServer(models.Model):
         try:
             message_id = message['Message-Id']
             smtp = smtp_session
-            try:
-                smtp = smtp or self.connect(
-                    smtp_server, smtp_port, smtp_user, smtp_password,
-                    smtp_encryption, smtp_debug, mail_server_id=mail_server_id)
-                smtp.sendmail(smtp_from, smtp_to_list, message.as_string())
-            finally:
-                # do not quit() a pre-established smtp_session
-                if smtp is not None and not smtp_session:
-                    smtp.quit()
+            smtp = smtp or self.connect(
+                smtp_server, smtp_port, smtp_user, smtp_password,
+                smtp_encryption, smtp_debug, mail_server_id=mail_server_id)
+            smtp.sendmail(smtp_from, smtp_to_list, message.as_string())
+            # do not quit() a pre-established smtp_session
+            if not smtp_session:
+                smtp.quit()
         except Exception as e:
             params = (ustr(smtp_server), e.__class__.__name__, ustr(e))
             msg = _("Mail delivery failed via SMTP server '%s'.\n%s: %s") % params

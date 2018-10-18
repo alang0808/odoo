@@ -164,7 +164,7 @@ class AccountFiscalPosition(models.Model):
 
 class AccountFiscalPositionTax(models.Model):
     _name = 'account.fiscal.position.tax'
-    _description = 'Taxes Fiscal Position'
+    _description = 'Tax Mapping of Fiscal Position'
     _rec_name = 'position_id'
 
     position_id = fields.Many2one('account.fiscal.position', string='Fiscal Position',
@@ -181,7 +181,7 @@ class AccountFiscalPositionTax(models.Model):
 
 class AccountFiscalPositionAccount(models.Model):
     _name = 'account.fiscal.position.account'
-    _description = 'Accounts Fiscal Position'
+    _description = 'Accounts Mapping of Fiscal Position'
     _rec_name = 'position_id'
 
     position_id = fields.Many2one('account.fiscal.position', string='Fiscal Position',
@@ -394,14 +394,13 @@ class ResPartner(models.Model):
         required=True)
     property_account_position_id = fields.Many2one('account.fiscal.position', company_dependent=True,
         string="Fiscal Position",
-        help="The fiscal position will determine taxes and accounts used for the partner.", oldname="property_account_position",
-        domain="[('company_id', 'in', [company_id, False])]")
+        help="The fiscal position determines the taxes/accounts used for this contact.", oldname="property_account_position")
     property_payment_term_id = fields.Many2one('account.payment.term', company_dependent=True,
         string='Customer Payment Terms',
         help="This payment term will be used instead of the default one for sales orders and customer invoices", oldname="property_payment_term")
     property_supplier_payment_term_id = fields.Many2one('account.payment.term', company_dependent=True,
-         string='Vendor Payment Terms',
-         help="This payment term will be used instead of the default one for purchase orders and vendor bills", oldname="property_supplier_payment_term")
+        string='Vendor Payment Terms',
+        help="This payment term will be used instead of the default one for purchase orders and vendor bills", oldname="property_supplier_payment_term")
     ref_company_ids = fields.One2many('res.company', 'partner_id',
         string='Companies that refers to partner', oldname="ref_companies")
     has_unreconciled_entries = fields.Boolean(compute='_compute_has_unreconciled_entries',
@@ -445,8 +444,12 @@ class ResPartner(models.Model):
 
     @api.onchange('company_id')
     def _onchange_company_id(self):
+        company = self.env['res.company']
         if self.company_id:
-            return {'domain': {'property_account_position_id': [('company_id', 'in', [self.company_id.id, False])]}}
+            company = self.company_id
+        else:
+            company = self.env.user.company_id
+        return {'domain': {'property_account_position_id': [('company_id', 'in', [company.id, False])]}}
 
     def can_edit_vat(self):
         can_edit_vat = super(ResPartner, self).can_edit_vat()

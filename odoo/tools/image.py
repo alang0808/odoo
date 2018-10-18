@@ -14,11 +14,20 @@ from odoo.tools import pycompat
 Image.preinit()
 Image._initialized = 2
 
+# Maps only the 6 first bits of the base64 data, accurate enough
+# for our purpose and faster than decoding the full blob first
+FILETYPE_BASE64_MAGICWORD = {
+    b'/': 'jpg',
+    b'R': 'gif',
+    b'i': 'png',
+    b'P': 'svg+xml',
+}
+
 # ----------------------------------------
 # Image resizing
 # ----------------------------------------
 
-def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', filetype=None, avoid_if_small=False):
+def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', filetype=None, avoid_if_small=False, upper_limit=False):
     """ Function to resize an image. The image will be resized to the given
         size, while keeping the aspect ratios, and holes in the image will be
         filled with transparent background. The image will not be stretched if
@@ -51,7 +60,10 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
     """
     if not base64_source:
         return False
-    if size == (None, None):
+    # Return unmodified content if no resize or we etect first 6 bits of '<'
+    # (0x3C) for SVG documents - This will bypass XML files as well, but it's
+    # harmless for these purposes
+    if size == (None, None) or base64_source[:1] == b'P':
         return base64_source
     image_stream = io.BytesIO(codecs.decode(base64_source, encoding))
     image = Image.open(image_stream)
@@ -63,18 +75,32 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
     }.get(filetype, filetype)
 
     asked_width, asked_height = size
+    if upper_limit:
+        if asked_width:
+            if asked_width >= image.size[0]:
+                asked_width = image.size[0]
+        if asked_height:
+            if asked_height >= image.size[1]:
+                asked_height = image.size[1]
+
+        if image.size[0] >= image.size[1]:
+            asked_height = None
+        else:
+            asked_width = None
+        if asked_width is None and asked_height is None:
+            return base64_source
+
     if asked_width is None:
         asked_width = int(image.size[0] * (float(asked_height) / image.size[1]))
     if asked_height is None:
         asked_height = int(image.size[1] * (float(asked_width) / image.size[0]))
     size = asked_width, asked_height
-
     # check image size: do not create a thumbnail if avoiding smaller images
     if avoid_if_small and image.size[0] <= size[0] and image.size[1] <= size[1]:
         return base64_source
 
     if image.size != size:
-        image = image_resize_and_sharpen(image, size)
+        image = image_resize_and_sharpen(image, size, upper_limit=upper_limit)
     if image.mode not in ["1", "L", "P", "RGB", "RGBA"] or (filetype == 'JPEG' and image.mode == 'RGBA'):
         image = image.convert("RGB")
 
@@ -82,7 +108,7 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
     image.save(background_stream, filetype)
     return codecs.encode(background_stream.getvalue(), encoding)
 
-def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.0):
+def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.0, upper_limit=False):
     """
         Create a thumbnail by resizing while keeping ratio.
         A sharpen filter is applied for a better looking result.
@@ -101,8 +127,12 @@ def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.
     sharpener = ImageEnhance.Sharpness(image)
     resized_image = sharpener.enhance(factor)
     # create a transparent image for background and paste the image on it
-    image = Image.new('RGBA', size, (255, 255, 255, 0))
+    if upper_limit:
+        image = Image.new('RGBA', (size[0], size[1]-3), (255, 255, 255, 0)) # FIXME temporary fix for trimming the ghost border.
+    else:
+        image = Image.new('RGBA', size, (255, 255, 255, 0))
     image.paste(resized_image, ((size[0] - resized_image.size[0]) // 2, (size[1] - resized_image.size[1]) // 2))
+
     if image.mode != origin_mode:
         image = image.convert(origin_mode)
     return image
@@ -159,7 +189,7 @@ def image_resize_image_small(base64_source, size=(64, 64), encoding='base64', fi
 # ----------------------------------------
 # Crop Image
 # ----------------------------------------
-def crop_image(data, type='top', ratio=False, size=None, image_format="PNG"):
+def crop_image(data, type='top', ratio=False, size=None, image_format=None):
     """ Used for cropping image and create thumbnail
         :param data: base64 data of image.
         :param type: Used for cropping position possible
@@ -188,6 +218,7 @@ def crop_image(data, type='top', ratio=False, size=None, image_format="PNG"):
             new_h = h
             new_w = (h * w_ratio) // h_ratio
 
+    image_format = image_format or image_stream.format or 'JPEG'
     if type == "top":
         cropped_image = image_stream.crop((0, 0, new_w, new_h))
         cropped_image.save(output_stream, format=image_format)
@@ -201,6 +232,8 @@ def crop_image(data, type='top', ratio=False, size=None, image_format="PNG"):
         raise ValueError('ERROR: invalid value for crop_type')
     if size:
         thumbnail = Image.open(io.BytesIO(output_stream.getvalue()))
+        output_stream.truncate(0)
+        output_stream.seek(0)
         thumbnail.thumbnail(size, Image.ANTIALIAS)
         thumbnail.save(output_stream, image_format)
     return base64.b64encode(output_stream.getvalue())
@@ -288,6 +321,15 @@ def image_resize_images(vals, big_name='image', medium_name='image_medium', smal
     elif big_name in vals or medium_name in vals or small_name in vals:
         vals[big_name] = vals[medium_name] = vals[small_name] = False
 
+def image_data_uri(base64_source):
+    """This returns data URL scheme according RFC 2397
+    (https://tools.ietf.org/html/rfc2397) for all kind of supported images
+    (PNG, GIF, JPG and SVG), defaulting on PNG type if not mimetype detected.
+    """
+    return 'data:image/%s;base64,%s' % (
+        FILETYPE_BASE64_MAGICWORD.get(base64_source[:1], 'png'),
+        base64_source.decode(),
+    )
 
 if __name__=="__main__":
     import sys

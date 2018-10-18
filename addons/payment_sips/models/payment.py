@@ -4,6 +4,8 @@
 
 import json
 import logging
+import re
+import time
 from hashlib import sha256
 
 from werkzeug import urls
@@ -97,7 +99,7 @@ class AcquirerSips(models.Model):
 
         return_context = {}
         if sips_tx_values.get('return_url'):
-            return_context[u'return_url'] = u'%s' % sips_tx_values.pop('return_url')
+            return_context[u'return_url'] = u'%s' % urls.url_quote(sips_tx_values.pop('return_url'))
         return_context[u'reference'] = u'%s' % sips_tx_values['reference']
         sips_tx_values['Data'] += u'|returnContext=%s' % (json.dumps(return_context))
 
@@ -120,6 +122,14 @@ class TxSips(models.Model):
     _sips_error_tx_status = ['03', '12', '24', '25', '30', '40', '51', '63', '94']
     _sips_pending_tx_status = ['60']
     _sips_cancel_tx_status = ['17']
+
+    @api.model
+    def _compute_reference(self, values=None, prefix=None):
+        res = super(TxSips, self)._compute_reference(values=values, prefix=prefix)
+        acquirer = self.env['payment.acquirer'].browse(values.get('acquirer_id'))
+        if acquirer and acquirer.provider == 'sips':
+            return re.sub(r'[^0-9a-zA-Z]+', 'x', res) + 'x' + str(int(time.time()))
+        return res
 
     # --------------------------------------------------
     # FORM RELATED METHODS
@@ -177,7 +187,7 @@ class TxSips(models.Model):
         data = {
             'acquirer_reference': data.get('transactionReference'),
             'partner_reference': data.get('customerId'),
-            'date_validate': data.get('transactionDateTime',
+            'date': data.get('transactionDateTime',
                                       fields.Datetime.now())
         }
         res = False
@@ -185,33 +195,46 @@ class TxSips(models.Model):
             msg = 'Payment for tx ref: %s, got response [%s], set as done.' % \
                   (self.reference, status)
             _logger.info(msg)
-            data.update(state='done', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_done()
             res = True
         elif status in self._sips_error_tx_status:
             msg = 'Payment for tx ref: %s, got response [%s], set as ' \
                   'error.' % (self.reference, status)
-            data.update(state='error', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_cancel()
         elif status in self._sips_wait_tx_status:
             msg = 'Received wait status for payment ref: %s, got response ' \
                   '[%s], set as error.' % (self.reference, status)
-            data.update(state='error', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_cancel()
         elif status in self._sips_refused_tx_status:
             msg = 'Received refused status for payment ref: %s, got response' \
                   ' [%s], set as error.' % (self.reference, status)
-            data.update(state='error', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_cancel()
         elif status in self._sips_pending_tx_status:
             msg = 'Payment ref: %s, got response [%s] set as pending.' \
                   % (self.reference, status)
-            data.update(state='pending', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_pending()
         elif status in self._sips_cancel_tx_status:
             msg = 'Received notification for payment ref: %s, got response ' \
                   '[%s], set as cancel.' % (self.reference, status)
-            data.update(state='cancel', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_cancel()
         else:
             msg = 'Received unrecognized status for payment ref: %s, got ' \
                   'response [%s], set as error.' % (self.reference, status)
-            data.update(state='error', state_message=msg)
+            data.update(state_message=msg)
+            self.write(data)
+            self._set_transaction_cancel()
 
         _logger.info(msg)
-        self.write(data)
         return res

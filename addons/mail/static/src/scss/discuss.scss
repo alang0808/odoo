@@ -2,53 +2,24 @@
 // Layout
 // ------------------------------------------------------------------
 
-.o_mail_chat {
+.o_mail_discuss {
     @include o-position-absolute(0, 0, 0, 0);
     height: 100%;
     overflow: hidden;
 
-    .o_mail_annoying_notification_bar {
-        height: 40px;
-        background-color: #DFA941;
-        color: white;
-        text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
-        @include o-flex-display;
-        border-bottom: 1px solid $o-main-color-muted;
-
-        .o_mail_request_permission {
-            @include o-flex-display;
-            justify-content: center;
-            @include o-flex(1,1, auto);
-        }
-        > span {
-            font-size: 16px;
-            line-height: 40px;
-            > a {
-                color: white;
-                margin-left: 5px;
-                text-decoration: underline;
-            }
-
-            &.fa-close {
-                margin-right: 10px;
-                cursor: pointer;
-            }
-        }
-    }
-
-    .o_mail_chat_sidebar {
+    .o_mail_discuss_sidebar {
         width: $o-mail-chat-sidebar-width;
         height: 100%;
         float: left;
         overflow: auto;
         padding: $o-horizontal-padding 0;
 
-        @media (min-width: $screen-lg-min) {
+        @include media-breakpoint-up(xl) {
             width: $o-mail-chat-sidebar-width + 50px;
         }
 
         .o_mail_sidebar_title {
-            @include o-flex-display;
+            display: flex;
             padding: 6px $o-horizontal-padding 0 $o-horizontal-padding;
             align-items: center;
             justify-content: space-between;
@@ -63,17 +34,18 @@
                 cursor: pointer;
             }
         }
-        .o_mail_chat_channel_item {
-            @include o-flex-display;
+        .o_mail_discuss_item {
+            display: flex;
+            align-items: center;
             width: 100%;
             padding: 2px $o-horizontal-padding 2px ($o-horizontal-padding + 12px); // compensate icon
 
-            .o_channel_name {
-                @include o-flex(1, 1, auto);
+            .o_thread_name {
+                flex: 1 1 auto;
                 @include o-text-overflow;
             }
             .o_mail_sidebar_needaction, .o_mail_partner_unpin, .o_mail_channel_settings {
-                @include o-flex(0, 0, auto);
+                flex: 0 0 auto;
             }
             .o_mail_sidebar_needaction {
                 margin: 0 0 0 5px;
@@ -85,17 +57,17 @@
                 margin-left: 3px;
             }
 
-            &.o_mail_chat_title_main {
-                padding: $padding-base-vertical $o-horizontal-padding;
+            &.o_mail_discuss_title_main {
+                padding: $input-btn-padding-y $o-horizontal-padding;
                 margin-bottom: 2px;
             }
         }
 
-        .o_mail_chat_channel_item + .o_mail_sidebar_title {
-            margin-top: $padding-base-vertical;
+        .o_mail_discuss_item + .o_mail_sidebar_title {
+            margin-top: $input-btn-padding-y;
         }
 
-        .o_mail_add_channel {
+        .o_mail_add_thread {
             width: 100%;
             padding: 5px ($o-horizontal-padding + 23px); // compensate icon
             position: relative;
@@ -110,30 +82,24 @@
         }
     }
 
-    .o_mail_chat_content {
-        @include o-flex-display;
-        @include o-flex-flow(column, nowrap);
+    .o_mail_discuss_content {
+        display: flex;
+        flex-flow: column nowrap;
         height: 100%;
         margin-left: $o-mail-chat-sidebar-width;
         position: relative;
-        @media (min-width: $screen-sm-min) {
+        @include media-breakpoint-up(md) {
             overflow: auto;
         }
 
-        @media (min-width: $screen-lg-min) {
+        @include media-breakpoint-up(xl) {
             margin-left: $o-mail-chat-sidebar-width + 50px;
         }
 
         .o_mail_thread {
-            @include o-flex(1, 0, 0);
+            flex: 1 0 0;
             overflow: auto;
-            padding: 0 0 15px 0;
             -webkit-overflow-scrolling: touch; // smooth scrolling in iOS app (Safari)
-
-            .o_chat_help_message {
-                padding: 25px 0;
-                text-align: justify;
-            }
         }
 
         .o_mail_snackbar {
@@ -141,7 +107,7 @@
             padding-top: 10px;
             padding-bottom: 10px;
             cursor: pointer;
-            background-color: darken($gray, 8%);
+            background-color: darken(gray('700'), 8%);
             color: white;
         }
     }
@@ -151,16 +117,16 @@
 // Style
 // ------------------------------------------------------------------
 
-.o_mail_chat {
-    .o_mail_chat_sidebar {
-        background-color: $gray-dark;
-        color: $gray-lighter-dark;
+.o_mail_discuss {
+    .o_mail_discuss_sidebar {
+        background-color: gray('900');
+        color: gray('300');
 
-        .o_mail_chat_channel_item {
+        .o_mail_discuss_item {
             cursor: pointer;
 
             &:hover {
-                background-color: darken($gray-dark,2%);
+                background-color: darken(gray('900'),2%);
 
                 .o_mail_partner_unpin, .o_mail_channel_settings {
                     opacity: $o-mail-sidebar-icon-opacity;
@@ -168,8 +134,8 @@
             }
 
             &.o_active {
-                background-color: $gray-darker;
-                box-shadow: inset 3px 0 0 $o-brand-optional;
+                background-color: gray('900');
+                box-shadow: inset 3px 0 0 $o-brand-primary;
             }
 
             .o_mail_hash {
@@ -186,27 +152,24 @@
 
             > .badge {
                 color: white;
-                background-color: $o-brand-optional;
-                font-size: 10px;
-                line-height: 16px;
-                height: 18px;
+                background-color: $o-brand-primary;
             }
 
-            &.o_mail_chat_title_main {
+            &.o_mail_discuss_title_main {
                 font-size: $font-size-base;
 
-                &.o_mail_chat_title_starred > .badge {
-                    background-color: $gray-light;
-                    border-color: $gray-light;
+                &.o_mail_mailbox_title_starred > .badge {
+                    background-color: gray('600');
+                    border-color: gray('600');
                 }
             }
         }
 
         > hr {
-            border-color: $gray;
+            border-color: gray('700');
         }
 
-        .o_mail_add_channel {
+        .o_mail_add_thread {
             display: none;
             > input {
                 color: black;
@@ -219,9 +182,9 @@
         .o_mail_sidebar_title {
             h4 {
                 margin: 0;
-                font-size: $font-size-small;
+                font-size: $font-size-sm;
                 text-transform: uppercase;
-                color: $gray-light;
+                color: gray('600');
                 &.o_mail_open_channels:hover {
                     color: white;
                 }
@@ -229,12 +192,12 @@
             .o_add {
                 cursor: pointer;
                 @include o-hover-opacity($o-mail-sidebar-icon-opacity, 1);
-                @include o-hover-text-color($gray-light, white);
+                @include o-hover-text-color(gray('600'), white);
             }
         }
     }
 
-    .o_mail_chat_content {
+    .o_mail_discuss_content {
         background-color: white;
     }
 
@@ -254,10 +217,10 @@
     font-size: 1em;
     position: relative;
     &.o_user_online {
-        color: $o-brand-optional;
+        color: $o-enterprise-primary-color;
     }
     &.o_user_idle {
-        color: $brand-warning;
+        color: theme-color('warning');
     }
 }
 
@@ -265,68 +228,39 @@
 // ------------------------------------------------------------------
 // Mobile
 // ------------------------------------------------------------------
-@media (max-width: $screen-xs-max) {
-    .o_mail_chat {
-        @include o-flex-display;
-        @include o-flex-flow(column, nowrap);
+@include media-breakpoint-down(sm) {
+    .o_mail_discuss {
+        display: flex;
+        flex-flow: column nowrap;
         background: white;
 
-        .o_mail_chat_mobile_control_panel {
-            @include o-flex(0, 0, auto);
-            padding: 5px;
-            min-height: 44px;
-            border-bottom: 1px solid #ebebeb;
-            box-shadow: 0px 0px 10px #afafaf;
-            z-index: 1; // so that box shaddow is above thread's images
-            .o_searchview {
-                border: none;
-                padding: 5px 5px 0px 5px;
-                .o_searchview_input {
-                    font-size: 15px;
-                }
-                .o_searchview_more {
-                    display: none;
-                }
-            }
-            .o_enable_searchview, .o_enable_searchview:focus,
-                .o_enable_searchview:hover, .o_enable_searchview:active  {
-                    @include o-position-absolute($right: 5px, $top: 5px);
-                    color: gray;
-                    background: none;
-                    font-size: 15px;
-                    &:active {
-                        box-shadow: none;
-                    }
-            }
-        }
-
-        .o_mail_chat_mobile_inbox_buttons {
-            @include o-flex-display;
-            @include o-flex(0, 0, auto);
+        .o_mail_discuss_mobile_mailboxes_buttons {
+            display: flex;
+            flex: 0 0 auto;
             z-index: 2;
-            box-shadow: 0 2px 4px $gray-lighter-darker;
+            box-shadow: 0 2px 4px gray('400');
 
-            .o_channel_inbox_item {
-                @include o-flex(1, 1, auto);
+            .o_mailbox_inbox_item {
+                flex: 1 1 auto;
                 width: 50%;
                 padding: 2%;
 
-                &.btn-default {
-                    border-bottom: 1px solid $gray-lighter-darker
+                &.btn-secondary {
+                    border-bottom: 1px solid gray('400')
                 }
             }
         }
 
-        .o_mail_chat_content {
-            @include o-flex(1, 0, 0);
+        .o_mail_discuss_content {
+            flex: 1 0 0;
             margin-left: 10px;
             margin-right: 10px;
             background-color: transparent;
         }
 
-        .o_mail_chat_tab_pane {
+        .o_mail_discuss_tab_pane {
             overflow-x: scroll;
-            .o_mail_add_channel {
+            .o_mail_add_thread {
                 display: none;
                 position: relative;
                 padding: 5px 0px;
@@ -344,106 +278,123 @@
             }
         }
         .o_mail_mobile_tabs {
-            @include o-flex(0, 0, auto);
+            flex: 0 0 auto;
         }
     }
 }
 
 // ------------------------------------------------------------------
-// Channel preview: shared between discuss (mobile) and systray
+// Thread preview: shared between discuss (mobile) and systray
 // ------------------------------------------------------------------
 
-.o_mail_channel_preview {
-    @include o-flex-display;
-    background-color: $gray-lighter;
+.o_mail_preview {
+    display: flex;
+    background-color: theme-color('light');
     color: $o-main-text-color;
     cursor: pointer;
     overflow: hidden;
     position: relative;
     &:hover {
-        background-color: $gray-lighter-dark;
-        .o_channel_name {
+        background-color: gray('300');
+        .o_preview_name {
             color: $headings-color;
+        }
+        .o_discuss_icon {
+            opacity: 1;
         }
     }
     &:not(:last-child) {
-        border-bottom: 1px solid $gray-lighter-darker;
+        border-bottom: 1px solid gray('400');
     }
-    .o_mail_channel_image {
-        @include o-flex(0, 0, auto);
+    .o_mail_preview_image {
+        flex: 0 0 auto;
         position: relative;
         > img {
-            @include square(100%);
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
         }
-        &.o_mail_channel_app > img {
+        &.o_mail_preview_app > img {
             border-radius: 2px;
         }
         .o_mail_user_status {
             @include o-position-absolute($bottom: 0px, $right: 0px);
         }
     }
-    .o_channel_info {
-        @include o-flex(1, 1, 100%);
+    .o_preview_info {
+        flex: 1 1 100%;
         overflow: hidden;
-        .o_channel_title {
-            @include o-flex-display;
-            .o_channel_name {
-                @include o-flex(0, 1, auto);
+        .o_preview_title {
+            display: flex;
+            .o_preview_name {
+                flex: 0 0 auto;
                 @include o-text-overflow;
             }
-            .o_channel_counter {
-                @include o-flex(1, 1, auto);
+            .o_mail_activity_action_buttons {
+                display: flex;
+                flex: 1 1 auto;
+                flex-flow: row-reverse wrap;
+            }
+            .o_mail_activity_action {
+                padding-top: 0px;
+                padding-bottom: 0px;
+                padding-right: 0px;
+            }
+            .o_preview_counter {
+                flex: 1 1 auto;
             }
             .o_last_message_date {
-                @include o-flex(0, 0, auto);
+                flex: 0 0 auto;
                 color: $o-main-color-muted;
                 font-weight: 500;
             }
         }
         .o_last_message_preview {
-            width: 100%;
+            width: 94%;
             max-height: 20px;
             color: $o-main-color-muted;
             @include o-text-overflow;
         }
     }
-    &.o_channel_unread {
+    .o_discuss_icon {
+        opacity: 0;
+    }
+    &.o_preview_unread {
         background-color: transparent;
         &:hover {
-            background-color: $gray-lighter;
+            background-color: theme-color('light');
         }
-        .o_channel_info {
-            .o_channel_title {
-                .o_channel_name, .o_channel_counter {
+        .o_preview_info {
+            .o_preview_title {
+                .o_preview_name, .o_preview_counter {
                     font-weight: 700;
                 }
                 .o_last_message_date {
-                    color: $o-brand-optional;
+                    color: $o-brand-primary;
                 }
             }
         }
     }
 }
 
-@media (max-width: $screen-xs-max) {
+@include media-breakpoint-down(sm) {
 
-    .o_main_navbar > ul.o_menu_systray > li.open .dropdown-menu {
+    .o_main_navbar > ul.o_menu_systray > li .dropdown-menu.show {
         border: none;
     }
 
-    .o_mail_channel_preview {
+    .o_mail_preview {
         padding: $o-mail-chatter-mobile-gap;
 
-        .o_mail_channel_image:not(img) {
+        .o_mail_preview_image:not(img) {
             width: $o-mail-chatter-mobile-gap*6;
         }
 
-        .o_channel_info, .o_last_message_date {
+        .o_preview_info, .o_last_message_date {
             margin-left: $o-mail-chatter-mobile-gap;
         }
 
-        .o_channel_name {
+        .o_preview_name {
             font-size: 1.1em;
         }
 
@@ -457,17 +408,17 @@
     }
 
     .o_mail_mobile_tabs {
-        @include o-flex-display;
-        box-shadow: 0 0 8px $gray-lighter-darker;
+        display: flex;
+        box-shadow: 0 0 8px gray('400');
 
         .o_mail_mobile_tab {
-            @include o-flex-display;
-            @include o-flex(1, 1, auto);
+            display: flex;
+            flex: 1 1 auto;
             width: 20%;
-            @include o-flex-flow(column, nowrap);
-            @include o-justify-content(space-between);
+            flex-flow: column nowrap;
+            justify-content: space-between;
             padding: $o-mail-chatter-mobile-gap $o-mail-chatter-mobile-gap*2;
-            box-shadow: 1px 0 0 $gray-lighter-darker;
+            box-shadow: 1px 0 0 gray('400');
             text-align: center;
 
             > span {
@@ -482,7 +433,7 @@
             }
 
             &.active > span {
-                color: $o-brand-optional;
+                color: $o-brand-primary;
             }
         }
     }

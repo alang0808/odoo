@@ -11,7 +11,7 @@ var config = require('web.config');
 var Context = require('web.Context');
 var core = require('web.core');
 var data = require('web.data'); // this will be removed at some point
-var pyeval = require('web.pyeval');
+var pyUtils = require('web.py_utils');
 var SearchView = require('web.SearchView');
 var view_registry = require('web.view_registry');
 
@@ -340,7 +340,9 @@ ActionManager.include({
                 action.controllerID = controller.jsID;
                 return self._executeAction(action, options).done(function () {
                     if (lazyLoadedController) {
-                        self.controllerStack.unshift(lazyLoadedController.jsID);
+                        // controller should be placed just before the current one
+                        var index = self.controllerStack.length - 1;
+                        self.controllerStack.splice(index, 0, lazyLoadedController.jsID);
                         self.controlPanel.update({
                             breadcrumbs: self._getBreadcrumbs(),
                         }, {clear: false});
@@ -429,6 +431,7 @@ ActionManager.include({
             if (View) {
                 views.push({
                     accessKey: View.prototype.accessKey || View.prototype.accesskey,
+                    displayName: View.prototype.display_name,
                     fieldsView: fieldsView,
                     icon: View.prototype.icon,
                     isMobileFriendly: View.prototype.mobile_friendly,
@@ -522,21 +525,28 @@ ActionManager.include({
         var domains = searchData.domains;
         var groupbys = searchData.groupbys;
         var action_context = action.context || {};
-        var results = pyeval.eval_domains_and_contexts({
+        var results = pyUtils.eval_domains_and_contexts({
             domains: [action.domain || []].concat(domains || []),
             contexts: [action_context].concat(contexts || []),
             group_by_seq: groupbys || [],
             eval_context: this.userContext,
         });
+        var groupBy = results.group_by.length ?
+                        results.group_by :
+                        (action.context.group_by || []);
+        groupBy = (typeof groupBy === 'string') ? [groupBy] : groupBy;
+
         if (results.error) {
             throw new Error(_.str.sprintf(_t("Failed to evaluate search criterions")+": \n%s",
                             JSON.stringify(results.error)));
         }
-        var groupBy = results.group_by.length ? results.group_by : (action.context.group_by || []);
+
+        var context = _.omit(results.context, 'time_ranges');
+
         return {
-            context: results.context,
+            context: context,
             domain: results.domain,
-            groupBy: (typeof groupBy === 'string') ? [groupBy] : groupBy,
+            groupBy: groupBy,
         };
     },
     /**
@@ -703,12 +713,12 @@ ActionManager.include({
         var actionData = ev.data.action_data;
         var env = ev.data.env;
         var context = new Context(env.context, actionData.context || {});
-        var recordID = env.currentID || null; // pyeval handles null value, not undefined
-        var def;
+        var recordID = env.currentID || null; // pyUtils handles null value, not undefined
+        var def = $.Deferred();
 
         // determine the action to execute according to the actionData
         if (actionData.special) {
-            def = $.when({type: 'ir.actions.act_window_close'});
+            def = $.when({type: 'ir.actions.act_window_close', infos: 'special'});
         } else if (actionData.type === 'object') {
             // call a Python Object method, which may return an action to execute
             var args = recordID ? [[recordID]] : [env.resIDs];
@@ -733,7 +743,7 @@ ActionManager.include({
             });
         } else if (actionData.type === 'action') {
             // execute a given action, so load it first
-            def = this._loadAction(actionData.name, _.extend(pyeval.eval('context', context), {
+            def = this._loadAction(actionData.name, _.extend(pyUtils.eval('context', context), {
                 active_model: env.model,
                 active_ids: env.resIDs,
                 active_id: recordID,
@@ -751,7 +761,7 @@ ActionManager.include({
             // code below handles the first case i.e 'effect' attribute on button.
             var effect = false;
             if (actionData.effect) {
-                effect = pyeval.py_eval(actionData.effect);
+                effect = pyUtils.py_eval(actionData.effect);
             }
 
             if (action && action.constructor === Object) {

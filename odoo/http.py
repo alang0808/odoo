@@ -25,6 +25,7 @@ from os.path import join as opj
 from zlib import adler32
 
 import babel.core
+from datetime import datetime, date
 import passlib.utils
 import psycopg2
 import json
@@ -44,10 +45,11 @@ except ImportError:
     psutil = None
 
 import odoo
+from odoo import fields
 from .service.server import memory_info
 from .service import security, model as service_model
 from .tools.func import lazy_property
-from .tools import ustr, consteq, frozendict, pycompat, unique
+from .tools import ustr, consteq, frozendict, pycompat, unique, date_utils
 
 from .modules.module import module_manifest
 
@@ -101,9 +103,9 @@ def dispatch_rpc(service_name, method, params):
         rpc_response_flag = rpc_response.isEnabledFor(logging.DEBUG)
         if rpc_request_flag or rpc_response_flag:
             start_time = time.time()
-            start_rss, start_vms = 0, 0
+            start_memory = 0
             if psutil:
-                start_rss, start_vms = memory_info(psutil.Process(os.getpid()))
+                start_memory = memory_info(psutil.Process(os.getpid()))
             if rpc_request and rpc_response_flag:
                 odoo.netsvc.log(rpc_request, logging.DEBUG, '%s.%s' % (service_name, method), replace_request_password(params))
 
@@ -119,10 +121,10 @@ def dispatch_rpc(service_name, method, params):
 
         if rpc_request_flag or rpc_response_flag:
             end_time = time.time()
-            end_rss, end_vms = 0, 0
+            end_memory = 0
             if psutil:
-                end_rss, end_vms = memory_info(psutil.Process(os.getpid()))
-            logline = '%s.%s time:%.3fs mem: %sk -> %sk (diff: %sk)' % (service_name, method, end_time - start_time, start_vms / 1024, end_vms / 1024, (end_vms - start_vms)/1024)
+                end_memory = memory_info(psutil.Process(os.getpid()))
+            logline = '%s.%s time:%.3fs mem: %sk -> %sk (diff: %sk)' % (service_name, method, end_time - start_time, start_memory / 1024, end_memory / 1024, (end_memory - start_memory)/1024)
             if rpc_response_flag:
                 odoo.netsvc.log(rpc_response, logging.DEBUG, logline, result)
             else:
@@ -166,7 +168,7 @@ def redirect_with_hash(url, code=303):
     # FIXME: decide whether urls should be bytes or text, apparently
     # addons/website/controllers/main.py:91 calls this with a bytes url
     # but addons/web/controllers/main.py:481 uses text... (blows up on login)
-    url = pycompat.to_text(url)
+    url = pycompat.to_text(url).strip()
     if urls.url_parse(url, scheme='http').scheme not in ('http', 'https'):
         url = u'http://' + url
     url = url.replace("'", "%27").replace("<", "%3C")
@@ -617,6 +619,7 @@ class JsonRequest(WebRequest):
         self.context = self.params.pop('context', dict(self.session.context))
 
     def _json_response(self, result=None, error=None):
+
         response = {
             'jsonrpc': '2.0',
             'id': self.jsonrequest.get('id')
@@ -632,10 +635,10 @@ class JsonRequest(WebRequest):
             # We need then to manage http sessions manually.
             response['session_id'] = self.session.sid
             mime = 'application/javascript'
-            body = "%s(%s);" % (self.jsonp, json.dumps(response, default=ustr),)
+            body = "%s(%s);" % (self.jsonp, json.dumps(response, default=date_utils.json_default))
         else:
             mime = 'application/json'
-            body = json.dumps(response, default=ustr)
+            body = json.dumps(response, default=date_utils.json_default)
 
         return Response(
             body, status=error and error.pop('http_status', 200) or 200,
@@ -682,9 +685,9 @@ class JsonRequest(WebRequest):
                 args = self.params.get('args', [])
 
                 start_time = time.time()
-                _, start_vms = 0, 0
+                start_memory = 0
                 if psutil:
-                    _, start_vms = memory_info(psutil.Process(os.getpid()))
+                    start_memory = memory_info(psutil.Process(os.getpid()))
                 if rpc_request and rpc_response_flag:
                     rpc_request.debug('%s: %s %s, %s',
                         endpoint, model, method, pprint.pformat(args))
@@ -693,11 +696,11 @@ class JsonRequest(WebRequest):
 
             if rpc_request_flag or rpc_response_flag:
                 end_time = time.time()
-                _, end_vms = 0, 0
+                end_memory = 0
                 if psutil:
-                    _, end_vms = memory_info(psutil.Process(os.getpid()))
+                    end_memory = memory_info(psutil.Process(os.getpid()))
                 logline = '%s: %s %s: time:%.3fs mem: %sk -> %sk (diff: %sk)' % (
-                    endpoint, model, method, end_time - start_time, start_vms / 1024, end_vms / 1024, (end_vms - start_vms)/1024)
+                    endpoint, model, method, end_time - start_time, start_memory / 1024, end_memory / 1024, (end_memory - start_memory)/1024)
                 if rpc_response_flag:
                     rpc_response.debug('%s, %s', logline, pprint.pformat(result))
                 else:
@@ -804,7 +807,7 @@ class HttpRequest(WebRequest):
 
 Odoo URLs are CSRF-protected by default (when accessed with unsafe
 HTTP methods). See
-https://www.odoo.com/documentation/11.0/reference/http.html#csrf for
+https://www.odoo.com/documentation/12.0/reference/http.html#csrf for
 more details.
 
 * if this endpoint is accessed through Odoo via py-QWeb form, embed a CSRF
@@ -1032,13 +1035,14 @@ class OpenERPSession(werkzeug.contrib.sessions.Session):
                 HTTP_HOST=wsgienv['HTTP_HOST'],
                 REMOTE_ADDR=wsgienv['REMOTE_ADDR'],
             )
-            uid = dispatch_rpc('common', 'authenticate', [db, login, password, env])
+            uid = odoo.registry(db)['res.users'].authenticate(db, login, password, env)
         else:
             security.check(db, uid, password)
+        self.rotate = True
         self.db = db
         self.uid = uid
         self.login = login
-        self.session_token = uid and security.compute_session_token(self)
+        self.session_token = uid and security.compute_session_token(self, request.env)
         request.uid = uid
         request.disable_db = False
 
@@ -1053,9 +1057,11 @@ class OpenERPSession(werkzeug.contrib.sessions.Session):
         """
         if not self.db or not self.uid:
             raise SessionExpiredException("Session expired")
-
+        # We create our own environment instead of the request's one.
+        # to avoid creating it without the uid since request.uid isn't set yet
+        env = odoo.api.Environment(request.cr, self.uid, self.context)
         # here we check if the session is still valid
-        if not security.check_session(self):
+        if not security.check_session(self, env):
             raise SessionExpiredException("Session expired")
 
     def logout(self, keep_db=False):
@@ -1294,7 +1300,8 @@ class Root(object):
         # Setup http sessions
         path = odoo.tools.config.session_dir
         _logger.debug('HTTP sessions stored in: %s', path)
-        return werkzeug.contrib.sessions.FilesystemSessionStore(path, session_class=OpenERPSession)
+        return werkzeug.contrib.sessions.FilesystemSessionStore(
+            path, session_class=OpenERPSession, renew_missing=True)
 
     @lazy_property
     def nodb_routing_map(self):
@@ -1402,10 +1409,16 @@ class Root(object):
         else:
             response = result
 
+        save_session = (not request.endpoint) or request.endpoint.routing.get('save_session', True)
+        if not save_session:
+            return response
+
         if httprequest.session.should_save:
             if httprequest.session.rotate:
                 self.session_store.delete(httprequest.session)
                 httprequest.session.sid = self.session_store.generate_key()
+                if httprequest.session.uid:
+                    httprequest.session.session_token = security.compute_session_token(httprequest.session, request.env)
                 httprequest.session.modified = True
             self.session_store.save(httprequest.session)
         # We must not set the cookie if the session id was specified using a http header or a GET parameter.
@@ -1429,6 +1442,9 @@ class Root(object):
             httprequest.app = self
             httprequest.parameter_storage_class = werkzeug.datastructures.ImmutableOrderedMultiDict
             threading.current_thread().url = httprequest.url
+            threading.current_thread().query_count = 0
+            threading.current_thread().query_time = 0
+            threading.current_thread().perf_t0 = time.time()
 
             explicit_session = self.setup_session(httprequest)
             self.setup_db(httprequest)
@@ -1492,6 +1508,7 @@ def db_filter(dbs, httprequest=None):
     if d == "www" and r:
         d = r.partition('.')[0]
     if odoo.tools.config['dbfilter']:
+        d, h = re.escape(d), re.escape(h)
         r = odoo.tools.config['dbfilter'].replace('%h', h).replace('%d', d)
         dbs = [i for i in dbs if re.match(r, i)]
     elif odoo.tools.config['db_name']:
@@ -1625,7 +1642,7 @@ def send_file(filepath_or_fp, mimetype=None, as_attachment=False, filename=None,
 
 def content_disposition(filename):
     filename = odoo.tools.ustr(filename)
-    escaped = urls.url_quote(filename)
+    escaped = urls.url_quote(filename, safe='')
 
     return "attachment; filename*=UTF-8''%s" % escaped
 

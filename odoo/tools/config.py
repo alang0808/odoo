@@ -117,7 +117,7 @@ class configmanager(object):
         group.add_option("--addons-path", dest="addons_path",
                          help="specify additional addons paths (separated by commas).",
                          action="callback", callback=self._check_addons_path, nargs=1, type="string")
-        group.add_option("--load", dest="server_wide_modules", help="Comma-separated list of server-wide modules.", my_default='web')
+        group.add_option("--load", dest="server_wide_modules", help="Comma-separated list of server-wide modules.", my_default='base,web')
 
         group.add_option("-D", "--data-dir", dest="data_dir", my_default=_get_default_datadir(),
                          help="Directory where to store Odoo data")
@@ -156,11 +156,11 @@ class configmanager(object):
         group = optparse.OptionGroup(parser, "Testing Configuration")
         group.add_option("--test-file", dest="test_file", my_default=False,
                          help="Launch a python test file.")
-        group.add_option("--test-enable", action="store_true", dest="test_enable",
-                         my_default=False, help="Enable unit tests.")
+        group.add_option("--test-enable", action="callback", callback=self._test_enable_callback,
+                         dest='test_enable',
+                         help="Enable unit tests.")
         group.add_option("--test-tags", dest="test_tags",
-                         default=('+standard'),
-                         help="Comma separated list of tags to filter which tests to excute")
+                         help="Comma separated list of tags to filter which tests to excute. Enable unit tests if set.")
 
         parser.add_option_group(group)
 
@@ -221,7 +221,7 @@ class configmanager(object):
                          help="specify the database ssl connection mode (see PostgreSQL documentation)")
         group.add_option("--db_maxconn", dest="db_maxconn", type='int', my_default=64,
                          help="specify the the maximum number of physical connections to PostgreSQL")
-        group.add_option("--db-template", dest="db_template", my_default="template1",
+        group.add_option("--db-template", dest="db_template", my_default="template0",
                          help="specify a custom database template to create a new database")
         parser.add_option_group(group)
 
@@ -286,10 +286,12 @@ class configmanager(object):
                              help="Specify the number of workers, 0 disable prefork mode.",
                              type="int")
             group.add_option("--limit-memory-soft", dest="limit_memory_soft", my_default=2048 * 1024 * 1024,
-                             help="Maximum allowed virtual memory per worker, when reached the worker be reset after the current request (default 671088640 aka 640MB).",
+                             help="Maximum allowed virtual memory per worker, when reached the worker be "
+                             "reset after the current request (default 2048MiB).",
                              type="int")
             group.add_option("--limit-memory-hard", dest="limit_memory_hard", my_default=2560 * 1024 * 1024,
-                             help="Maximum allowed virtual memory per worker, when reached, any memory allocation will fail (default 805306368 aka 768MB).",
+                             help="Maximum allowed virtual memory per worker, when reached, any memory "
+                             "allocation will fail (default 2560MiB).",
                              type="int")
             group.add_option("--limit-time-cpu", dest="limit_time_cpu", my_default=60,
                              help="Maximum allowed CPU time per request (default 60).",
@@ -392,9 +394,12 @@ class configmanager(object):
         # the same for the pidfile
         if self.options['pidfile'] in ('None', 'False'):
             self.options['pidfile'] = False
+        # the same for the test_tags
+        if self.options['test_tags'] == 'None':
+            self.options['test_tags'] = None
         # and the server_wide_modules
         if self.options['server_wide_modules'] in ('', 'None', 'False'):
-            self.options['server_wide_modules'] = 'web'
+            self.options['server_wide_modules'] = 'base,web'
 
         # if defined do not take the configfile value even if the defined value is None
         keys = ['http_interface', 'http_port', 'longpolling_port', 'http_enable',
@@ -426,7 +431,7 @@ class configmanager(object):
             'dev_mode', 'shell_interface', 'smtp_ssl', 'load_language',
             'stop_after_init', 'logrotate', 'without_demo', 'http_enable', 'syslog',
             'list_db', 'proxy_mode',
-            'test_file', 'test_enable', 'test_tags',
+            'test_file', 'test_tags',
             'osv_memory_count_limit', 'osv_memory_age_limit', 'max_cron_threads', 'unaccent',
             'data_dir',
             'server_wide_modules',
@@ -483,6 +488,8 @@ class configmanager(object):
             if len(self.options['language']) > 5:
                 raise Exception('ERROR: The Lang name must take max 5 chars, Eg: -lfr_BE')
 
+        self.options['test_enable'] = bool(self.options['test_tags'])
+
         if opt.save:
             self.save()
 
@@ -515,6 +522,10 @@ class configmanager(object):
             ad_paths.append(res)
 
         setattr(parser.values, option.dest, ",".join(ad_paths))
+
+    def _test_enable_callback(self, option, opt, value, parser):
+        if not parser.values.test_tags:
+            parser.values.test_tags = "+standard"
 
     def load(self):
         outdated_options_map = {

@@ -17,6 +17,7 @@ NUMBER_PARENS = re.compile(r"\(([0-9]+)\)")
 
 class IrUiMenu(models.Model):
     _name = 'ir.ui.menu'
+    _description = 'Menu'
     _order = "sequence,id"
     _parent_store = True
 
@@ -125,8 +126,9 @@ class IrUiMenu(models.Model):
         return self.filtered(lambda menu: menu.id in visible_ids)
 
     @api.model
-    def search(self, args, offset=0, limit=None, order=None, count=False):
-        menus = super(IrUiMenu, self).search(args, offset=0, limit=None, order=order, count=False)
+    def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
+        menu_ids = super(IrUiMenu, self)._search(args, offset=0, limit=None, order=order, count=False, access_rights_uid=access_rights_uid)
+        menus = self.browse(menu_ids)
         if menus:
             # menu filtering is done only on main menu tree, not other menu lists
             if not self._context.get('ir.ui.menu.full_list'):
@@ -135,18 +137,19 @@ class IrUiMenu(models.Model):
                 menus = menus[offset:]
             if limit:
                 menus = menus[:limit]
-        return len(menus) if count else menus
+        return len(menus) if count else menus.ids
 
     @api.multi
     def name_get(self):
         return [(menu.id, menu._get_full_name()) for menu in self]
 
-    @api.model
-    def create(self, values):
+    @api.model_create_multi
+    def create(self, vals_list):
         self.clear_caches()
-        if 'web_icon' in values:
-            values['web_icon_data'] = self._compute_web_icon_data(values.get('web_icon'))
-        return super(IrUiMenu, self).create(values)
+        for values in vals_list:
+            if 'web_icon' in values:
+                values['web_icon_data'] = self._compute_web_icon_data(values.get('web_icon'))
+        return super(IrUiMenu, self).create(vals_list)
 
     @api.multi
     def write(self, values):

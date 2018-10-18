@@ -90,9 +90,9 @@ QUnit.module('Views', {
             res_id: 1,
         }).open();
 
-        assert.notOk($('div.modal .modal-body button').length,
+        assert.notOk($('.modal-body button').length,
             "should not have any button in body");
-        assert.strictEqual($('div.modal .modal-footer button').length, 1,
+        assert.strictEqual($('.modal-footer button').length, 1,
             "should have only one button in footer");
         parent.destroy();
     });
@@ -118,7 +118,7 @@ QUnit.module('Views', {
             res_id: 1,
         }).open();
 
-        assert.strictEqual($('div.modal button.btn-primary').length, 1,
+        assert.strictEqual($('.modal button.btn-primary').length, 1,
             "should have 1 buttons in modal");
 
         $('.o_field_x2many_list_row_add a').click();
@@ -127,7 +127,7 @@ QUnit.module('Views', {
             keyCode: $.ui.keyCode.ESCAPE,
         }));
 
-        assert.strictEqual($('div.modal button.btn-primary').length, 1,
+        assert.strictEqual($('.modal button.btn-primary').length, 1,
             "should still have 1 buttons in modal");
         parent.destroy();
     });
@@ -321,7 +321,7 @@ QUnit.module('Views', {
                     return $.when(false);
                 }
                 if (route === '/web/dataset/call_kw/instrument/create') {
-                    assert.deepEqual(args.args, [{badassery: [[6, false, [1]]], name: false}], 
+                    assert.deepEqual(args.args, [{badassery: [[6, false, [1]]], name: false}],
                         'The method create should have been called with the right arguments');
                     return $.when(false);
                 }
@@ -334,24 +334,24 @@ QUnit.module('Views', {
         form.$('.o_field_widget .o_field_many2one[name=instrument] input').click();
         $('ul.ui-autocomplete.ui-front.ui-menu.ui-widget.ui-widget-content li.o_m2o_dropdown_option').first().click();
 
-        var $modal = $('.modal-dialog.modal-lg');
+        var $modal = $('.modal-lg');
 
         assert.equal($modal.length, 1,
             'There should be one modal');
 
         $modal.find('.o_field_x2many_list_row_add a').click();
 
-        var $modals = $('.modal-dialog.modal-lg');
+        var $modals = $('.modal-lg');
 
         assert.equal($modals.length, 2,
             'There should be two modals');
 
         var $second_modal = $modals.not($modal);
-        $second_modal.find('.o_list_view.table.table-condensed.table-striped.o_list_view_ungrouped .o_data_row input[type=checkbox]').click();
+        $second_modal.find('.o_list_view.table.table-sm.table-striped.o_list_view_ungrouped .o_data_row input[type=checkbox]').click();
 
         $second_modal.find('.o_select_button').click();
 
-        $modal = $('.modal-dialog.modal-lg');
+        $modal = $('.modal-lg');
 
         assert.equal($modal.length, 1,
             'There should be one modal');
@@ -359,7 +359,7 @@ QUnit.module('Views', {
         assert.equal($modal.find('.o_data_cell').text(), 'Awsome',
             'There should be one item in the list of the modal');
 
-        $modal.find('.btn.btn-sm.btn-primary').click();
+        $modal.find('.btn.btn-primary').click();
 
         form.destroy();
     });
@@ -391,7 +391,7 @@ QUnit.module('Views', {
             intercepts: {
                 create_filter: function (event) {
                     var filter = event.data.filter;
-                    assert.deepEqual(filter.domain, [['bar', '=', true]],
+                    assert.deepEqual(filter.domain, "[('bar', '=', True)]",
                         "should save the correct domain");
                     assert.deepEqual(filter.context, {shouldBeInFilterContext: true},
                         "should save the correct context");

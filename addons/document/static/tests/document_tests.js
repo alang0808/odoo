@@ -1,8 +1,14 @@
 odoo.define('document.tests', function (require) {
     "use strict";
+    /**
+     * The feature tested here is disabled as it was replaced by another feature
+     * while still holding unfixed bugs and doing unnecessary rpc.
+     */
+    return;
 
     var testUtils = require('web.test_utils');
     var FormView = require('web.FormView');
+    var ListView = require('web.ListView');
 
     var createView = testUtils.createView;
 
@@ -16,6 +22,9 @@ odoo.define('document.tests', function (require) {
                     records: [{
                         id: 1,
                         display_name: "first record",
+                    }, {
+                        id: 2,
+                        display_name: "second record",
                     }]
                 },
                 'ir.attachment': {
@@ -73,6 +82,35 @@ odoo.define('document.tests', function (require) {
             $('.modal-footer .btn-primary').click();
             assert.strictEqual(form.sidebar.$('.o_sidebar_delete_attachment').length, 1, "there should be only one attachment");
             form.destroy();
+        });
+
+        QUnit.test('no attachment on list view', function (assert) {
+            assert.expect(4);
+
+            var list = createView({
+                View: ListView,
+                model: 'partner',
+                data: this.data,
+                groupBy: ['display_name'],
+                viewOptions: {sidebar: true},
+                arch: '<tree string="Partners">' +
+                        '<field name="display_name"/>' +
+                      '</tree>',
+                mockRPC: function (route, args) {
+                    assert.step(args.model);
+                    return this._super.apply(this, arguments);
+                }
+            });
+
+            // select record then trigger render
+            list.$('.o_group_header:last').click();
+            list.$('.o_data_row input').click();
+            list.$('.o_group_header:first').click();
+
+            assert.verifySteps(['partner', 'partner', 'partner'],
+                "ir.attachment not called when selecting record in list view");
+
+            list.destroy();
         });
     });
 });

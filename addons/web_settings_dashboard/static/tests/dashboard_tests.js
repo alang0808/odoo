@@ -11,17 +11,21 @@ var Dashboard = webSettingsDashboard.Dashboard;
 function createDashboard(params) {
     var widget = new Widget();
     var dashboard = new Dashboard(widget);
-    dashboard.all_dashboards = ['invitations']; // test only user invitations
+    dashboard.all_dashboards = params.dashboards || ['invitations']; // test only user invitations
 
     testUtils.addMockEnvironment(widget, params);
 
     var originalDestroy = Dashboard.prototype.destroy;
-    Dashboard.destroy = function () {
+    dashboard.destroy = function () {
         dashboard.destroy = originalDestroy;
         widget.destroy();
     };
 
-    dashboard.appendTo($('#qunit-fixture'));
+    if (params.debug) {
+        dashboard.appendTo($('body'));
+    } else {
+        dashboard.appendTo($('#qunit-fixture'));
+    }
 
     return dashboard;
 }
@@ -88,11 +92,13 @@ QUnit.module('settings_dashboard', function () {
                 }
                 return this._super.apply(this, arguments);
             },
-            services: [NotificationService.extend({
-                notify: function (params) {
-                    assert.step(params.type);
-                }
-            })],
+            services: {
+                notification: NotificationService.extend({
+                    notify: function (params) {
+                        assert.step(params.type);
+                    }
+                }),
+            },
         });
 
         // enter an invalid email address to invite
@@ -167,11 +173,13 @@ QUnit.module('settings_dashboard', function () {
                 }
                 return this._super.apply(this, arguments);
             },
-            services: [NotificationService.extend({
-                notify: function (params) {
-                    assert.step(params.type);
-                }
-            })],
+            services: {
+                notification: NotificationService.extend({
+                    notify: function (params) {
+                        assert.step(params.type);
+                    }
+                }),
+            },
         });
 
         // simulate a copy paste of multiple email addresses
@@ -185,6 +193,122 @@ QUnit.module('settings_dashboard', function () {
             'input have been cleared');
         assert.verifySteps(['warning', 'warning'], "should have triggered 2 warnings");
 
+        dashboard.destroy();
+    });
+
+    QUnit.test('Prevent default behaviour when clicking on load translation', function (assert) {
+        assert.expect(3);
+
+        var dashboard = createDashboard({
+            dashboards: ['translations'],
+            mockRPC: function (route, args) {
+                if (route === '/web_settings_dashboard/data') {
+                    return $.when();
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+
+        var $loadTranslation = dashboard.$('.o_load_translations');
+
+        assert.strictEqual($loadTranslation.length, 1,
+            "should have button to load translations");
+
+        // Prevent the browser default behaviour when clicking on anything.
+        // This includes clicking on a `<a>` with `href`, so that it does not
+        // change the URL in the address bar.
+        $(document.body).on('click.o_test', function (ev) {
+            assert.ok(ev.isDefaultPrevented(),
+                "should have prevented browser default behaviour");
+            assert.strictEqual(ev.target, $loadTranslation[0],
+                "should have clicked on 'load a translation' button");
+            ev.preventDefault();
+        });
+
+        $loadTranslation.click();
+
+        $(document.body).off('click.o_test');
+
+        dashboard.destroy();
+    });
+
+    QUnit.test('Prevent default behaviour when clicking on set up company', function (assert) {
+        assert.expect(3);
+
+        var dashboard = createDashboard({
+            dashboards: ['company'],
+            mockRPC: function (route, args) {
+                if (route === '/web_settings_dashboard/data') {
+                    return $.when({
+                        company: {
+                            company_name: 'MyCompany'
+                        }
+                    });
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+
+        var $setupCompany = dashboard.$('.o_setup_company');
+
+        assert.strictEqual($setupCompany.length, 1,
+            "should have button to set up company");
+
+        // Prevent the browser default behaviour when clicking on anything.
+        // This includes clicking on a `<a>` with `href`, so that it does not
+        // change the URL in the address bar.
+        $(document.body).on('click.o_test', function (ev) {
+            assert.ok(ev.isDefaultPrevented(),
+                "should have prevented browser default behaviour");
+            assert.strictEqual(ev.target, $setupCompany[0],
+                "should have clicked on 'setup company' button");
+            ev.preventDefault();
+        });
+
+        $setupCompany.click();
+
+        $(document.body).off('click.o_test');
+
+        dashboard.destroy();
+    });
+
+    QUnit.test('Prevent default behaviour when clicking on browse apps', function (assert) {
+        assert.expect(3);
+
+        var dashboard = createDashboard({
+            dashboards: ['apps'],
+            mockRPC: function (route, args) {
+                if (route === '/web_settings_dashboard/data') {
+                    return $.when({
+                        apps: {},
+                    });
+                }
+                if (args.method === 'get_account_url') {
+                    return $.when('fakeURL');
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+
+        var $browseAppsButton = dashboard.$('.btn.o_browse_apps');
+
+        // Prevent the browser default behaviour when clicking on anything.
+        // This includes clicking on a `<a>` with `href`, so that it does not
+        // change the URL in the address bar.
+        $(document.body).on('click.o_test', function (ev) {
+            assert.ok(ev.isDefaultPrevented(),
+                "should have prevented browser default behaviour");
+            assert.strictEqual(ev.target, $browseAppsButton[0],
+                "should have clicked on 'browse apps' button");
+            ev.preventDefault();
+        });
+
+        assert.strictEqual($browseAppsButton.length, 1,
+            "should have button to browse apps");
+
+        $browseAppsButton.click();
+
+        $(document.body).off('click.o_test');
         dashboard.destroy();
     });
 });

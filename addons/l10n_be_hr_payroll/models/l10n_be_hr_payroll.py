@@ -135,7 +135,7 @@ class HrContract(models.Model):
     @api.depends('commission_on_target')
     def _compute_warrants_cost(self):
         for contract in self:
-            contract.warrants_cost = contract.commission_on_target * 1.326 * 1.05 * 12.0
+            contract.warrants_cost = contract.commission_on_target * 1.326 / 1.05 * 12.0
             contract.warrant_value_employee = contract.commission_on_target * 1.326 * (1.00 - 0.535) * 12.0
 
     @api.depends('wage', 'fuel_card', 'representation_fees', 'transport_employer_cost',
@@ -225,7 +225,7 @@ class HrContract(models.Model):
     @api.onchange('mobile', 'mobile_plus')
     def _onchange_mobile(self):
         if self.mobile_plus and not self.mobile:
-            raise ValidationError(_('You should have a mobile subscription to select an international communication amount!'))
+            raise ValidationError(_('You should have a mobile subscription to select an international communication amount.'))
 
     def _get_internet_amount(self, has_internet):
         if has_internet:

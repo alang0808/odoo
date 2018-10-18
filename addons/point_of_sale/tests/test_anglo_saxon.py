@@ -36,9 +36,13 @@ class TestAngloSaxonCommon(common.TransactionCase):
         self.product = self.product.copy({'name': 'New product','standard_price': 100})
         self.company.anglo_saxon_accounting = True
         self.product.categ_id = self.category
+        self.product.property_account_expense_id = account_expense
+        self.product.property_account_income_id = self.account
         sale_journal = self.env['account.journal'].create({'name': 'POS journal', 'type': 'sale', 'code': 'POS00'})
         self.pos_config.journal_id = sale_journal
         self.cash_journal = self.env['account.journal'].create({'name': 'CASH journal', 'type': 'cash', 'code': 'CSH00'})
+        self.pos_config.invoice_journal_id = False
+        self.pos_config.journal_ids = [self.cash_journal.id]
 
 
 class TestAngloSaxonFlow(TestAngloSaxonCommon):
@@ -70,8 +74,14 @@ class TestAngloSaxonFlow(TestAngloSaxonCommon):
                 'product_id': self.product.id,
                 'price_unit': 450,
                 'discount': 0.0,
-                'qty': 1.0
-            })]
+                'qty': 1.0,
+                'price_subtotal': 450,
+                'price_subtotal_incl': 450,
+            })],
+            'amount_total': 450,
+            'amount_tax': 0,
+            'amount_paid': 0,
+            'amount_return': 0,
         })
 
         # I make a payment to fully pay the order
@@ -87,6 +97,7 @@ class TestAngloSaxonFlow(TestAngloSaxonCommon):
 
         # I check that the order is marked as paid
         self.assertEqual(self.pos_order_pos0.state, 'paid', 'Order should be in paid state.')
+        self.assertEqual(self.pos_order_pos0.amount_paid, 450, 'Amount paid for the order should be updated.')
 
         # I close the current session to generate the journal entries
         self.pos_config.current_session_id.action_pos_session_close()

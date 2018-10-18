@@ -8,11 +8,6 @@
             web_icon="project,static/description/icon.png"
             sequence="50"/>
 
-        <menuitem name="Search"
-            id="menu_project_management"
-            parent="menu_main_pm"
-            sequence="2" groups="base.group_no_one,group_project_user"/>
-
         <menuitem id="menu_project_config" name="Configuration" parent="menu_main_pm"
             sequence="100" groups="project.group_project_manager"/>
 
@@ -63,9 +58,8 @@
         <record id="act_project_project_2_project_task_all" model="ir.actions.act_window">
             <field name="name">Tasks</field>
             <field name="res_model">project.task</field>
-            <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
+            <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity</field>
             <field name="context">{
-                'group_by': 'stage_id',
                 'search_default_project_id': [active_id],
                 'default_project_id': active_id,
             }</field>
@@ -83,15 +77,7 @@
         <record id="project_task_action_sub_task" model="ir.actions.act_window">
             <field name="name">Sub-tasks</field>
             <field name="res_model">project.task</field>
-            <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
-            <field name="domain">[('id', 'child_of', active_id), ('id', '!=', active_id)]</field>
-            <field name="context">
-            {
-                'default_parent_id' : active_id,
-                'default_project_id' : project_id,
-                'default_name' : name + ': ',
-            }
-            </field>
+            <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity</field>
             <field name="search_view_id" ref="project.view_task_search_form"/>
         </record>
 
@@ -101,12 +87,15 @@
             <field name="model">project.project</field>
             <field name="arch" type="xml">
                 <form string="Project">
+                    <header>
+                        <button name="%(portal.portal_share_action)d" string="Share" type="action" class="oe_highlight oe_read_only"/>
+                    </header>
                 <sheet string="Project">
                     <div class="oe_button_box" name="button_box" groups="base.group_user">
                         <button  class="oe_stat_button" name="attachment_tree_view" type="object" icon="fa-files-o">
                             <field string="Documents" name="doc_count" widget="statinfo"/>
                         </button>
-                        <button class="oe_stat_button" type="action" attrs="{'invisible': [('task_count', '=', 0)]}"
+                        <button class="oe_stat_button" type="action"
                             name="%(act_project_project_2_project_task_all)d" icon="fa-tasks">
                             <field string="Tasks" name="task_count" widget="statinfo" options="{'label_field': 'label_tasks'}"/>
                         </button>
@@ -121,7 +110,7 @@
                             </div>
                         </button>
                         <button name="toggle_active" type="object"
-                                confirm="(Un)archiving a project automatically (un)archives its tasks and issues. Do you want to proceed?"
+                                confirm="(Un)archiving a project automatically (un)archives its tasks. Do you want to proceed?"
                                 class="oe_stat_button" icon="fa-archive">
                             <field name="active" widget="boolean_button"
                                 options='{"terminology": "archive"}'/>
@@ -131,7 +120,7 @@
                         <h1>
                             <field name="name" placeholder="Project Name"/>
                         </h1>
-                        <div name="options_active" class="oe_edit_only">
+                        <div name="options_active">
                             <div>
                                 <label for="label_tasks" class="oe_inline" string="Name of the tasks :"/>
                                 <field name="label_tasks" class="oe_inline oe_input_align"/>
@@ -154,6 +143,7 @@
                                 </div>
                                 <field name="rating_status_period"  class="oe_inline" attrs="{'required': [('rating_status','=','periodic')], 'invisible': [('rating_status','!=','periodic')]}" groups="project.group_project_rating"/>
                                 <field name="portal_show_rating" attrs="{'invisible': [('rating_status','==','no')]}" groups="project.group_project_rating"/>
+                                <field name="subtask_project_id" groups="project.group_subtask_project"/>
                             </group>
                             <group name="misc">
                                 <group string="Configuration" groups="base.group_no_one" name="configuration">
@@ -202,8 +192,8 @@
                     <field name="user_id" string="Project Manager"/>
                     <field name="partner_id" string="Contact" filter_domain="[('partner_id', 'child_of', self)]"/>
                     <group expand="0" string="Group By">
-                        <filter string="Manager" name="Manager" context="{'group_by':'user_id'}"/>
-                        <filter string="Contact" name="Partner" context="{'group_by':'partner_id'}"/>
+                        <filter string="Project Manager" name="Manager" context="{'group_by': 'user_id'}"/>
+                        <filter string="Customer" name="Partner" context="{'group_by': 'partner_id'}"/>
                     </group>
                 </search>
             </field>
@@ -234,17 +224,17 @@
                         <t t-name="kanban-box">
                             <div t-attf-class="oe_kanban_content oe_kanban_global_click o_kanban_get_form">
                                 <div class="row">
-                                    <div class="col-xs-12">
+                                    <div class="col-12">
                                         <strong><field name="name" string="Project Name"/></strong>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-xs-8">
+                                    <div class="col-8">
                                         <field name="partner_id" string="Contact"/>
                                     </div>
-                                    <div class="col-xs-4">
+                                    <div class="col-4">
                                         <div class="oe_kanban_bottom_right">
-                                            <img t-att-src="kanban_image('res.users', 'image_small', record.user_id.raw_value)" t-att-title="record.user_id.value" width="24" height="24" class="oe_kanban_avatar pull-right"/>
+                                            <img t-att-src="kanban_image('res.users', 'image_small', record.user_id.raw_value)" t-att-title="record.user_id.value" t-att-alt="record.user_id.value" width="24" height="24" class="oe_kanban_avatar float-right"/>
                                         </div>
                                     </div>
                                 </div>
@@ -273,7 +263,7 @@
                     </group>
                     <footer>
                         <button string="Create" name="open_tasks" type="object" class="btn-primary o_open_tasks"/>
-                        <button string="Discard" class="btn-default" special="cancel"/>
+                        <button string="Discard" class="btn-secondary" special="cancel"/>
                     </footer>
                 </form>
             </field>
@@ -317,7 +307,7 @@
                                                 </span>
                                             </div>
                                             <div t-if="record.alias_name.value and record.alias_domain.value">
-                                                <span><i class="fa fa-envelope"></i> <t t-esc="record.alias_id.value"/></span>
+                                                <span><i class="fa fa-envelope" role="img" aria-label="Domain Alias" title="Domain Alias"></i> <t t-esc="record.alias_id.value"/></span>
                                             </div>
                                             <div t-if="record.rating_status.raw_value != 'no'" class="mt8 text-primary" title="Percentage of happy ratings over the past 30 days. Get rating details from the More menu." groups="project.group_project_rating">
                                                 <b>
@@ -326,27 +316,30 @@
                                                     </t>
                                                     <t t-if="record.percentage_satisfaction_project.value != -1">
                                                         <a name="action_view_all_rating" type="object" context="{'search_default_rating_last_30_days':1}">
-                                                            <i class="fa fa-smile-o"/> <t t-esc="record.percentage_satisfaction_project.value"/>%
+                                                            <i class="fa fa-smile-o" role="img" aria-label="Percentage of satisfaction" title="Percentage of satisfaction"/> <t t-esc="record.percentage_satisfaction_project.value"/>%
                                                         </a>
                                                     </t>
                                                 </b>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="o_kanban_card_manage_pane dropdown-menu" groups="project.group_project_manager">
+                                    <div class="o_kanban_card_manage_pane dropdown-menu" groups="project.group_project_manager" role="menu">
                                         <div class="o_kanban_card_manage_section o_kanban_manage_reports">
-                                            <div>
+                                            <div role="menuitem">
+                                                <a name="%(portal.portal_share_action)d" type="action">Share</a>
+                                            </div>
+                                            <div role="menuitem">
                                                 <a type="edit">Edit</a>
                                             </div>
-                                            <div t-if="record.rating_status.raw_value != 'no'">
+                                            <div role="menuitem" t-if="record.rating_status.raw_value != 'no'">
                                                 <a name="action_view_all_rating" type="object">Customer Ratings</a>
                                             </div>
                                         </div>
-                                        <div class="o_no_padding_kanban_colorpicker">
-                                            <ul class="oe_kanban_colorpicker" data-field="color"/>
+                                        <div role="menuitem" aria-haspopup="true" class="o_no_padding_kanban_colorpicker">
+                                            <ul class="oe_kanban_colorpicker" data-field="color" role="popup"/>
                                         </div>
                                     </div>
-                                    <a class="o_kanban_manage_toggle_button o_left" href="#" groups="project.group_project_manager"><i class="fa fa-ellipsis-v" /></a>
+                                    <a class="o_kanban_manage_toggle_button o_left" href="#" groups="project.group_project_manager"><i class="fa fa-ellipsis-v" role="img" aria-label="Manage" title="Manage"/></a>
                                     <span class="o_right"><field name="is_favorite" widget="boolean_favorite" nolabel="1" force_save="1" /></span>
                                 </div>
 
@@ -385,7 +378,7 @@
                 <p class="o_view_nocontent_smiling_face">
                     Create a new project
                 </p><p>
-                    Or <a type="action" name="%(project.ir_actions_server_project_sample)d">activate a sample project</a> to play with.
+                    Or <a type="action" name="%(project.ir_actions_server_project_sample)d" tabindex="-1">activate a sample project</a> to play with.
                 </p>
             </field>
         </record>
@@ -420,15 +413,15 @@
                     <header>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" class="oe_highlight"
                             attrs="{'invisible' : [('user_id', '!=', False)]}"/>
-
+                        <button name="%(portal.portal_share_action)d" string="Share" type="action" class="oe_highlight oe_read_only"/>
                         <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}"/>
                     </header>
                     <sheet string="Task">
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" icon="fa-tasks" type="object" name="action_open_parent_task" string="Parent Task" attrs="{'invisible' : [('parent_id', '=', False)]}" groups="project.group_subtask_project"/>
-                        <button id="subtask_stat_button" name="%(project_task_action_sub_task)d" type="action" class="oe_stat_button" icon="fa-tasks"
+                        <button name="action_subtask" type="object" class="oe_stat_button" icon="fa-tasks"
                             attrs="{'invisible' : [('parent_id', '!=', False)]}"
-                            context="{'project_id': project_id, 'name': name, 'parent_id': id}" groups="project.group_subtask_project">
+                            context="{'project_id': subtask_project_id, 'name': name, 'partner_id': partner_id}" groups="project.group_subtask_project">
                             <field string="Sub-tasks" name="subtask_count" widget="statinfo"/>
                         </button>
                         <button name="%(rating_rating_action_task)d" type="action" attrs="{'invisible': [('rating_count', '=', 0)]}" class="oe_stat_button" icon="fa-smile-o" groups="project.group_project_rating">
@@ -476,6 +469,7 @@
                                     <field name="email_cc" groups="base.group_no_one"/>
                                     <field name="parent_id" attrs="{'invisible' : [('subtask_count', '>', 0)]}" groups="project.group_subtask_project"/>
                                     <field name="child_ids" invisible="1" />
+                                    <field name="subtask_project_id" invisible="1" />
                                     <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                                     <field name="displayed_image_id" groups="base.group_no_one"/>
                                 </group>
@@ -511,8 +505,8 @@
             <field name="arch" type="xml">
                 <form>
                     <group>
-                        <field name="name"/>
-                        <field name="user_id" options="{'no_open': True}"/>
+                        <field name="name" string = "Task Title"/>
+                        <field name="user_id" options="{'no_open': True,'no_create': True}"/>
                     </group>
                 </form>
             </field>
@@ -559,19 +553,17 @@
                                         </small>
                                     </div>
                                     <div class="o_dropdown_kanban dropdown" groups="base.group_user">
-                                        <a class="dropdown-toggle btn" data-toggle="dropdown" href="#" >
-                                            <span class="fa fa-ellipsis-v" aria-hidden="true"/>
+                                        <a role="button" class="dropdown-toggle o-no-caret btn" data-toggle="dropdown" href="#" aria-label="Dropdown menu" title="Dropdown menu">
+                                            <span class="fa fa-ellipsis-v"/>
                                         </a>
-                                        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                                            <li t-if="widget.editable"><a type="set_cover">Set Cover Image</a></li>
-                                            <li t-if="widget.editable"><a type="edit">Edit Task</a></li>
-                                            <li t-if="widget.deletable"><a type="delete">Delete</a></li>
-                                            <li class="divider"></li>
-                                            <li class="dropdown-header">Record's Colour</li>
-                                            <li>
-                                                <ul class="oe_kanban_colorpicker" data-field="color"/>
-                                            </li>
-                                        </ul>
+                                        <div class="dropdown-menu" role="menu">
+                                            <a t-if="widget.editable" role="menuitem" type="set_cover" class="dropdown-item">Set Cover Image</a>
+                                            <a name="%(portal.portal_share_action)d" role="menuitem" type="action" class="dropdown-item">Share</a>
+                                            <a t-if="widget.editable" role="menuitem" type="edit" class="dropdown-item">Edit Task</a>
+                                            <a t-if="widget.deletable" role="menuitem" type="delete" class="dropdown-item">Delete</a>
+                                            <div role="separator" class="dropdown-divider"></div>
+                                            <ul class="oe_kanban_colorpicker" data-field="color"/>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="o_kanban_record_body">
@@ -585,17 +577,17 @@
                                         <field name="priority" widget="priority"/>
                                         <field name="activity_ids" widget="kanban_activity"/>
                                         <t t-if="record.message_needaction_counter.raw_value">
-                                            <span class='oe_kanban_mail_new' title='Unread Messages'><i class='fa fa-comments'/><t t-raw="record.message_needaction_counter.raw_value"/></span>
+                                            <span role="alert" class='oe_kanban_mail_new' title='Unread Messages'><i class='fa fa-comments' role="img" aria-label="Unread Messages"/><t t-raw="record.message_needaction_counter.raw_value"/></span>
                                         </t>
                                         <b t-if="record.rating_ids.raw_value.length">
-                                            <span style="font-weight:bold;" class="fa fa-fw mt4 fa-smile-o text-success" t-if="record.rating_last_value.value == 10" title="Latest Rating: Satisfied"/>
-                                            <span style="font-weight:bold;" class="fa fa-fw mt4 fa-meh-o text-warning" t-if="record.rating_last_value.value == 5" title="Latest Rating: Not Satisfied"/>
-                                            <span style="font-weight:bold;" class="fa fa-fw mt4 fa-frown-o text-danger" t-if="record.rating_last_value.value == 1" title="Latest Rating: Higly Dissatisfied"/>
+                                            <span style="font-weight:bold;" class="fa fa-fw mt4 fa-smile-o text-success" t-if="record.rating_last_value.value == 10" title="Latest Rating: Satisfied" role="img" aria-label="Happy face"/>
+                                            <span style="font-weight:bold;" class="fa fa-fw mt4 fa-meh-o text-warning" t-if="record.rating_last_value.value == 5" title="Latest Rating: Not Satisfied" role="img" aria-label="Neutral face"/>
+                                            <span style="font-weight:bold;" class="fa fa-fw mt4 fa-frown-o text-danger" t-if="record.rating_last_value.value == 1" title="Latest Rating: Higly Dissatisfied" role="img" aria-label="Sad face"/>
                                         </b>
                                     </div>
                                     <div class="oe_kanban_bottom_right">
                                         <field name="kanban_state" widget="state_selection" groups="base.group_user"/>
-                                        <img t-att-src="kanban_image('res.users', 'image_small', record.user_id.raw_value)" t-att-title="record.user_id.value" width="24" height="24" class="oe_kanban_avatar"/>
+                                        <img t-att-src="kanban_image('res.users', 'image_small', record.user_id.raw_value)" t-att-title="record.user_id.value" t-att-alt="record.user_id.value" width="24" height="24" class="oe_kanban_avatar"/>
                                     </div>
                                 </div>
                             </div>
@@ -675,7 +667,7 @@
         <record id="action_view_task" model="ir.actions.act_window">
             <field name="name">Tasks</field>
             <field name="res_model">project.task</field>
-            <field name="view_mode">kanban,tree,form,calendar,pivot,graph</field>
+            <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity</field>
             <field name="context">{'search_default_my_tasks': 1}</field>
             <field name="search_view_id" ref="view_task_search_form"/>
             <field name="help" type="html">
@@ -698,22 +690,8 @@
             <field name="act_window_id" ref="action_view_task"/>
         </record>
 
-        <record id="project_task_action_activity" model="ir.actions.act_window">
-            <field name="name">My Next Activities</field>
-            <field name="res_model">project.task</field>
-            <field name="view_type">form</field>
-            <field name="view_mode">tree,form,kanban,calendar</field>
-            <field name="view_id" ref="project_task_view_tree_activity"/>
-            <field name="context">{'search_default_activities_my':1}</field>
-            <field name="domain">[('activity_date_deadline', '!=', False)]</field>
-            <field name="help" type="html">
-                <p class="o_view_nocontent_empty_folder">
-                    No scheduled activity at the moment
-                </p>
-            </field>
-        </record>
-
-        <menuitem action="action_view_task" id="menu_action_view_task" parent="project.menu_project_management" sequence="5"/>
+        <menuitem name="All Tasks" id="menu_project_management" parent="menu_main_pm"
+            action="action_view_task" sequence="2" groups="base.group_no_one,group_project_user"/>
 
         <record id="project_task_action_from_partner" model="ir.actions.act_window">
             <field name="name">Tasks</field>
@@ -721,12 +699,6 @@
             <field name="view_mode">kanban,tree,form</field>
             <field name="search_view_id" ref="view_task_search_form"/>
         </record>
-
-        <menuitem id="project_task_menu_activity"
-            name="Next Activities"
-            parent="project.menu_project_management"
-            action="project_task_action_activity"
-            sequence="25"/>
 
         <record id="action_view_task_overpassed_draft" model="ir.actions.act_window">
             <field name="name">Overpassed Tasks</field>
@@ -744,7 +716,7 @@
             <field name="name">Project's tasks</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form,calendar,graph,kanban</field>
-            <field name="domain">[('project_id', 'child_of', [active_id])]</field>
+            <field name="domain">[('project_id', '=', active_id)]</field>
             <field name="context">{'project_id':active_id}</field>
         </record>
 
@@ -784,17 +756,23 @@
                                 You can define here labels that will be displayed for the state instead
                                 of the default labels.
                             </p>
-                            <label for="legend_normal" string=" " class="o_status oe_project_kanban_legend"/>
+                            <label for="legend_normal" string=" " class="o_status oe_project_kanban_legend"
+                                title="Task in progress. Click to block or set as done."
+                                aria-label="Task in progress. Click to block or set as done." role="img"/>
                             <field name="legend_normal" nolabel="1"/>
-                            <label for="legend_blocked" string=" " class="o_status o_status_red oe_project_kanban_legend"/>
+                            <label for="legend_blocked" string=" " class="o_status o_status_red oe_project_kanban_legend"
+                                title="Task is blocked. Click to unblock or set as done."
+                                aria-label="Task is blocked. Click to unblock or set as done." role="img"/>
                             <field name="legend_blocked" nolabel="1"/>
-                            <label for="legend_done" string=" " class="o_status o_status_green oe_project_kanban_legend"/>
+                            <label for="legend_done" string=" " class="o_status o_status_green oe_project_kanban_legend"
+                                title="This step is done. Click to block or set in progress."
+                                aria-label="This step is done. Click to block or set in progress." role="img"/>
                             <field name="legend_done" nolabel="1"/>
 
                             <p class="text-muted" colspan="2">
                                 You can also give a tooltip about the use of the stars available in the kanban and form views.
                             </p>
-                            <label for="legend_priority" string=" " class="fa fa-star fa-lg o_star_on oe_project_kanban_legend"/>
+                            <label for="legend_priority" string=" " class="fa fa-star fa-lg o_star_on oe_project_kanban_legend" aria-label="Legend priority" title="Legend priority" role="img"/>
                             <field name="legend_priority" nolabel="1"/>
 
                             <p class="text-muted" colspan="2">
@@ -832,7 +810,7 @@
                         <t t-name="kanban-box">
                             <div t-attf-class="oe_kanban_global_click">
                                 <div class="row">
-                                    <div class="col-xs-12">
+                                    <div class="col-12">
                                         <strong><t t-esc="record.name.value"/></strong>
                                     </div>
                                 </div>
@@ -869,7 +847,7 @@
 
         <menuitem action="open_task_type_form" id="menu_project_config_project" name="Stages" parent="menu_project_config" sequence="3" groups="base.group_no_one"/>
 
-        <menuitem action="open_view_project_all" id="menu_projects" name="Dashboard" parent="menu_main_pm" sequence="1"/>
+        <menuitem action="open_view_project_all" id="menu_projects" name="Projects" parent="menu_main_pm" sequence="1"/>
         <menuitem action="open_view_project_all_config" id="menu_projects_config" name="Projects" parent="menu_project_config" sequence="10"/>
 
         <!-- User Form -->

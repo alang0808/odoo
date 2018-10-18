@@ -48,10 +48,10 @@ class SaleOrder(models.Model):
             order.project_ids = projects
 
     @api.multi
-    def action_confirm(self):
+    def _action_confirm(self):
         """ On SO confirmation, some lines should generate a task or a project. """
-        result = super(SaleOrder, self).action_confirm()
-        self.order_line.sudo()._timesheet_service_generation()
+        result = super(SaleOrder, self)._action_confirm()
+        self.mapped('order_line').sudo()._timesheet_service_generation()
         return result
 
     @api.multi
@@ -74,7 +74,7 @@ class SaleOrder(models.Model):
             action = self.env.ref('project.action_view_task').read()[0]
             action['context'] = {}  # erase default context to avoid default filter
             if len(self.tasks_ids) > 1:  # cross project kanban task
-                action['views'] = [[False, 'kanban'], [list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'calendar'], [False, 'pivot'], [False, 'graph']]
+                action['views'] = [[False, 'kanban'], [list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'calendar'], [False, 'pivot']]
             elif len(self.tasks_ids) == 1:  # single task -> form view
                 action['views'] = [(form_view_id, 'form')]
                 action['res_id'] = self.tasks_ids.id
@@ -88,7 +88,7 @@ class SaleOrder(models.Model):
         self.ensure_one()
         # redirect to form or kanban view
         billable_projects = self.project_ids.filtered(lambda project: project.sale_line_id)
-        if len(billable_projects) == 1:
+        if len(billable_projects) == 1 and self.env.user.has_group('project.group_project_manager'):
             action = billable_projects[0].action_view_timesheet_plan()
         else:
             view_form_id = self.env.ref('project.edit_project').id
@@ -106,24 +106,14 @@ class SaleOrder(models.Model):
     @api.multi
     def action_view_timesheet(self):
         self.ensure_one()
-        action = self.env.ref('hr_timesheet.act_hr_timesheet_line')
-        list_view_id = self.env.ref('hr_timesheet.hr_timesheet_line_tree').id
-        form_view_id = self.env.ref('hr_timesheet.hr_timesheet_line_form').id
+        action = self.env.ref('hr_timesheet.timesheet_action_all').read()[0]
+        action['context'] = self.env.context  # erase default filters
 
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-        }
         if self.timesheet_count > 0:
-            result['domain'] = "[('id','in',%s)]" % self.timesheet_ids.ids
+            action['domain'] = [('so_line', 'in', self.order_line.ids)]
         else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
 
 
 class SaleOrderLine(models.Model):
@@ -151,7 +141,7 @@ class SaleOrderLine(models.Model):
 
         lines_by_timesheet = self.filtered(lambda sol: sol.qty_delivered_method == 'timesheet')
         domain = lines_by_timesheet._timesheet_compute_delivered_quantity_domain()
-        mapping = lines_by_timesheet._get_delivered_quantity_by_analytic(domain)
+        mapping = lines_by_timesheet.sudo()._get_delivered_quantity_by_analytic(domain)
         for line in lines_by_timesheet:
             line.qty_delivered = mapping.get(line.id, 0.0)
 
@@ -174,18 +164,32 @@ class SaleOrderLine(models.Model):
             else:
                 super(SaleOrderLine, line)._compute_product_updatable()
 
-    @api.model
-    def create(self, values):
-        line = super(SaleOrderLine, self).create(values)
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super(SaleOrderLine, self).create(vals_list)
         # Do not generate task/project when expense SO line, but allow
         # generate task with hours=0.
-        if line.state == 'sale' and not line.is_expense:
-            line.sudo()._timesheet_service_generation()
-            # if the SO line created a task, post a message on the order
-            if line.task_id:
-                msg_body = _("Task Created (%s): <a href=# data-oe-model=project.task data-oe-id=%d>%s</a>") % (line.product_id.name, line.task_id.id, line.task_id.name)
-                line.order_id.message_post(body=msg_body)
-        return line
+        for line in lines:
+            if line.state == 'sale' and not line.is_expense:
+                line.sudo()._timesheet_service_generation()
+                # if the SO line created a task, post a message on the order
+                if line.task_id:
+                    msg_body = _("Task Created (%s): <a href=# data-oe-model=project.task data-oe-id=%d>%s</a>") % (line.product_id.name, line.task_id.id, line.task_id.name)
+                    line.order_id.message_post(body=msg_body)
+        return lines
+
+    @api.multi
+    def write(self, values):
+        result = super(SaleOrderLine, self).write(values)
+        # changing the ordered quantity should change the planned hours on the
+        # task, whatever the SO state. It will be blocked by the super in case
+        # of a locked sale order.
+        if 'product_uom_qty' in values:
+            for line in self:
+                if line.task_id:
+                    planned_hours = line._convert_qty_company_hours()
+                    line.task_id.write({'planned_hours': planned_hours})
+        return result
 
     ###########################################
     # Service : Project and task generation
@@ -218,6 +222,8 @@ class SaleOrderLine(models.Model):
             'analytic_account_id': account.id,
             'partner_id': self.order_id.partner_id.id,
             'sale_line_id': self.id,
+            'sale_order_id': self.order_id.id,
+            'active': True,
         }
         if self.product_id.project_template_id:
             values['name'] = "%s - %s" % (values['name'], self.product_id.project_template_id.name)
@@ -320,4 +326,5 @@ class SaleOrderLine(models.Model):
                         project = map_so_project_templates[(so_line.order_id.id, so_line.product_id.project_template_id.id)]
                     else:
                         project = map_so_project[so_line.order_id.id]
-                so_line._timesheet_create_task(project=project)
+                if not so_line.task_id:
+                    so_line._timesheet_create_task(project=project)

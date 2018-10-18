@@ -58,7 +58,7 @@
                     <group col="6" attrs="{'invisible':[('compute_price', '!=', 'formula')]}">
                         <field name="base" colspan="6"/>
 
-                        <label string="New Price ="/>
+                        <span class="o_form_label">New Price =</span>
                         <div>
                             <span attrs="{'invisible':[('base', '!=', 'list_price')]}">Public Price  -  </span>
                             <span attrs="{'invisible':[('base', '!=', 'standard_price')]}">Cost  -  </span>
@@ -119,7 +119,7 @@
                                     <div class="o_kanban_record_headings">
                                         <strong class="o_kanban_record_title"><span><field name="name"/></span></strong>
                                     </div>
-                                    <strong><i class="fa fa-money" aria-hidden="true"></i> <field name="currency_id"/></strong>
+                                    <strong><i class="fa fa-money" role="img" aria-label="Currency" title="Currency"></i> <field name="currency_id"/></strong>
                                 </div>
                             </div>
                         </t>
@@ -136,7 +136,7 @@
                     <sheet>
                         <div class="oe_button_box" name="button_box">
                             <button name="toggle_active" type="object"
-                                    class="oe_stat_button" icon="fa-archive" groups="sales_team.group_sale_manager">
+                                    class="oe_stat_button" icon="fa-archive">
                                 <field name="active" widget="boolean_button"
                                     options='{"terminology": "archive"}'/>
                             </button>

@@ -3,17 +3,17 @@
 # * website
 # 
 # Translators:
-# krnkris <krnkris@freemail.hu>, 2016
+# krnkris, 2016
 # Kovács Tibor <kovika@gmail.com>, 2016
-# Martin Trigaux <mat@odoo.com>, 2016
+# Martin Trigaux, 2016
 # gezza <geza.nagy@oregional.hu>, 2016
 # Zsofia Biro <zsbiro1205@gmail.com>, 2016
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~11.1\n"
+"Project-Id-Version: Odoo Server saas~11.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-12-13 14:36+0000\n"
-"PO-Revision-Date: 2017-12-13 14:36+0000\n"
+"POT-Creation-Date: 2018-08-02 09:12+0000\n"
+"PO-Revision-Date: 2018-08-02 09:12+0000\n"
 "Last-Translator: Zsofia Biro <zsbiro1205@gmail.com>, 2016\n"
 "Language-Team: Hungarian (https://www.transifex.com/odoo/teams/41243/hu/)\n"
 "MIME-Version: 1.0\n"
@@ -24,31 +24,31 @@ msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/editor/snippets.options.js:927
+#: code:addons/website/static/src/js/editor/snippets.options.js:1009
 #, python-format
 msgid " Add Images"
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:233
-#: code:addons/website/models/website.py:302
+#: code:addons/website/models/website.py:241
+#: code:addons/website/models/website.py:310
 #, python-format
 msgid "%s (id:%s)"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "&amp;times;"
 msgstr "&amp;times;"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.sitemap_index_xml
-#: model:ir.ui.view,arch_db:website.sitemap_xml
+#: model_terms:ir.ui.view,arch_db:website.sitemap_index_xml
+#: model_terms:ir.ui.view,arch_db:website.sitemap_xml
 msgid "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;"
 msgstr "&lt;?xml verzió=\"1.0\" kódolás=\"UTF-8\"?&gt;"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.default_xml
+#: model_terms:ir.ui.view,arch_db:website.default_xml
 msgid "&lt;?xml version=\"1.0\" encoding=\"utf-8\"?&gt;"
 msgstr ""
 
@@ -67,34 +67,27 @@ msgid "&times;"
 msgstr "&times;"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "' did not match any pages."
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:723
-#: code:addons/website/models/website.py:725
-#: code:addons/website/models/website.py:743
+#: code:addons/website/models/website.py:737
+#: code:addons/website/models/website.py:739
+#: code:addons/website/models/website.py:757
 #, python-format
 msgid "(copy)"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:29
+#: code:addons/website/static/src/xml/website.pageProperties.xml:33
 #, python-format
 msgid "(could be used in"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout_footer_copyright
-msgid ""
-",\n"
-"                                                      the #1"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid ""
 ",\n"
 "                                updated:"
@@ -103,18 +96,18 @@ msgstr ""
 "                                frissítve:"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid ", author:"
 msgstr ", szerző:"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid ", updated:"
 msgstr ", frissítve:"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:23
+#: code:addons/website/static/src/xml/website.pageProperties.xml:27
 #, python-format
 msgid ""
 ".\n"
@@ -122,57 +115,57 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.default_csv
+#: model_terms:ir.ui.view,arch_db:website.default_csv
 msgid "1,2,3"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "10s"
 msgstr "10mp"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "12"
 msgstr "12"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "1s"
 msgstr "1mp"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "24x7 toll-free support"
 msgstr "24x7 ingyenesen-hívható támogatás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "2s"
 msgstr "2mp"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "3s"
 msgstr "3mp"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.403
+#: model_terms:ir.ui.view,arch_db:website.403
 msgid "403: Forbidden"
 msgstr "403: Tilos"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.404
+#: model_terms:ir.ui.view,arch_db:website.404
 msgid "404: Page not found!"
 msgstr "404: Oldal nem található!"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "5s"
 msgstr "5mp"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_picture
+#: model_terms:ir.ui.view,arch_db:website.s_big_picture
 msgid "<b>A Small Subtitle</b>"
 msgstr "<b>Egy kis alcím</b>"
 
@@ -193,7 +186,7 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_block
+#: model_terms:ir.ui.view,arch_db:website.s_text_block
 msgid ""
 "<b>Great stories are for everyone even when only written for\n"
 "                        just one person.</b> If you try to write with a wide general\n"
@@ -206,7 +199,7 @@ msgstr ""
 "                        Senkit sem fog érdekelni. Írja meg egy személynek. Ha ez érdekes az egyiknek, érdekes lesz a többieknek is."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_block
+#: model_terms:ir.ui.view,arch_db:website.s_text_block
 msgid ""
 "<b>Great stories have personality.</b> Consider telling\n"
 "                        a great story that provides personality. Writing a story\n"
@@ -233,97 +226,87 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.actions.act_window,help:website.action_module_theme
-msgid "<b>No theme module found!</b>"
-msgstr "<b>Nem talált téma modult!</b>"
-
-#. module: website
-#: model:ir.actions.act_window,help:website.action_module_website
-msgid "<b>No website module found!</b>"
-msgstr "<b>Nem talált weboldal modult!</b>"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "<b>Set Custom Image...</b>"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-arrows\"/>Background Image Sizing"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-arrows-h\"/>Images spacing"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-clock-o\"/>Scroll Speed"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-clock-o\"/>Slideshow speed"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippets
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
+msgid "<i class=\"fa fa-columns\"/>Number of columns"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.snippets
 msgid "<i class=\"fa fa-diamond\"/> Feature"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-expand\"/>Margin"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-eyedropper\"/>Background Color"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-eyedropper\"/>Overlay color"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-facebook\"/>Options"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippets
+#: model_terms:ir.ui.view,arch_db:website.snippets
 msgid "<i class=\"fa fa-indent\"/> Inner content"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippets
+#: model_terms:ir.ui.view,arch_db:website.snippets
 msgid "<i class=\"fa fa-magic icon-fix\"/> Effect"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-magic\"/>Mode"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-magnet\"/>Float"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-paint-brush\"/>Styling"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "<i class=\"fa fa-picture-o\"/>Background Image"
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
+msgid "<i class=\"fa fa-picture-o\"/>Choose Background Image"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.language_selector
+#: model_terms:ir.ui.view,arch_db:website.language_selector
 msgid ""
 "<i class=\"fa fa-plus-circle\"/>\n"
 "                Add a language..."
@@ -332,47 +315,47 @@ msgstr ""
 "                Adjon hozzá egy nyelvet..."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-plus-circle\"/>Add Slide"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-plus-circle\"/>Add images"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-refresh\"/>Re-order"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-th\"/>Columns"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippets
+#: model_terms:ir.ui.view,arch_db:website.snippets
 msgid "<i class=\"fa fa-th-large\"/> Structure"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "<i class=\"fa fa-th-large\"/> WEBSITE <b class=\"caret\"/>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-trash\"/>Remove all images"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "<i class=\"fa fa-trash-o\"/>Remove Slide"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "<i>Instant setup, satisfied or reimbursed.</i>"
 msgstr "<i>Azonnali beállítás, elégedett vagy kártalanítjuk.</i>"
 
@@ -386,7 +369,7 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_floating
+#: model_terms:ir.ui.view,arch_db:website.s_image_floating
 msgid ""
 "<small class=\"text-muted\">A great way to catch your reader's attention is "
 "to tell a story. Everything you consider writing can be told as a "
@@ -397,34 +380,34 @@ msgstr ""
 "történetként mesélje el.</small>"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_parallax_slider
+#: model_terms:ir.ui.view,arch_db:website.s_parallax_slider
 msgid "<small>Author of this quote</small>"
 msgstr "<small>Ennek az árajánlatnak a készítője</small>"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_parallax_slider
+#: model_terms:ir.ui.view,arch_db:website.s_parallax_slider
 msgid "<small>John Doe, CEO</small>"
 msgstr "<small>John Doe, CEO</small>"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid ""
 "<span class=\"caret\"/>\n"
 "                            <span class=\"sr-only\">Toggle Dropdown</span>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "<span class=\"fa fa-pencil\"/>Edit"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "<span class=\"fa fa-plus\"/>New"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_facebook_page
+#: model_terms:ir.ui.view,arch_db:website.s_facebook_page
 msgid ""
 "<span class=\"o_add_facebook_page\">\n"
 "                <i class=\"fa fa-plus-circle\"/> Add Facebook Page\n"
@@ -432,23 +415,14 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_gallery
+#: model_terms:ir.ui.view,arch_db:website.s_image_gallery
 msgid ""
 "<span class=\"o_add_images\" style=\"cursor: pointer;\"><i class=\"fa fa-"
 "plus-circle\"/> Add Images</span>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout
-msgid ""
-"<span class=\"sr-only\">Toggle navigation</span>\n"
-"                <span class=\"icon-bar\"/>\n"
-"                <span class=\"icon-bar\"/>\n"
-"                <span class=\"icon-bar\"/>"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid ""
 "<span/>\n"
 "                                <span class=\"css_publish\">Unpublished</span>\n"
@@ -456,67 +430,72 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "<span>$</span><b style=\"font-size: 60px\">125</b><small>.00</small>"
 msgstr "<span>$</span><b style=\"font-size: 60px\">125</b><small>.00</small>"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "<span>$</span><b style=\"font-size: 60px\">35</b><small>.00</small>"
 msgstr "<span>$</span><b style=\"font-size: 60px\">35</b><small>.00</small>"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "<span>$</span><b style=\"font-size: 60px\">65</b><small>.00</small>"
 msgstr "<span>$</span><b style=\"font-size: 60px\">65</b><small>.00</small>"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_button
+#: model_terms:ir.ui.view,arch_db:website.s_button
 msgid ""
 "<span>Contact Us Now</span>\n"
 "                        <i class=\"fa fa-chevron-right\"/>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_share
+#: model_terms:ir.ui.view,arch_db:website.layout_footer_copyright
+msgid "<span>Copyright &amp;copy;</span>"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_share
 msgid "<span>Share</span>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_button
+#: model_terms:ir.ui.view,arch_db:website.s_button
 msgid "<strong>50,000+ companies run Odoo to grow their businesses.</strong>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "<strong>Error message:</strong>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid ""
 "A CDN helps you serve your website’s content with high availability and high"
 " performance to any visitor wherever they are located."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_block
+#: model_terms:ir.ui.view,arch_db:website.s_text_block
 msgid "A Great Headline"
 msgstr "Egy kiváló címsor"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_picture
+#: model_terms:ir.ui.view,arch_db:website.s_big_picture
 msgid "A Punchy Headline"
 msgstr "Egy hatásos címsor"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_text
-#: model:ir.ui.view,arch_db:website.s_text_image
+#: model_terms:ir.ui.view,arch_db:website.s_image_text
+#: model_terms:ir.ui.view,arch_db:website.s_text_image
 msgid "A Section Subtitle"
 msgstr "Egy szakasz alcím"
 
 #. module: website
-#: model:ir.model.fields,help:website.field_ir_act_server_website_published
+#: model:ir.model.fields,help:website.field_ir_actions_server__website_published
 msgid ""
 "A code server action can be executed from the website, using a dedicated "
 "controller. The address is <base>/website/action/<website_path>. Set this "
@@ -529,58 +508,58 @@ msgstr ""
 "hamis-ra állított a művelet, akkor nem futtatható a honlapon keresztül."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_block
+#: model_terms:ir.ui.view,arch_db:website.s_text_block
 msgid "A good subtitle"
 msgstr "Egy jó alcím"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_block
+#: model_terms:ir.ui.view,arch_db:website.s_text_block
 msgid ""
 "A great way to catch your reader's attention is to tell a story.\n"
 "                        Everything you consider writing can be told as a story."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_features
+#: model_terms:ir.ui.view,arch_db:website.s_features
 msgid "A small explanation of this great<br/>feature, in clear words."
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_module_website_version
+#: model:ir.model.fields,field_description:website.field_res_config_settings__module_website_version
 msgid "A/B Testing"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "API Key"
 msgstr "API kulcs"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.aboutus
-#: model:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
-#: model:ir.ui.view,arch_db:website.footer_default
-#: model:website.page,arch_db:website.aboutus_page
+#: model_terms:ir.ui.view,arch_db:website.aboutus
+#: model_terms:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
+#: model_terms:website.page,arch_db:website.aboutus_page
 msgid "About us"
 msgstr "Rólunk"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Account &amp; Sales management"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_cdn_activated
+#: model:ir.model.fields,field_description:website.field_website__cdn_activated
 msgid "Activate CDN for assets"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_active
-#: model:ir.model.fields,field_description:website.field_website_redirect_active
+#: model:ir.model.fields,field_description:website.field_website_page__active
+#: model:ir.model.fields,field_description:website.field_website_redirect__active
 msgid "Active"
 msgstr "Aktív"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid ""
 "Adapt these three columns to fit you design need.\n"
 "                        To duplicate, delete or move columns, select the\n"
@@ -602,13 +581,13 @@ msgid "Add Menu Entry"
 msgstr "Menüelem hozzáadása"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Add a great slogan"
 msgstr "Egy jó szlogen hozzáadása"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/new_content.js:49
+#: code:addons/website/static/src/js/menu/new_content.js:50
 #, python-format
 msgid "Add page in menu"
 msgstr "Oldal hozzáadása a menühöz"
@@ -621,12 +600,12 @@ msgid "After having checked how it looks on mobile, <b>close the preview</b>."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid "Aline Turner, CTO"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid ""
 "Aline is one of the iconic person in life who can say she loves what she does.\n"
 "                                She mentors 100+ in-house developers and looks after the community of over\n"
@@ -634,7 +613,7 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid ""
 "All these icons are licensed under creative commons so that you can use "
 "them."
@@ -643,7 +622,7 @@ msgstr ""
 "őket."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid ""
 "Although this Website may be linked to other websites, we are not, directly or\n"
 "                                indirectly, implying any approval, association, sponsorship, endorsement, or\n"
@@ -651,12 +630,12 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "An error occured while rendering the template"
 msgstr "Hiba történt a sablon renderelése során"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid ""
 "Analyze the efficiency of your marketing campaigns by using trackable UTM "
 "trackers (campaigns, medium, sources). Create trackers and follow clicks "
@@ -666,22 +645,22 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_title
+#: model_terms:ir.ui.view,arch_db:website.s_title
 msgid "And a great subtitle too"
 msgstr "És egy kiváló alcím is"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "Apply"
 msgstr "Alkalmaz"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_arch_db
+#: model:ir.model.fields,field_description:website.field_website_page__arch_db
 msgid "Arch Blob"
 msgstr "Arch felugró"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_arch_fs
+#: model:ir.model.fields,field_description:website.field_website_page__arch_fs
 msgid "Arch Filename"
 msgstr "Arch fájlnév"
 
@@ -693,54 +672,49 @@ msgid "Are you sure you want to delete this page ?"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_ir_attachment_website_url
-msgid "Attachment URL"
-msgstr "Melléklet URL elérési útja"
-
-#. module: website
-#: model:ir.model.fields,field_description:website.field_website_auto_redirect_lang
+#: model:ir.model.fields,field_description:website.field_website__auto_redirect_lang
 msgid "Autoredirect Language"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_ir_act_server_website_published
+#: model:ir.model.fields,field_description:website.field_ir_actions_server__website_published
 msgid "Available on the Website"
 msgstr "Elérhető a honlapon"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "Back"
 msgstr "Vissza"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model:ir.model.fields,field_description:website.field_website_page__arch_base
+msgid "Base View Architecture"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Basic sales &amp; marketing for up to 2 users"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Beginner"
 msgstr "Kezdő"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Big"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "Building Profile"
-msgstr ""
-
-#. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_cdn_url
-#: model:ir.model.fields,field_description:website.field_website_cdn_url
+#: model:ir.model.fields,field_description:website.field_res_config_settings__cdn_url
+#: model:ir.model.fields,field_description:website.field_website__cdn_url
 msgid "CDN Base URL"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_cdn_filters
-#: model:ir.model.fields,field_description:website.field_website_cdn_filters
+#: model:ir.model.fields,field_description:website.field_res_config_settings__cdn_filters
+#: model:ir.model.fields,field_description:website.field_website__cdn_filters
 msgid "CDN Filters"
 msgstr ""
 
@@ -748,34 +722,35 @@ msgstr ""
 #. openerp-web
 #: code:addons/website/static/src/js/backend/dashboard.js:101
 #: code:addons/website/static/src/xml/website.xml:27
-#: model:ir.ui.view,arch_db:website.500
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 #, python-format
 msgid "Cancel"
 msgstr "Mégse"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Change Background"
 msgstr "Háttér megváltoztatása"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Change Icons"
 msgstr "Ikonok megváltoztatása"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_field_parent
+#: model:ir.model.fields,field_description:website.field_website_page__field_parent
 msgid "Child Field"
 msgstr "Gyermek elem mező"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_child_id
+#: model:ir.model.fields,field_description:website.field_website_menu__child_id
+#: model_terms:ir.ui.view,arch_db:website.website_menus_form_view
 msgid "Child Menus"
 msgstr "Almenük"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_picture
+#: model_terms:ir.ui.view,arch_db:website.s_big_picture
 msgid ""
 "Choose a vibrant image and write an inspiring paragraph\n"
 "                        about it. It does not have to be long, but it should\n"
@@ -783,37 +758,32 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Circle"
 msgstr "Kör"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "City"
-msgstr "Város"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Click on the icon to adapt it to your feature"
 msgstr "Kattintson az ikonra, hogy annak tulajdonságait magára szabja"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_banner
+#: model_terms:ir.ui.view,arch_db:website.s_banner
 msgid "Click to customize this text"
 msgstr "Kattintson ennek a szövegnek az egyedivé tételéhez"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Client ID"
 msgstr "Ügyfál ID azonosító"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Client Secret"
 msgstr "Ügyfél titok"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Clone this page"
 msgstr ""
 
@@ -830,17 +800,17 @@ msgid "Companies"
 msgstr "Vállalatok"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_company_id
+#: model:ir.model.fields,field_description:website.field_website__company_id
 msgid "Company"
 msgstr "Vállalat"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout_footer_copyright
+#: model_terms:ir.ui.view,arch_db:website.layout_footer_copyright
 msgid "Company name"
 msgstr "Cégnév"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Complete CRM for any size team"
 msgstr ""
 
@@ -857,7 +827,7 @@ msgid "Confirmation"
 msgstr "Megerősítés"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.footer_default
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
 msgid "Connect with us"
 msgstr "Kapcsolatfelvétel"
 
@@ -867,110 +837,110 @@ msgid "Contact"
 msgstr "Kapcsolat"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.403 model:ir.ui.view,arch_db:website.404
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.403 model_terms:ir.ui.view,arch_db:website.404
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Contact Us"
 msgstr "Vegye fel a kapcsolatot velünk"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.contactus
-#: model:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
-#: model:ir.ui.view,arch_db:website.footer_default
-#: model:ir.ui.view,arch_db:website.s_banner
-#: model:ir.ui.view,arch_db:website.s_big_message
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.contactus
+#: model_terms:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
+#: model_terms:ir.ui.view,arch_db:website.s_banner
+#: model_terms:ir.ui.view,arch_db:website.s_big_message
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 #: model:website.menu,name:website.menu_contactus
-#: model:website.page,arch_db:website.contactus_page
+#: model_terms:website.page,arch_db:website.contactus_page
 msgid "Contact us"
 msgstr "Lépjen velünk kapcsolatba"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.contactus
-#: model:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
-#: model:website.page,arch_db:website.contactus_page
+#: model_terms:ir.ui.view,arch_db:website.contactus
+#: model_terms:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.contactus_page
 msgid "Contact us about anything related to our company or services."
 msgstr ""
 "Lépjen kapcsolatba velünk, ha bármilyen kérdése van a cégünkről vagy "
 "szolgáltatásainkról."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_picture
+#: model_terms:ir.ui.view,arch_db:website.s_big_picture
 msgid "Contact us »"
 msgstr "Kapcsolatfelvétel »"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Content"
 msgstr "Tartalom"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Content Delivery Network (CDN)"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:392
+#: code:addons/website/static/src/js/menu/content.js:424
 #: code:addons/website/static/src/xml/website.xml:26
 #, python-format
 msgid "Continue"
 msgstr "Folytatás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout_footer_copyright
-msgid "Copyright &amp;copy;"
-msgstr ""
-
-#. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:332
+#: code:addons/website/static/src/js/menu/content.js:366
 #, python-format
 msgid "Create Menu"
 msgstr "Menü létrehozás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.page_404
+#: model_terms:ir.ui.view,arch_db:website.page_404
 msgid "Create Page"
 msgstr "Oldal készítése"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.brand_promotion
+msgid "Create a"
+msgstr "Hozz létre egy"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Create a Google Project and Get a Key"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Create several versions of your website pages"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_create_uid
-#: model:ir.model.fields,field_description:website.field_website_menu_create_uid
-#: model:ir.model.fields,field_description:website.field_website_page_create_uid
-#: model:ir.model.fields,field_description:website.field_website_redirect_create_uid
+#: model:ir.model.fields,field_description:website.field_website__create_uid
+#: model:ir.model.fields,field_description:website.field_website_menu__create_uid
+#: model:ir.model.fields,field_description:website.field_website_page__create_uid
+#: model:ir.model.fields,field_description:website.field_website_redirect__create_uid
 msgid "Created by"
 msgstr "Készítette"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_create_date
-#: model:ir.model.fields,field_description:website.field_website_menu_create_date
-#: model:ir.model.fields,field_description:website.field_website_page_create_date
-#: model:ir.model.fields,field_description:website.field_website_redirect_create_date
+#: model:ir.model.fields,field_description:website.field_website__create_date
+#: model:ir.model.fields,field_description:website.field_website_menu__create_date
+#: model:ir.model.fields,field_description:website.field_website_page__create_date
+#: model:ir.model.fields,field_description:website.field_website_redirect__create_date
 msgid "Created on"
 msgstr "Létrehozás dátuma"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "Cubes"
+#: model:ir.model.fields,field_description:website.field_res_config_settings__auth_signup_uninvited
+msgid "Customer Account"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Customize"
 msgstr "Testreszabás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Customize Theme"
 msgstr "Téma testreszabása"
 
@@ -986,34 +956,41 @@ msgstr ""
 "hírdetés hátterét."
 
 #. module: website
+#. openerp-web
+#: code:addons/website/static/src/js/menu/edit.js:75
+#, python-format
+msgid "DRAG BUILDING BLOCKS HERE"
+msgstr ""
+
+#. module: website
 #: model:ir.actions.client,name:website.backend_dashboard
 #: model:ir.ui.menu,name:website.menu_dashboard
 msgid "Dashboard"
 msgstr "Műszerfal"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Default"
 msgstr "Alapértelmezett"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Default Access Rights"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_default_lang_id
+#: model:ir.model.fields,field_description:website.field_website__default_lang_id
 msgid "Default Language"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_default_lang_id
+#: model:ir.model.fields,field_description:website.field_res_config_settings__website_default_lang_id
 msgid "Default language"
 msgstr "Alapértelmezett nyelv"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_default_lang_code
-#: model:ir.model.fields,field_description:website.field_website_default_lang_code
+#: model:ir.model.fields,field_description:website.field_res_config_settings__website_default_lang_code
+#: model:ir.model.fields,field_description:website.field_website__default_lang_code
 msgid "Default language code"
 msgstr "Alapértelmezett nyelv kódja"
 
@@ -1025,19 +1002,20 @@ msgid "Define Keywords"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Delete Blocks"
 msgstr "Blokk törlése"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:750
+#: code:addons/website/static/src/js/menu/content.js:59
+#: code:addons/website/static/src/js/menu/content.js:797
 #, python-format
 msgid "Delete Page"
 msgstr "Oldal Törlése"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid ""
 "Delete the above image or replace it with a picture\n"
 "                        that illustrates your message. Click on the picture to\n"
@@ -1045,19 +1023,19 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Delete this page"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_references
+#: model_terms:ir.ui.view,arch_db:website.s_references
 msgid "Demo Logo"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:23
-#: code:addons/website/static/src/xml/website.pageProperties.xml:32
+#: code:addons/website/static/src/xml/website.pageProperties.xml:27
+#: code:addons/website/static/src/xml/website.pageProperties.xml:36
 #, python-format
 msgid "Dependencies"
 msgstr "Függőségek"
@@ -1070,7 +1048,7 @@ msgid "Description"
 msgstr "Leírás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Disable autoplay"
 msgstr ""
 
@@ -1083,29 +1061,29 @@ msgid "Discard"
 msgstr "Elvetés"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.external_snippets
+#: model_terms:ir.ui.view,arch_db:website.external_snippets
 msgid "Discussion Group"
 msgstr "Megbeszélés csoport"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_display_name
-#: model:ir.model.fields,field_description:website.field_website_menu_display_name
-#: model:ir.model.fields,field_description:website.field_website_page_display_name
-#: model:ir.model.fields,field_description:website.field_website_published_mixin_display_name
-#: model:ir.model.fields,field_description:website.field_website_redirect_display_name
-#: model:ir.model.fields,field_description:website.field_website_seo_metadata_display_name
+#: model:ir.model.fields,field_description:website.field_website__display_name
+#: model:ir.model.fields,field_description:website.field_website_menu__display_name
+#: model:ir.model.fields,field_description:website.field_website_page__display_name
+#: model:ir.model.fields,field_description:website.field_website_published_mixin__display_name
+#: model:ir.model.fields,field_description:website.field_website_redirect__display_name
+#: model:ir.model.fields,field_description:website.field_website_seo_metadata__display_name
 msgid "Display Name"
 msgstr "Megjelenített név"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/editor/snippets.options.js:89
+#: code:addons/website/static/src/js/editor/snippets.options.js:90
 #, python-format
 msgid "Do you want to edit the company data ?"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "Domain"
 msgstr "Tartomány"
 
@@ -1114,11 +1092,6 @@ msgstr "Tartomány"
 #: code:addons/website/static/src/xml/website.xml:35
 #, python-format
 msgid "Don't forget to update all links referring to this page."
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "Downtown"
 msgstr ""
 
 #. module: website
@@ -1143,41 +1116,41 @@ msgid "Drag the <i>Cover</i> block and drop it in your page."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Duplicate"
 msgstr "Többszörözés"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Duplicate blocks to add more features."
 msgstr "Blokkok duplikálása, több jellemző hozzáadásához."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.publish_management
+#: model_terms:ir.ui.view,arch_db:website.publish_management
 msgid "Edit"
 msgstr "Szerkesztés"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:421
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: code:addons/website/static/src/js/menu/content.js:453
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 #, python-format
 msgid "Edit Menu"
 msgstr "Menü szerkesztése"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Edit Top Menu"
 msgstr "Főmenü szerkesztése"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Edit code in backend"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.publish_management
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.publish_management
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Edit in backend"
 msgstr "Szerkesztés ablakban"
 
@@ -1189,7 +1162,7 @@ msgid "Edit my Analytics Client ID"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.page_404
+#: model_terms:ir.ui.view,arch_db:website.page_404
 msgid ""
 "Edit the content below this line to adapt the default \"page not found\" "
 "page."
@@ -1210,17 +1183,17 @@ msgid "Editor and Designer"
 msgstr "Szerkesztő és tervező"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Email support"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Enterprise package"
 msgstr "Vállalatai csomag"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "Error"
 msgstr "Hiba"
 
@@ -1232,19 +1205,12 @@ msgid "Events"
 msgstr "Rendezvények"
 
 #. module: website
-#. openerp-web
-#: code:addons/website/static/src/xml/website.contentMenu.xml:61
-#, python-format
-msgid "Existing Page, URL or Email"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Expert"
 msgstr "Szakértő"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_well
+#: model_terms:ir.ui.view,arch_db:website.s_well
 msgid ""
 "Explain the benefits you offer. Don't write about products or\n"
 "            services here, write about solutions."
@@ -1253,74 +1219,81 @@ msgstr ""
 "             a szolgáltatásokról itt, írjon a megoldásokról."
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_xml_id
+#: model:ir.model.fields,field_description:website.field_ir_actions_server__xml_id
+#: model:ir.model.fields,field_description:website.field_website_page__xml_id
 msgid "External ID"
 msgstr "Külső azonosító"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Extra-Large"
 msgstr "Extra nagy"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_social_facebook
+#: model:ir.model.fields,field_description:website.field_website__social_facebook
 msgid "Facebook Account"
 msgstr "Facebook fiók"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/editor/snippets.options.js:411
+#: code:addons/website/static/src/js/editor/snippets.options.js:493
 #, python-format
 msgid "Facebook Page"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Fast"
 msgstr "Gyors"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_favicon
+#: model:ir.model.fields,field_description:website.field_res_config_settings__favicon
 msgid "Favicon"
 msgstr "Favicon - Kedvenc ikon"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid "Feature One"
 msgstr "Jellemző egy"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid "Feature Three"
 msgstr "Jellemző három"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_panel
+#: model_terms:ir.ui.view,arch_db:website.s_panel
 msgid "Feature Title"
 msgstr "Jellemző címe"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid "Feature Two"
 msgstr "Jellemző kettő"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_features
+#: model_terms:ir.ui.view,arch_db:website.s_features
 msgid "First Feature"
 msgstr "Első jellemző"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model:ir.model.fields,help:website.field_ir_ui_view__first_page_id
+#: model:ir.model.fields,help:website.field_website_page__first_page_id
+msgid "First page linked to this view"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Fixed"
 msgstr "Állandó"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Float"
 msgstr "Lebegőpontos"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Folded list"
 msgstr "Összecsukott lista"
 
@@ -1332,7 +1305,7 @@ msgid "Follow all the"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid ""
 "Founder and chief visionary, Tony is the driving force behind Company. He loves\n"
 "                                to keep his hands full by participating in the development of the software,\n"
@@ -1340,7 +1313,12 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: selection:res.config.settings,auth_signup_uninvited:0
+msgid "Free sign up (B2C)"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid ""
 "From the main container, you can change the background to highlight "
 "features."
@@ -1349,17 +1327,17 @@ msgstr ""
 "jellemzőket."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid "General Terms and Conditions / Service Policies"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Get access to all modules"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Get access to all modules and features"
 msgstr ""
 
@@ -1373,7 +1351,7 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_social_github
+#: model:ir.model.fields,field_description:website.field_website__social_github
 msgid "GitHub Account"
 msgstr "GitHub fiók"
 
@@ -1392,13 +1370,13 @@ msgid "Go to Link"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_view_form_extend
+#: model_terms:ir.ui.view,arch_db:website.view_view_form_extend
 msgid "Go to Page Manager"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.backend.xml:92
+#: code:addons/website/static/src/xml/website.backend.xml:93
 #, python-format
 msgid "Go to Website"
 msgstr ""
@@ -1415,19 +1393,19 @@ msgstr ""
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/js/backend/dashboard.js:84
-#: model:ir.model.fields,field_description:website.field_res_config_settings_has_google_analytics
+#: model:ir.model.fields,field_description:website.field_res_config_settings__has_google_analytics
 #, python-format
 msgid "Google Analytics"
 msgstr "Google Analytics - elemzések"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_google_analytics_key
-#: model:ir.model.fields,field_description:website.field_website_google_analytics_key
+#: model:ir.model.fields,field_description:website.field_res_config_settings__google_analytics_key
+#: model:ir.model.fields,field_description:website.field_website__google_analytics_key
 msgid "Google Analytics Key"
 msgstr "Google Analytics kulcs"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_has_google_analytics_dashboard
+#: model:ir.model.fields,field_description:website.field_res_config_settings__has_google_analytics_dashboard
 msgid "Google Analytics in Dashboard"
 msgstr ""
 
@@ -1441,62 +1419,63 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_google_management_client_id
-#: model:ir.model.fields,field_description:website.field_website_google_management_client_id
+#: model:ir.model.fields,field_description:website.field_res_config_settings__google_management_client_id
+#: model:ir.model.fields,field_description:website.field_website__google_management_client_id
 msgid "Google Client ID"
 msgstr "Google Ügyfél ID"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_google_management_client_secret
-#: model:ir.model.fields,field_description:website.field_website_google_management_client_secret
+#: model:ir.model.fields,field_description:website.field_res_config_settings__google_management_client_secret
+#: model:ir.model.fields,field_description:website.field_website__google_management_client_secret
 msgid "Google Client Secret"
 msgstr "Google Ügyfél titkosítás"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_has_google_maps
-#: model:ir.ui.view,arch_db:website.company_description
+#: model:ir.model.fields,field_description:website.field_res_config_settings__has_google_maps
+#: model_terms:ir.ui.view,arch_db:website.company_description
 msgid "Google Maps"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_google_maps_api_key
+#: model:ir.model.fields,field_description:website.field_res_config_settings__google_maps_api_key
 msgid "Google Maps API Key"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_social_googleplus
+#: model:ir.model.fields,field_description:website.field_website__social_googleplus
 msgid "Google+ Account"
 msgstr "Google+ fiók"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Great Value"
 msgstr "Alapértelmezés szerinti érték"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.aboutus
-#: model:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
-#: model:website.page,arch_db:website.aboutus_page
+#: model_terms:ir.ui.view,arch_db:website.aboutus
+#: model_terms:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.aboutus_page
 msgid "Great products for great people"
 msgstr "Nagyszerű termékek nagyszerű embereknek"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Grid"
 msgstr "Tarifatáblázat"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.menu_search
+#: model_terms:ir.ui.view,arch_db:website.menu_search
+#: model_terms:ir.ui.view,arch_db:website.view_redirect_search
 msgid "Group By"
 msgstr "Csoportosítás"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_groups_id
+#: model:ir.model.fields,field_description:website.field_website_page__groups_id
 msgid "Groups"
 msgstr "Csoportok"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "HTML/CSS Editor"
 msgstr ""
 
@@ -1506,7 +1485,7 @@ msgid "HTTP routing"
 msgstr "HTTP útválasztás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_cover
+#: model_terms:ir.ui.view,arch_db:website.s_cover
 msgid "Headline"
 msgstr ""
 
@@ -1519,14 +1498,21 @@ msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:110
+#: code:addons/website/static/src/xml/website.pageProperties.xml:114
 #, python-format
 msgid "Hide this page from search results"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
-#: model:ir.ui.view,arch_db:website.footer_default
+#. openerp-web
+#: code:addons/website/static/src/xml/website.contentMenu.xml:54
+#, python-format
+msgid "Hint: Simply type '#' to create a container menu"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
 #: model:website.menu,name:website.menu_homepage
 msgid "Home"
 msgstr "Kezdőlap"
@@ -1534,10 +1520,9 @@ msgstr "Kezdőlap"
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.editor.xml:4
-#: model:ir.model.fields,field_description:website.field_website_homepage_id
-#: model:ir.model.fields,field_description:website.field_website_page_is_homepage
-#: model:ir.ui.view,arch_db:website.403 model:ir.ui.view,arch_db:website.404
-#: model:ir.ui.view,arch_db:website.footer_custom
+#: model:ir.model.fields,field_description:website.field_website__homepage_id
+#: model:ir.model.fields,field_description:website.field_website_page__is_homepage
+#: model_terms:ir.ui.view,arch_db:website.403 model_terms:ir.ui.view,arch_db:website.404
 #, python-format
 msgid "Homepage"
 msgstr "Honlap"
@@ -1545,7 +1530,7 @@ msgstr "Honlap"
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.backend.xml:58
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 #, python-format
 msgid "How to get my Client ID"
 msgstr ""
@@ -1553,28 +1538,33 @@ msgstr ""
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.backend.xml:53
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 #, python-format
 msgid "How to get my Tracking ID"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_id
-#: model:ir.model.fields,field_description:website.field_website_menu_id_7378
-#: model:ir.model.fields,field_description:website.field_website_page_id
-#: model:ir.model.fields,field_description:website.field_website_published_mixin_id
-#: model:ir.model.fields,field_description:website.field_website_redirect_id
-#: model:ir.model.fields,field_description:website.field_website_seo_metadata_id
+#: model:ir.model.fields,field_description:website.field_website__id
+#: model:ir.model.fields,field_description:website.field_website_menu__id
+#: model:ir.model.fields,field_description:website.field_website_page__id
+#: model:ir.model.fields,field_description:website.field_website_published_mixin__id
+#: model:ir.model.fields,field_description:website.field_website_redirect__id
+#: model:ir.model.fields,field_description:website.field_website_seo_metadata__id
 msgid "ID"
 msgstr "Azonosító ID"
 
 #. module: website
-#: model:ir.model.fields,help:website.field_website_page_xml_id
+#: model:ir.model.fields,help:website.field_ir_actions_server__xml_id
+msgid "ID of the action if defined in a XML file"
+msgstr "Az akció azonosítója ha, meg van határozva az XML fájlban"
+
+#. module: website
+#: model:ir.model.fields,help:website.field_website_page__xml_id
 msgid "ID of the view defined in xml file"
 msgstr "Az xml fájlban meghatározott nézet azonosítója"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid ""
 "If this error is caused by a change of yours in the templates, you have the "
 "possibility to reset one or more templates to their <strong>factory "
@@ -1582,7 +1572,7 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,help:website.field_website_page_groups_id
+#: model:ir.model.fields,help:website.field_website_page__groups_id
 msgid ""
 "If this field is empty, the view applies to all users. Otherwise, the view "
 "applies to the users of those groups only."
@@ -1591,7 +1581,7 @@ msgstr ""
 "Egyébként, csak arra a kijelölt csoport felhasználóra vonatkozik a nézet."
 
 #. module: website
-#: model:ir.model.fields,help:website.field_website_page_active
+#: model:ir.model.fields,help:website.field_website_page__active
 msgid ""
 "If this view is inherited,\n"
 "* if True, the view always extends its parent\n"
@@ -1626,19 +1616,19 @@ msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:108
-#: model:ir.ui.view,arch_db:website.index_management
+#: code:addons/website/static/src/xml/website.pageProperties.xml:112
+#: model_terms:ir.ui.view,arch_db:website.index_management
 #, python-format
 msgid "Indexed"
 msgstr "Indexált"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Information about the"
 msgstr "Információ a"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_inherit_id
+#: model:ir.model.fields,field_description:website.field_website_page__inherit_id
 msgid "Inherited View"
 msgstr "Örökölt nézet"
 
@@ -1648,17 +1638,17 @@ msgid "Install Language"
 msgstr "Nyelv telepítése"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Install new language"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Installed Applications"
 msgstr "Telepített alkalmazások"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Installed Modules"
 msgstr "Telepített Modulok"
 
@@ -1670,12 +1660,12 @@ msgid "Invalid Facebook Page Url"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid "Iris Joe, CFO"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid ""
 "Iris, with her international experience, helps us easily understand the numbers and\n"
 "                                improves them. She is determined to drive success and delivers her professional\n"
@@ -1683,13 +1673,14 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_is_visible
+#: model:ir.model.fields,field_description:website.field_website_menu__is_visible
+#: model:ir.model.fields,field_description:website.field_website_page__is_visible
 msgid "Is Visible"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:19
+#: code:addons/website/static/src/xml/website.pageProperties.xml:23
 #, python-format
 msgid "It looks like your file is being called by"
 msgstr ""
@@ -1704,12 +1695,12 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_button
+#: model_terms:ir.ui.view,arch_db:website.s_button
 msgid "Join us and make your company a better place."
 msgstr "Csatlakozzon hozzánk, és tegye a cégét egy jobb hellyé."
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_key
+#: model:ir.model.fields,field_description:website.field_website_page__key
 msgid "Key"
 msgstr "Kulcs"
 
@@ -1721,70 +1712,70 @@ msgid "Keyword"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_language_ids
-#: model:ir.model.fields,field_description:website.field_website_language_ids
+#: model:ir.model.fields,field_description:website.field_res_config_settings__language_ids
+#: model:ir.model.fields,field_description:website.field_website__language_ids
 msgid "Languages"
 msgstr "Nyelvek"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Languages available on your website"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Large"
 msgstr "Nagy"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website___last_update
-#: model:ir.model.fields,field_description:website.field_website_menu___last_update
-#: model:ir.model.fields,field_description:website.field_website_page___last_update
-#: model:ir.model.fields,field_description:website.field_website_published_mixin___last_update
-#: model:ir.model.fields,field_description:website.field_website_redirect___last_update
-#: model:ir.model.fields,field_description:website.field_website_seo_metadata___last_update
+#: model:ir.model.fields,field_description:website.field_website____last_update
+#: model:ir.model.fields,field_description:website.field_website_menu____last_update
+#: model:ir.model.fields,field_description:website.field_website_page____last_update
+#: model:ir.model.fields,field_description:website.field_website_published_mixin____last_update
+#: model:ir.model.fields,field_description:website.field_website_redirect____last_update
+#: model:ir.model.fields,field_description:website.field_website_seo_metadata____last_update
 msgid "Last Modified on"
 msgstr "Utoljára frissítve ekkor"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.backend.xml:66
+#: code:addons/website/static/src/xml/website.backend.xml:67
 #, python-format
 msgid "Last Month"
 msgstr "Előző hónap"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_write_uid
-#: model:ir.model.fields,field_description:website.field_website_page_write_uid
-#: model:ir.model.fields,field_description:website.field_website_redirect_write_uid
-#: model:ir.model.fields,field_description:website.field_website_write_uid
+#: model:ir.model.fields,field_description:website.field_website__write_uid
+#: model:ir.model.fields,field_description:website.field_website_menu__write_uid
+#: model:ir.model.fields,field_description:website.field_website_page__write_uid
+#: model:ir.model.fields,field_description:website.field_website_redirect__write_uid
 msgid "Last Updated by"
 msgstr "Utoljára frissítette"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_write_date
-#: model:ir.model.fields,field_description:website.field_website_page_write_date
-#: model:ir.model.fields,field_description:website.field_website_redirect_write_date
-#: model:ir.model.fields,field_description:website.field_website_write_date
+#: model:ir.model.fields,field_description:website.field_website__write_date
+#: model:ir.model.fields,field_description:website.field_website_menu__write_date
+#: model:ir.model.fields,field_description:website.field_website_page__write_date
+#: model:ir.model.fields,field_description:website.field_website_redirect__write_date
 msgid "Last Updated on"
 msgstr "Utoljára frissítve "
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.backend.xml:65
+#: code:addons/website/static/src/xml/website.backend.xml:66
 #, python-format
 msgid "Last Week"
 msgstr "Előző hét"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.backend.xml:67
+#: code:addons/website/static/src/xml/website.backend.xml:68
 #, python-format
 msgid "Last Year"
 msgstr "Utolsó év"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Left"
 msgstr "Bal"
 
@@ -1796,7 +1787,7 @@ msgid "Legend:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Let your customers log in to see their documents"
 msgstr ""
 
@@ -1808,19 +1799,12 @@ msgid "Let's start designing."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Limited customization"
 msgstr ""
 
 #. module: website
-#. openerp-web
-#: code:addons/website/static/src/xml/website.contentMenu.xml:55
-#, python-format
-msgid "Link"
-msgstr "Hivatkozás"
-
-#. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_module_website_links
+#: model:ir.model.fields,field_description:website.field_res_config_settings__module_website_links
 msgid "Link Trackers"
 msgstr ""
 
@@ -1832,17 +1816,17 @@ msgid "Link my Analytics Account"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_social_linkedin
+#: model:ir.model.fields,field_description:website.field_website__social_linkedin
 msgid "LinkedIn Account"
 msgstr "LinkedIn fiók"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid "Links to other websites"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "List of Features"
 msgstr "Jellemzők listája"
 
@@ -1854,71 +1838,72 @@ msgid "Loading..."
 msgstr "Betöltés…"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.external_snippets
+#: model_terms:ir.ui.view,arch_db:website.external_snippets
 msgid "Local Events"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_id
+#: model:ir.model.fields,field_description:website.field_website__menu_id
 msgid "Main Menu"
 msgstr "Főmenü"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Manage Pages"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Manage Your Pages"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Manage Your Website Pages"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Manage this page"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Masonry"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.403 model:ir.ui.view,arch_db:website.404
+#: model_terms:ir.ui.view,arch_db:website.403 model_terms:ir.ui.view,arch_db:website.404
 msgid "Maybe you were looking for one of these popular pages ?"
 msgstr "Talán ezekből a népszerű oldalakból keresett egyet?"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Medium"
 msgstr "Közepes"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid "Meet the Executive Team"
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:241
-#: model:ir.model.fields,field_description:website.field_website_menu_name
+#: code:addons/website/models/website.py:249
+#: model:ir.model.fields,field_description:website.field_website_menu__name
 #, python-format
 msgid "Menu"
 msgstr "Menü"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:342
+#: code:addons/website/static/src/js/menu/content.js:380
 #, python-format
 msgid "Menu Label"
 msgstr "Menüelem címkéje"
 
 #. module: website
-#: code:addons/website/models/website.py:243
+#: code:addons/website/models/website.py:251
+#: model:ir.ui.menu,name:website.menu_website_menu_list
 #, python-format
 msgid "Menus"
 msgstr "Menük"
@@ -1931,12 +1916,12 @@ msgid "Messages"
 msgstr "Üzenetek"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid "Mich Stark, COO"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid ""
 "Mich loves taking on challenges. With his multi-year experience as Commercial\n"
 "                                Director in the software industry, Mich has helped Company to get where it\n"
@@ -1951,15 +1936,19 @@ msgid "Mobile preview"
 msgstr "Mobil előnézet"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_model
-#: model:ir.model.fields,field_description:website.field_website_page_model_ids
+#: model:ir.model.fields,field_description:website.field_website_page__model
 msgid "Model"
 msgstr "Modell"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_model_data_id
+#: model:ir.model.fields,field_description:website.field_website_page__model_data_id
 msgid "Model Data"
 msgstr "Modell adat"
+
+#. module: website
+#: model:ir.model.fields,field_description:website.field_website_page__model_ids
+msgid "Models"
+msgstr "Modellek"
 
 #. module: website
 #. openerp-web
@@ -1970,95 +1959,100 @@ msgstr ""
 "A kulcsszavához kapcsolódó legkeresettebb témák, fontosság szerint rendezve:"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Move to first"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Move to last"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Move to next"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Move to previous"
 msgstr ""
 
 #. module: website
 #: selection:website.redirect,type:0
-msgid "Moved permanently"
+msgid "Moved permanently (301)"
 msgstr ""
 
 #. module: website
 #: selection:website.redirect,type:0
-msgid "Moved temporarily"
+msgid "Moved temporarily (302)"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout
+#: model_terms:ir.ui.view,arch_db:website.layout
 msgid "My Website"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:40
-#: model:ir.ui.view,arch_db:website.edit_website_pages
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: code:addons/website/static/src/xml/website.pageProperties.xml:44
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 #, python-format
 msgid "Name"
 msgstr "Név"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Name and favicon of your website"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/new_content.js:41
-#: code:addons/website/static/src/xml/website.contentMenu.xml:58
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: code:addons/website/static/src/js/menu/new_content.js:42
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 #, python-format
 msgid "New Page"
 msgstr "Új oldal"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_new_window
+#: model:ir.model.fields,field_description:website.field_website_menu__new_window
 msgid "New Window"
 msgstr "Új Ablak"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.external_snippets
+#: model_terms:ir.ui.view,arch_db:website.external_snippets
 msgid "Newsletter"
 msgstr "Hírlevél"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.kanban_contain
+#: model_terms:ir.ui.view,arch_db:website.kanban_contain
 msgid "Next"
 msgstr "Következő"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "No customization"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "No support"
 msgstr "Nincs támogatás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.actions.act_window,help:website.action_module_theme
+#: model_terms:ir.actions.act_window,help:website.action_module_website
+msgid "No website module found!"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "No-scroll"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "None"
 msgstr "Egyik sem"
 
@@ -2070,66 +2064,66 @@ msgid "Not used"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Note: To hide this page, uncheck it from the top Customize menu."
 msgstr ""
 "Megjegyzés: ennek az oldalnak az elrejtéséhez, törölje a kijelölést a felső,"
 " Egyediesítés menüben."
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_language_count
+#: model:ir.model.fields,field_description:website.field_res_config_settings__language_count
 msgid "Number of languages"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout_footer_copyright
+#: model_terms:ir.ui.view,arch_db:website.brand_promotion
 msgid "Odoo"
 msgstr "Odoo"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid "Odoo - Sample 1 for three columns"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid "Odoo - Sample 2 for three columns"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid "Odoo - Sample 3 for three columns"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_picture
+#: model_terms:ir.ui.view,arch_db:website.s_big_picture
 msgid "Odoo CMS - a big picture"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_floating
+#: model_terms:ir.ui.view,arch_db:website.s_image_floating
 msgid "Odoo CMS- Sample image floating"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Odoo Version"
 msgstr "Odoo változat"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_text
+#: model_terms:ir.ui.view,arch_db:website.s_image_text
 msgid "Odoo image and text block"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_parallax_slider
+#: model_terms:ir.ui.view,arch_db:website.s_parallax_slider
 msgid ""
 "Odoo provides essential platform for our project management.\n"
 "                                                Things are better organized and more visible with it."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_image
+#: model_terms:ir.ui.view,arch_db:website.s_text_image
 msgid "Odoo text and image block"
 msgstr ""
 
@@ -2141,7 +2135,12 @@ msgid "On Website"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,help:website.field_website_page_mode
+#: selection:res.config.settings,auth_signup_uninvited:0
+msgid "On invitation (B2B)"
+msgstr ""
+
+#. module: website
+#: model:ir.model.fields,help:website.field_website_page__mode
 msgid ""
 "Only applies if this view inherits from an other one (inherit_id is not False/Null).\n"
 "\n"
@@ -2163,17 +2162,12 @@ msgstr ""
 "fogja felhasználni.\n"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Open Source ERP"
 msgstr "Nyílt forrású ERP"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout_footer_copyright
-msgid "Open Source eCommerce"
-msgstr "Nyílt forrású e-kereskedelem"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Optimize SEO"
 msgstr ""
 
@@ -2185,100 +2179,98 @@ msgid "Options"
 msgstr "Opciók"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Order now"
 msgstr "Rendelje meg most"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "Other Info"
 msgstr "Egyéb információ"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Our Offers"
 msgstr "Ajánlataink"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.footer_default
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
 msgid "Our Products &amp; Services"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_references
+#: model_terms:ir.ui.view,arch_db:website.s_references
 msgid "Our References"
 msgstr "Referenciáink"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.aboutus
-#: model:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
-#: model:website.page,arch_db:website.aboutus_page
+#: model_terms:ir.ui.view,arch_db:website.aboutus
+#: model_terms:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.aboutus_page
 msgid "Our Team"
 msgstr "Csoportunk"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.aboutus
-#: model:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
-#: model:website.page,arch_db:website.aboutus_page
+#: model_terms:ir.ui.view,arch_db:website.aboutus
+#: model_terms:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.aboutus_page
 msgid ""
 "Our products are designed for small to medium size companies willing to optimize\n"
 "                                                      their performance."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.footer_default
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
 msgid ""
 "Our products are designed for small to medium size companies willing to optimize\n"
-"                            their performance."
+"                                their performance."
 msgstr ""
-"Termékeinket azon kis és közepes méretű vállalatoknak terveztük, akik hajlandóak\n"
-"                               optimalizálni  a teljesítményüket."
 
 #. module: website
-#: code:addons/website/models/website.py:206
-#: code:addons/website/models/website.py:275
+#: code:addons/website/models/website.py:214
+#: code:addons/website/models/website.py:283
 #: model:ir.model,name:website.model_website_page
-#: model:ir.model.fields,field_description:website.field_ir_ui_view_page_ids
-#: model:ir.model.fields,field_description:website.field_website_page_page_ids
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__page_ids
+#: model:ir.model.fields,field_description:website.field_website_page__page_ids
 #, python-format
 msgid "Page"
 msgstr "Oldal"
 
 #. module: website
-#: code:addons/website/models/website.py:213
+#: code:addons/website/models/website.py:221
 #, python-format
 msgid "Page <b>%s</b> contains a link to this page"
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:282
+#: code:addons/website/models/website.py:290
 #, python-format
 msgid "Page <b>%s</b> is calling this file"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_website_indexed
+#: model:ir.model.fields,field_description:website.field_website_page__website_indexed
 msgid "Page Indexed"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:46
+#: code:addons/website/static/src/xml/website.pageProperties.xml:50
 #, python-format
 msgid "Page Name"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:59
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: code:addons/website/static/src/js/menu/content.js:67
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 #, python-format
 msgid "Page Properties"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/new_content.js:42
+#: code:addons/website/static/src/js/menu/new_content.js:43
 #: code:addons/website/static/src/xml/website.seo.xml:14
 #, python-format
 msgid "Page Title"
@@ -2287,27 +2279,22 @@ msgstr "Oldalcím"
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.facebook_page.xml:7
-#: code:addons/website/static/src/xml/website.pageProperties.xml:53
-#: model:ir.model.fields,field_description:website.field_website_page_url
+#: code:addons/website/static/src/xml/website.pageProperties.xml:57
+#: model:ir.model.fields,field_description:website.field_website_page__url
 #, python-format
 msgid "Page URL"
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:208
-#: code:addons/website/models/website.py:277
+#: code:addons/website/models/website.py:216
+#: code:addons/website/models/website.py:285
 #: model:ir.ui.menu,name:website.menu_website_pages_list
 #, python-format
 msgid "Pages"
 msgstr "Oldalak"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "Panama Sky"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.s_panel
+#: model_terms:ir.ui.view,arch_db:website.s_panel
 msgid ""
 "Panels are a great tool to compare offers or to emphasize on\n"
 "                key features. To compare products, use the inside columns."
@@ -2316,34 +2303,19 @@ msgstr ""
 "                 legfontosabb jellemzőket. A termékek összehasonlításához, használja a belső oszlopokat."
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_parent_left
-msgid "Parent Left"
-msgstr "Bal szülő"
-
-#. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_parent_id
+#: model:ir.model.fields,field_description:website.field_website_menu__parent_id
 msgid "Parent Menu"
 msgstr "Szülő menü"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_parent_right
-msgid "Parent Rigth"
+#: model:ir.model.fields,field_description:website.field_website_menu__parent_path
+msgid "Parent Path"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,help:website.field_website_partner_id
+#: model:ir.model.fields,help:website.field_website__partner_id
 msgid "Partner-related data of the user"
 msgstr "A felhasználó partner-kapcsolati adatai"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "Peak"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "People"
-msgstr "Emberek"
 
 #. module: website
 #. openerp-web
@@ -2353,17 +2325,12 @@ msgid "Please enter valid facebook page URL for preview"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.theme_customize
+#: model_terms:ir.ui.view,arch_db:website.theme_customize
 msgid "Please install a theme in order to customize your website."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.layout_footer_copyright
-msgid "Powered by"
-msgstr "Támogatja"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.kanban_contain
+#: model_terms:ir.ui.view,arch_db:website.kanban_contain
 msgid "Prev"
 msgstr "Előző"
 
@@ -2376,12 +2343,12 @@ msgid "Preview"
 msgstr "Előnézet"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Professional"
 msgstr "Professzionális"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Promote"
 msgstr "Közzététel"
 
@@ -2393,24 +2360,24 @@ msgid "Promote Page"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Promote page on the web"
 msgstr "Oldal közzététele a weben"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_partner_id
+#: model:ir.model.fields,field_description:website.field_website__partner_id
 msgid "Public Partner"
 msgstr "Nyilvános partner"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_user_id
+#: model:ir.model.fields,field_description:website.field_website__user_id
 msgid "Public User"
 msgstr "Nyilvános felhasználó"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:41
-#: code:addons/website/static/src/xml/website.pageProperties.xml:122
+#: code:addons/website/static/src/xml/website.pageProperties.xml:45
+#: code:addons/website/static/src/xml/website.pageProperties.xml:126
 #, python-format
 msgid "Publish"
 msgstr "Publikálás"
@@ -2425,44 +2392,45 @@ msgstr ""
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/js/backend/button.js:37
-#: model:ir.ui.view,arch_db:website.publish_management
-#: model:ir.ui.view,arch_db:website.publish_short
+#: model_terms:ir.ui.view,arch_db:website.publish_management
+#: model_terms:ir.ui.view,arch_db:website.publish_short
 #, python-format
 msgid "Published"
 msgstr "Közzétett"
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:133
-#: model:ir.model.fields,field_description:website.field_website_page_date_publish
+#: code:addons/website/static/src/xml/website.pageProperties.xml:137
+#: model:ir.model.fields,field_description:website.field_website_page__date_publish
 #, python-format
 msgid "Publishing Date"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "QWeb"
 msgstr "QWeb"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_redirect_url_from
+#: model:ir.model.fields,field_description:website.field_website_redirect__url_from
 msgid "Redirect From"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:62
+#: code:addons/website/static/src/xml/website.pageProperties.xml:66
 #, python-format
 msgid "Redirect Old URL"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_redirect_url_to
+#: model:ir.model.fields,field_description:website.field_website_redirect__url_to
 msgid "Redirect To"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_redirect_type
+#: model:ir.model.fields,field_description:website.field_website_redirect__type
+#: model_terms:ir.ui.view,arch_db:website.view_redirect_search
 msgid "Redirection Type"
 msgstr ""
 
@@ -2472,17 +2440,17 @@ msgid "Redirects"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.website_pages_form_view
+#: model_terms:ir.ui.view,arch_db:website.website_pages_form_view
 msgid "Related Menu Items"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_menu_ids
+#: model:ir.model.fields,field_description:website.field_website_page__menu_ids
 msgid "Related Menus"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_page_id
+#: model:ir.model.fields,field_description:website.field_website_menu__page_id
 msgid "Related Page"
 msgstr ""
 
@@ -2494,12 +2462,12 @@ msgid "Rename Page To:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "Reset selected templates"
 msgstr "Kiválasztott sablonok visszaállítása"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "Reset templates"
 msgstr "Sablonok visszaállítása"
 
@@ -2509,12 +2477,12 @@ msgid "Restricted Editor"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Right"
 msgstr "Jobb"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Rounded corners"
 msgstr "Lekerekített sarkok"
 
@@ -2524,12 +2492,7 @@ msgid "SEO metadata"
 msgstr "SEO meta adat"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
-msgid "Sails"
-msgstr ""
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Sample images"
 msgstr "Példa képek"
 
@@ -2543,82 +2506,87 @@ msgid "Save"
 msgstr "Mentés"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.menu_search
+#: model_terms:ir.ui.view,arch_db:website.menu_search
 msgid "Search Menus"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.website_search_box
+#: model_terms:ir.ui.view,arch_db:website.view_redirect_search
+msgid "Search Redirect"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.website_search_box
 msgid "Search..."
 msgstr "Keresés..."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_features
+#: model_terms:ir.ui.view,arch_db:website.s_features
 msgid "Second Feature"
 msgstr "Második jellemző"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Second List"
 msgstr "Második felsorolás"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "See Google Analytics data on your Website Dashboard"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:391
+#: code:addons/website/static/src/js/menu/content.js:423
 #, python-format
 msgid "Select a Menu"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid "Select and delete blocks to remove some features."
 msgstr ""
 "Válassza ki és törölje a blokkokat, bizonyos funkciók eltávolításához."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_message
+#: model_terms:ir.ui.view,arch_db:website.s_big_message
 msgid "Sell Online. Easily."
 msgstr "Értékesítsen online. Könnyen."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.contactus
-#: model:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
-#: model:website.page,arch_db:website.contactus_page
+#: model_terms:ir.ui.view,arch_db:website.contactus
+#: model_terms:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.contactus_page
 msgid "Send us an email"
 msgstr "Küldjön nekünk egy e-mailt"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_sequence
-#: model:ir.model.fields,field_description:website.field_website_page_priority
-#: model:ir.model.fields,field_description:website.field_website_redirect_sequence
+#: model:ir.model.fields,field_description:website.field_website_menu__sequence
+#: model:ir.model.fields,field_description:website.field_website_page__priority
+#: model:ir.model.fields,field_description:website.field_website_redirect__sequence
 msgid "Sequence"
 msgstr "Sorszám"
 
 #. module: website
 #: model:ir.actions.act_window,name:website.action_website_configuration
 #: model:ir.ui.menu,name:website.menu_website_website_settings
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "Settings"
 msgstr "Beállítások"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Shadows"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,help:website.field_website_auto_redirect_lang
+#: model:ir.model.fields,help:website.field_website__auto_redirect_lang
 msgid "Should users be redirected to their browser's language"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_ir_ui_view_customize_show
-#: model:ir.model.fields,field_description:website.field_website_page_customize_show
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__customize_show
+#: model:ir.model.fields,field_description:website.field_website_page__customize_show
 msgid "Show As Optional Inherit"
 msgstr "Mutasd opcionális örökléssel"
 
@@ -2631,69 +2599,68 @@ msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:86
+#: code:addons/website/static/src/xml/website.pageProperties.xml:90
 #, python-format
 msgid "Show in Top Menu"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Show your address on a map in the"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_banner
+#: model_terms:ir.ui.view,arch_db:website.s_banner
 msgid "Slider Odoo Image"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Slideshow"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Slow"
 msgstr "Lassú"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Small"
 msgstr "Kicsi"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_company_form_inherit_website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "Social Media"
 msgstr "Közösségi média"
 
 #. module: website
-#: code:addons/website/controllers/main.py:218
+#: code:addons/website/controllers/main.py:219
 #, python-format
 msgid "Sort by Name"
 msgstr ""
 
 #. module: website
-#: code:addons/website/controllers/main.py:217
+#: code:addons/website/controllers/main.py:218
 #, python-format
 msgid "Sort by Url"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Square"
 msgstr "Négyzetes"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_text
-#: model:ir.ui.view,arch_db:website.s_text_image
+#: model_terms:ir.ui.view,arch_db:website.s_image_text
+#: model_terms:ir.ui.view,arch_db:website.s_text_image
 msgid ""
 "Start with the customer – find out what they want\n"
 "                        and give it to them."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Starter package"
 msgstr "Induló csomag"
 
@@ -2705,21 +2672,6 @@ msgid "Stay on this page"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.footer_custom
-msgid "Subtitle"
-msgstr "Alcím"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.footer_custom
-msgid "Subtitle 2"
-msgstr "Alcím 2"
-
-#. module: website
-#: model:ir.ui.view,arch_db:website.footer_custom
-msgid "Subtitle 3"
-msgstr "Alcím 3"
-
-#. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.seo.xml:58
 #, python-format
@@ -2727,7 +2679,7 @@ msgid "Suggested"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "TRANSLATE"
 msgstr ""
 
@@ -2739,12 +2691,12 @@ msgid "Tabs"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "Technical name:"
 msgstr "Technikai név:"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_feature_grid
+#: model_terms:ir.ui.view,arch_db:website.s_feature_grid
 msgid ""
 "Tell features the visitor would like to know, not what you'd like to say."
 msgstr ""
@@ -2752,88 +2704,75 @@ msgstr ""
 " mondani szeretnék."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_features
+#: model_terms:ir.ui.view,arch_db:website.s_features
 msgid "Tell what's the value for the<br/>customer for this feature."
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:225
-#: code:addons/website/models/website.py:295
+#: code:addons/website/models/website.py:233
+#: code:addons/website/models/website.py:303
 #, python-format
 msgid "Template"
 msgstr "Sablon"
 
 #. module: website
-#: code:addons/website/models/website.py:231
+#: code:addons/website/models/website.py:239
 #, python-format
 msgid "Template <b>%s (id:%s)</b> contains a link to this page"
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:301
+#: code:addons/website/models/website.py:309
 #, python-format
 msgid "Template <b>%s (id:%s)</b> is calling this file"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "Template fallback"
 msgstr "Sablon visszakapcsolása"
 
 #. module: website
-#: code:addons/website/models/website.py:227
-#: code:addons/website/models/website.py:297
+#: code:addons/website/models/website.py:235
+#: code:addons/website/models/website.py:305
 #, python-format
 msgid "Templates"
 msgstr "Sablonok"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid "Terms of service"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "The error occured while rendering the template"
 msgstr "Hiba történt a sablon renderelése során"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "The following error was raised in the website controller"
 msgstr "A következő hiba merült fel a honlap vezérlőjében"
 
 #. module: website
-#: model:ir.model.fields,help:website.field_blog_post_website_url
-#: model:ir.model.fields,help:website.field_delivery_carrier_website_url
-#: model:ir.model.fields,help:website.field_event_event_website_url
-#: model:ir.model.fields,help:website.field_event_track_website_url
-#: model:ir.model.fields,help:website.field_hr_employee_website_url
-#: model:ir.model.fields,help:website.field_hr_job_website_url
-#: model:ir.model.fields,help:website.field_im_livechat_channel_website_url
-#: model:ir.model.fields,help:website.field_product_template_website_url
-#: model:ir.model.fields,help:website.field_res_partner_grade_website_url
-#: model:ir.model.fields,help:website.field_res_partner_tag_website_url
-#: model:ir.model.fields,help:website.field_res_partner_website_url
-#: model:ir.model.fields,help:website.field_slide_channel_website_url
-#: model:ir.model.fields,help:website.field_slide_slide_website_url
-#: model:ir.model.fields,help:website.field_website_page_website_url
-#: model:ir.model.fields,help:website.field_website_published_mixin_website_url
+#: model:ir.model.fields,help:website.field_website_page__website_url
+#: model:ir.model.fields,help:website.field_website_published_mixin__website_url
 msgid "The full URL to access the document through the website."
 msgstr ""
 "A teljes elérési út/URL  a dokumentum weboldalon keresztüli eléréséhez."
 
 #. module: website
-#: model:ir.model.fields,help:website.field_ir_act_server_website_url
+#: model:ir.model.fields,help:website.field_ir_actions_server__website_url
 msgid "The full URL to access the server action through the website."
 msgstr "A teljes URL a szerver eléréséhez belépés a weboldalon keresztül."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.403
+#: model_terms:ir.ui.view,arch_db:website.403
 msgid "The page you were looking for could not be authorized."
 msgstr "Az oldal, amit keresett, nem engedélyezett."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.404
+#: model_terms:ir.ui.view,arch_db:website.404
 msgid ""
 "The page you were looking for could not be found; it is possible you have\n"
 "                        typed the address incorrectly, but it has most probably been removed due\n"
@@ -2844,12 +2783,12 @@ msgstr ""
 "                         a honlap átszervezése miatt."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "The selected templates will be reset to their factory settings."
 msgstr "A kiválasztott sablon visszaáll a gyári beállításokra."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "There are currently no pages for your website."
 msgstr ""
 
@@ -2861,55 +2800,55 @@ msgid "There is no data currently available."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid ""
 "These terms of service (\"Terms\", \"Agreement\") are an agreement between the website\n"
 "                                (\"Website operator\", \"us\", \"we\" or \"our\") and you (\"User\", \"you\" or \"your\")."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_features
+#: model_terms:ir.ui.view,arch_db:website.s_features
 msgid "Third Feature"
 msgstr "Harmadik jellemző"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid ""
 "This Agreement sets forth the general terms and conditions of your use of this website\n"
 "                                and any of its products or services (collectively, \"Website\" or \"Services\")."
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,help:website.field_res_config_settings_favicon
-#: model:ir.model.fields,help:website.field_website_favicon
+#: model:ir.model.fields,help:website.field_res_config_settings__favicon
+#: model:ir.model.fields,help:website.field_website__favicon
 msgid "This field holds the image used to display a favicon on the website."
 msgstr ""
 "Ez a mező hordozza a weboldal favikon, kedvenc ikon megjelenítéséhez "
 "használt képet."
 
 #. module: website
-#: model:ir.model.fields,help:website.field_res_config_settings_default_lang_code
-#: model:ir.model.fields,help:website.field_website_default_lang_code
+#: model:ir.model.fields,help:website.field_res_config_settings__website_default_lang_code
+#: model:ir.model.fields,help:website.field_website__default_lang_code
 msgid "This field is used to set/get locales for user"
 msgstr ""
 "Ez a mező használatos a helyszínek felhasználóhoz való "
 "beállításához/csatolásához"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.page_404
+#: model_terms:ir.ui.view,arch_db:website.page_404
 msgid ""
 "This page does not exist, but you can create it as you are administrator of "
 "this site."
 msgstr ""
 
 #. module: website
-#: code:addons/website/models/website.py:246
+#: code:addons/website/models/website.py:254
 #, python-format
 msgid "This page is in the menu <b>%s</b>"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Thumbnails"
 msgstr ""
 
@@ -2921,7 +2860,7 @@ msgid "Timeline"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_three_columns
+#: model_terms:ir.ui.view,arch_db:website.s_three_columns
 msgid ""
 "To add a fourth column, reduce the size of these\n"
 "                        three columns using the right icon of each block.\n"
@@ -2930,35 +2869,35 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_company_team
+#: model_terms:ir.ui.view,arch_db:website.s_company_team
 msgid "Tony Fred, CEO"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/js/menu/content.js:386
+#: code:addons/website/static/src/js/menu/content.js:418
 #: model:website.menu,name:website.main_menu
 #, python-format
 msgid "Top Menu"
 msgstr "Főmenü"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "Traceback"
 msgstr "Visszakövet:"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Track clicks on UTM links"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Track visits in Google Analytics"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Tracking ID"
 msgstr ""
 
@@ -2970,25 +2909,24 @@ msgid "Transform the picture (click twice to reset transformation)"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_social_twitter
+#: model:ir.model.fields,field_description:website.field_website__social_twitter
 msgid "Twitter Account"
 msgstr "Twitter fiók"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.external_snippets
+#: model_terms:ir.ui.view,arch_db:website.external_snippets
 msgid "Twitter Scroller"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:76
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: code:addons/website/static/src/xml/website.pageProperties.xml:80
 #, python-format
 msgid "Type"
 msgstr "Típus"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid ""
 "Type '<i class=\"confirm_word\">yes</i>' in the box below if you want to "
 "confirm."
@@ -2997,55 +2935,55 @@ msgstr ""
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.backend.xml:52
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 #, python-format
 msgid "UA-XXXXXXXX-Y"
 msgstr "UA-XXXXXXXX-Y"
 
 #. module: website
-#: model:ir.model.fields,help:website.field_res_config_settings_cdn_filters
-#: model:ir.model.fields,help:website.field_website_cdn_filters
+#: model:ir.model.fields,help:website.field_res_config_settings__cdn_filters
+#: model:ir.model.fields,help:website.field_website__cdn_filters
 msgid "URL matching those filters will be rewritten using the CDN Base URL"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Ultimate package"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.index_management
+#: model_terms:ir.ui.view,arch_db:website.index_management
 msgid "Unindexed"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Unlimited CRM power and support"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "Unlimited customization"
 msgstr ""
 
 #. module: website
 #. openerp-web
 #: code:addons/website/static/src/js/backend/button.js:37
-#: model:ir.ui.view,arch_db:website.publish_management
-#: model:ir.ui.view,arch_db:website.publish_short
+#: model_terms:ir.ui.view,arch_db:website.publish_management
+#: model_terms:ir.ui.view,arch_db:website.publish_short
 #, python-format
 msgid "Unpublished"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_menu_url
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model:ir.model.fields,field_description:website.field_website_menu__url
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Url"
 msgstr "Url"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid "Use Of Cookies"
 msgstr ""
 
@@ -3057,82 +2995,77 @@ msgid "Use Small Header"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Use a CDN to optimize the availability of your website's content"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_cdn_activated
+#: model:ir.model.fields,field_description:website.field_res_config_settings__cdn_activated
 msgid "Use a Content Delivery Network (CDN)"
 msgstr ""
 
 #. module: website
 #. openerp-web
-#: code:addons/website/static/src/xml/website.pageProperties.xml:97
+#: code:addons/website/static/src/xml/website.pageProperties.xml:101
 #, python-format
 msgid "Use as Homepage"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.robots
+#: model_terms:ir.ui.view,arch_db:website.robots
 msgid ""
 "User-agent: *\n"
 "Sitemap:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model:ir.model,name:website.model_res_users
+msgid "Users"
+msgstr "Felhasználók"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Very Fast"
 msgstr "Nagyon gyors"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.snippet_options
+#: model_terms:ir.ui.view,arch_db:website.snippet_options
 msgid "Very Slow"
 msgstr "Nagyon lassú"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_view_id
+#: model:ir.model.fields,field_description:website.field_website_page__view_id
 msgid "View"
 msgstr "Nézet"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_arch
-#: model:ir.model.fields,field_description:website.field_website_page_arch_base
+#: model:ir.model.fields,field_description:website.field_website_page__arch
 msgid "View Architecture"
 msgstr "Architektúra nézet"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_name
+#: model:ir.model.fields,field_description:website.field_website_page__name
 msgid "View Name"
 msgstr "Nézet neve"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_type
+#: model:ir.model.fields,field_description:website.field_website_page__type
 msgid "View Type"
 msgstr "Nézet típusa"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_mode
+#: model:ir.model.fields,field_description:website.field_website_page__mode
 msgid "View inheritance mode"
 msgstr "Az öröklődés mód nézete"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_inherit_children_ids
+#: model:ir.model.fields,field_description:website.field_website_page__inherit_children_ids
 msgid "Views which inherit from this one"
 msgstr "Nézet, mely ebből örökölt"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_blog_post_website_published
-#: model:ir.model.fields,field_description:website.field_event_track_website_published
-#: model:ir.model.fields,field_description:website.field_hr_employee_website_published
-#: model:ir.model.fields,field_description:website.field_hr_job_website_published
-#: model:ir.model.fields,field_description:website.field_im_livechat_channel_website_published
-#: model:ir.model.fields,field_description:website.field_product_template_website_published
-#: model:ir.model.fields,field_description:website.field_res_partner_website_published
-#: model:ir.model.fields,field_description:website.field_slide_channel_website_published
-#: model:ir.model.fields,field_description:website.field_slide_slide_website_published
-#: model:ir.model.fields,field_description:website.field_website_page_website_published
-#: model:ir.model.fields,field_description:website.field_website_published_mixin_website_published
+#: model:ir.model.fields,field_description:website.field_website_page__website_published
+#: model:ir.model.fields,field_description:website.field_website_published_mixin__website_published
 msgid "Visible in Website"
 msgstr "Látható a weboldalon"
 
@@ -3144,9 +3077,9 @@ msgid "Visits"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.aboutus
-#: model:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
-#: model:website.page,arch_db:website.aboutus_page
+#: model_terms:ir.ui.view,arch_db:website.aboutus
+#: model_terms:ir.ui.view,arch_db:website.aboutus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.aboutus_page
 msgid ""
 "We are a team of passionate people whose goal is to improve everyone's\n"
 "                                                      life through disruptive products. We build great products to solve your\n"
@@ -3154,15 +3087,12 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.footer_default
+#: model_terms:ir.ui.view,arch_db:website.footer_custom
 msgid ""
 "We are a team of passionate people whose goal is to improve everyone's\n"
-"                            life through disruptive products. We build great products to solve your\n"
-"                            business problems."
+"                                life through disruptive products. We build great products to solve your\n"
+"                                business problems."
 msgstr ""
-"Mi, egy szenvedélyes emberekből álló csapat vagyunk, aminek az a célja, hogy javítsa mindenki\n"
-"                              életét  a termékeivel. Nagyszerű termékeket készítünk az üzleti problémáinak\n"
-"                              megoldásához."
 
 #. module: website
 #. openerp-web
@@ -3172,9 +3102,9 @@ msgid "We found these ones:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.contactus
-#: model:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
-#: model:website.page,arch_db:website.contactus_page
+#: model_terms:ir.ui.view,arch_db:website.contactus
+#: model_terms:ir.ui.view,arch_db:website.contactus_page_ir_ui_view
+#: model_terms:website.page,arch_db:website.contactus_page
 msgid "We'll do our best to get back to you as soon as possible."
 msgstr ""
 "Mi mindent megteszünk, hogy a legjobbat nyútsuk, a lehető leghamarabb."
@@ -3182,13 +3112,13 @@ msgstr ""
 #. module: website
 #: model:ir.actions.act_url,name:website.action_website
 #: model:ir.model,name:website.model_website
-#: model:ir.model.fields,field_description:website.field_ir_ui_view_website_id
-#: model:ir.model.fields,field_description:website.field_website_menu_website_id
-#: model:ir.model.fields,field_description:website.field_website_page_website_id
-#: model:ir.model.fields,field_description:website.field_website_redirect_website_id
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__website_id
+#: model:ir.model.fields,field_description:website.field_website_menu__website_id
+#: model:ir.model.fields,field_description:website.field_website_page__website_id
+#: model:ir.model.fields,field_description:website.field_website_redirect__website_id
 #: model:ir.ui.menu,name:website.menu_website_configuration
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
-#: model:ir.ui.view,arch_db:website.view_server_action_search_website
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.view_server_action_search_website
 msgid "Website"
 msgstr "Weboldal"
 
@@ -3198,12 +3128,17 @@ msgid "Website Apps"
 msgstr "Honlap modulok"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_domain
+#: model:ir.model.fields,field_description:website.field_website__domain
 msgid "Website Domain"
 msgstr "Weboldal domén"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_favicon
+#: model:ir.model.fields,field_description:website.field_res_users__group_website_user
+msgid "Website Editor"
+msgstr ""
+
+#. module: website
+#: model:ir.model.fields,field_description:website.field_website__favicon
 msgid "Website Favicon"
 msgstr "Weboldal Favicon - Kedvenc ikon"
 
@@ -3219,24 +3154,35 @@ msgid "Website Menu"
 msgstr "Honlap menü"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_website_name
-#: model:ir.model.fields,field_description:website.field_website_name
+#: model_terms:ir.ui.view,arch_db:website.website_menus_form_view
+msgid "Website Menus Settings"
+msgstr ""
+
+#. module: website
+#: model:ir.model.fields,field_description:website.field_res_config_settings__website_name
+#: model:ir.model.fields,field_description:website.field_website__name
 msgid "Website Name"
 msgstr "A honlap neve"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.website_pages_form_view
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__first_page_id
+#: model:ir.model.fields,field_description:website.field_website_page__first_page_id
+msgid "Website Page"
+msgstr ""
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.website_pages_form_view
 msgid "Website Page Settings"
 msgstr ""
 
 #. module: website
 #: model:ir.actions.act_window,name:website.action_website_pages_list
-#: model:ir.ui.view,arch_db:website.website_pages_tree_view
+#: model_terms:ir.ui.view,arch_db:website.website_pages_tree_view
 msgid "Website Pages"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_ir_act_server_website_path
+#: model:ir.model.fields,field_description:website.field_ir_actions_server__website_path
 msgid "Website Path"
 msgstr "Honlap útvonal"
 
@@ -3246,18 +3192,18 @@ msgid "Website Redirect"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.website_redirect_form_view
+#: model_terms:ir.ui.view,arch_db:website.website_redirect_form_view
 msgid "Website Redirect Settings"
 msgstr ""
 
 #. module: website
 #: model:ir.actions.act_window,name:website.action_website_redirect_list
-#: model:ir.ui.view,arch_db:website.website_redirect_tree_view
+#: model_terms:ir.ui.view,arch_db:website.website_redirect_tree_view
 msgid "Website Redirects"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "Website Settings"
 msgstr "Honlap beállítások"
 
@@ -3267,36 +3213,24 @@ msgid "Website Theme"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "Website Title"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_blog_post_website_url
-#: model:ir.model.fields,field_description:website.field_delivery_carrier_website_url
-#: model:ir.model.fields,field_description:website.field_event_event_website_url
-#: model:ir.model.fields,field_description:website.field_event_track_website_url
-#: model:ir.model.fields,field_description:website.field_hr_employee_website_url
-#: model:ir.model.fields,field_description:website.field_hr_job_website_url
-#: model:ir.model.fields,field_description:website.field_im_livechat_channel_website_url
-#: model:ir.model.fields,field_description:website.field_product_template_website_url
-#: model:ir.model.fields,field_description:website.field_res_partner_grade_website_url
-#: model:ir.model.fields,field_description:website.field_res_partner_tag_website_url
-#: model:ir.model.fields,field_description:website.field_res_partner_website_url
-#: model:ir.model.fields,field_description:website.field_slide_channel_website_url
-#: model:ir.model.fields,field_description:website.field_slide_slide_website_url
-#: model:ir.model.fields,field_description:website.field_website_page_website_url
-#: model:ir.model.fields,field_description:website.field_website_published_mixin_website_url
+#: model:ir.model.fields,field_description:website.field_ir_attachment__website_url
+#: model:ir.model.fields,field_description:website.field_website_page__website_url
+#: model:ir.model.fields,field_description:website.field_website_published_mixin__website_url
 msgid "Website URL"
 msgstr "Honlap URL"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_ir_act_server_website_url
+#: model:ir.model.fields,field_description:website.field_ir_actions_server__website_url
 msgid "Website Url"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid ""
 "Website may use cookies to personalize and facilitate maximum navigation of the\n"
 "                                User by this site. The User may configure his / her browser to notify and\n"
@@ -3304,73 +3238,28 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.menu_tree
+#: model_terms:ir.ui.view,arch_db:website.menu_tree
 msgid "Website menu"
 msgstr "Honlap menü"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_blog_blog_website_meta_description
-#: model:ir.model.fields,field_description:website.field_blog_post_website_meta_description
-#: model:ir.model.fields,field_description:website.field_blog_tag_website_meta_description
-#: model:ir.model.fields,field_description:website.field_event_event_website_meta_description
-#: model:ir.model.fields,field_description:website.field_event_track_website_meta_description
-#: model:ir.model.fields,field_description:website.field_forum_documentation_toc_website_meta_description
-#: model:ir.model.fields,field_description:website.field_forum_forum_website_meta_description
-#: model:ir.model.fields,field_description:website.field_forum_post_website_meta_description
-#: model:ir.model.fields,field_description:website.field_forum_tag_website_meta_description
-#: model:ir.model.fields,field_description:website.field_hr_job_website_meta_description
-#: model:ir.model.fields,field_description:website.field_ir_ui_view_website_meta_description
-#: model:ir.model.fields,field_description:website.field_product_public_category_website_meta_description
-#: model:ir.model.fields,field_description:website.field_product_template_website_meta_description
-#: model:ir.model.fields,field_description:website.field_res_partner_website_meta_description
-#: model:ir.model.fields,field_description:website.field_slide_channel_website_meta_description
-#: model:ir.model.fields,field_description:website.field_slide_slide_website_meta_description
-#: model:ir.model.fields,field_description:website.field_website_page_website_meta_description
-#: model:ir.model.fields,field_description:website.field_website_seo_metadata_website_meta_description
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__website_meta_description
+#: model:ir.model.fields,field_description:website.field_website_page__website_meta_description
+#: model:ir.model.fields,field_description:website.field_website_seo_metadata__website_meta_description
 msgid "Website meta description"
 msgstr "Honlap meta leírás"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_blog_blog_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_blog_post_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_blog_tag_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_event_event_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_event_track_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_forum_documentation_toc_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_forum_forum_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_forum_post_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_forum_tag_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_hr_job_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_ir_ui_view_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_product_public_category_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_product_template_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_res_partner_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_slide_channel_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_slide_slide_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_website_page_website_meta_keywords
-#: model:ir.model.fields,field_description:website.field_website_seo_metadata_website_meta_keywords
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__website_meta_keywords
+#: model:ir.model.fields,field_description:website.field_website_page__website_meta_keywords
+#: model:ir.model.fields,field_description:website.field_website_seo_metadata__website_meta_keywords
 msgid "Website meta keywords"
 msgstr "Honlap meta kulcsszavai"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_blog_blog_website_meta_title
-#: model:ir.model.fields,field_description:website.field_blog_post_website_meta_title
-#: model:ir.model.fields,field_description:website.field_blog_tag_website_meta_title
-#: model:ir.model.fields,field_description:website.field_event_event_website_meta_title
-#: model:ir.model.fields,field_description:website.field_event_track_website_meta_title
-#: model:ir.model.fields,field_description:website.field_forum_documentation_toc_website_meta_title
-#: model:ir.model.fields,field_description:website.field_forum_forum_website_meta_title
-#: model:ir.model.fields,field_description:website.field_forum_post_website_meta_title
-#: model:ir.model.fields,field_description:website.field_forum_tag_website_meta_title
-#: model:ir.model.fields,field_description:website.field_hr_job_website_meta_title
-#: model:ir.model.fields,field_description:website.field_ir_ui_view_website_meta_title
-#: model:ir.model.fields,field_description:website.field_product_public_category_website_meta_title
-#: model:ir.model.fields,field_description:website.field_product_template_website_meta_title
-#: model:ir.model.fields,field_description:website.field_res_partner_website_meta_title
-#: model:ir.model.fields,field_description:website.field_slide_channel_website_meta_title
-#: model:ir.model.fields,field_description:website.field_slide_slide_website_meta_title
-#: model:ir.model.fields,field_description:website.field_website_page_website_meta_title
-#: model:ir.model.fields,field_description:website.field_website_seo_metadata_website_meta_title
+#: model:ir.model.fields,field_description:website.field_ir_ui_view__website_meta_title
+#: model:ir.model.fields,field_description:website.field_website_page__website_meta_title
+#: model:ir.model.fields,field_description:website.field_website_seo_metadata__website_meta_title
 msgid "Website meta title"
 msgstr "Honlap meta cím"
 
@@ -3380,13 +3269,13 @@ msgid "Website: Dashboard"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_page_website_ids
-#: model:ir.ui.view,arch_db:website.view_website_tree
+#: model:ir.model.fields,field_description:website.field_website_page__website_ids
+#: model_terms:ir.ui.view,arch_db:website.view_website_tree
 msgid "Websites"
 msgstr "Honlapok"
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_base_language_install_website_ids
+#: model:ir.model.fields,field_description:website.field_base_language_install__website_ids
 msgid "Websites to translate"
 msgstr "Fordítandó weboldalak"
 
@@ -3405,19 +3294,19 @@ msgid "What do you want to do?"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_cover
+#: model_terms:ir.ui.view,arch_db:website.s_cover
 msgid "With a great subtitle"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_parallax_slider
+#: model_terms:ir.ui.view,arch_db:website.s_parallax_slider
 msgid ""
 "Write a quote here from one of your customers. Quotes are a\n"
 "                                                great way to build confidence in your products or services."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_text_image
+#: model_terms:ir.ui.view,arch_db:website.s_text_image
 msgid ""
 "Write one or two paragraphs describing your product or\n"
 "                        services.<br/>To be successful your content needs to be\n"
@@ -3425,7 +3314,7 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_image_text
+#: model_terms:ir.ui.view,arch_db:website.s_image_text
 msgid ""
 "Write one or two paragraphs describing your product,\n"
 "                        services or a specific feature. To be successful\n"
@@ -3433,19 +3322,19 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_cover
+#: model_terms:ir.ui.view,arch_db:website.s_cover
 msgid ""
 "Write one or two paragraphs describing your product, services or a specific "
 "feature. To be successful your content needs to be useful to your readers."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_big_message
+#: model_terms:ir.ui.view,arch_db:website.s_big_message
 msgid "Write one sentence to convince visitor about your message."
 msgstr "Írjon egy mondatot, mely üzenetével meggyőzi a látogatót."
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_features
+#: model_terms:ir.ui.view,arch_db:website.s_features
 msgid ""
 "Write what the customer would like to know,<br/>not what you want to show."
 msgstr ""
@@ -3459,13 +3348,22 @@ msgstr ""
 
 #. module: website
 #. openerp-web
+#: code:addons/website/static/src/js/menu/seo.js:543
+#, python-format
+msgid ""
+"You have hidden this page from search results. It won't be indexed by search"
+" engines."
+msgstr ""
+
+#. module: website
+#. openerp-web
 #: code:addons/website/static/src/xml/website.backend.xml:46
 #, python-format
 msgid "You need to log in to your Google Account before:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_faq_collapse
+#: model_terms:ir.ui.view,arch_db:website.s_faq_collapse
 msgid ""
 "You should carefully review the legal statements and other conditions of use of\n"
 "                                any website which you access through a link from this Website. Your linking to\n"
@@ -3473,8 +3371,8 @@ msgid ""
 msgstr ""
 
 #. module: website
-#: model:ir.actions.act_window,help:website.action_module_theme
-#: model:ir.actions.act_window,help:website.action_module_website
+#: model_terms:ir.actions.act_window,help:website.action_module_theme
+#: model_terms:ir.actions.act_window,help:website.action_module_website
 msgid "You should try other search criteria."
 msgstr "Más keresési kritériumokkal próbálja."
 
@@ -3486,7 +3384,7 @@ msgid "Your Client ID:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_banner
+#: model_terms:ir.ui.view,arch_db:website.s_banner
 msgid "Your Slide Title"
 msgstr ""
 
@@ -3498,7 +3396,7 @@ msgid "Your Tracking ID:"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_title
+#: model_terms:ir.ui.view,arch_db:website.s_title
 msgid "Your Website Title"
 msgstr "Honlapja címe"
 
@@ -3510,17 +3408,17 @@ msgid "Your current changes will be saved automatically."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.edit_website_pages
+#: model_terms:ir.ui.view,arch_db:website.edit_website_pages
 msgid "Your search '"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_website_social_youtube
+#: model:ir.model.fields,field_description:website.field_website__social_youtube
 msgid "Youtube Account"
 msgstr "Youtube fiók"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.http_error_debug
+#: model_terms:ir.ui.view,arch_db:website.http_error_debug
 msgid "and evaluating the following expression:"
 msgstr "és értékelje a következő kifejezést:"
 
@@ -3546,6 +3444,11 @@ msgid "found(s)"
 msgstr ""
 
 #. module: website
+#: model_terms:ir.ui.view,arch_db:website.brand_promotion
+msgid "free website"
+msgstr "ingyenes weboldal"
+
+#. module: website
 #. openerp-web
 #: code:addons/website/static/src/xml/website.seo.xml:28
 #, python-format
@@ -3553,37 +3456,37 @@ msgid "how your page will be listed on Google"
 msgstr "az oldala hogyan fog szerepelni a Google-n"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "https://plus.google.com/+Odooapps"
 msgstr "https://plus.google.com/+Odooapps"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "https://twitter.com/Odoo"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "https://www.facebook.com/odoo"
 msgstr "https://www.facebook.com/odoo"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "https://www.linkedin.com/company/odoo"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "https://www.youtube.com/user/OpenERPonline"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.view_website_form
+#: model_terms:ir.ui.view,arch_db:website.view_website_form
 msgid "https://youraccount.github.io"
 msgstr "https://az_ön_fiókja.github.io"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.show_website_info
+#: model_terms:ir.ui.view,arch_db:website.show_website_info
 msgid "instance of Odoo, the"
 msgstr "például az Odoo, a"
 
@@ -3608,17 +3511,17 @@ msgid "ir.ui.view"
 msgstr "ir.ui.view"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.menu_search
+#: model_terms:ir.ui.view,arch_db:website.menu_search
 msgid "name"
 msgstr "név"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.user_navbar
+#: model_terms:ir.ui.view,arch_db:website.user_navbar
 msgid "or Edit Master"
 msgstr "vagy az elsődleges szerkesztése"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:website.res_config_settings_view_form
 msgid "page"
 msgstr ""
 
@@ -3635,23 +3538,23 @@ msgid "signs to get your website ready in no time."
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.robots
+#: model_terms:ir.ui.view,arch_db:website.robots
 msgid "sitemap.xml"
 msgstr "sitemap.xml"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.menu_search
+#: model_terms:ir.ui.view,arch_db:website.menu_search
 msgid "url"
 msgstr "url"
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.s_comparisons
+#: model_terms:ir.ui.view,arch_db:website.s_comparisons
 msgid "user / month (billed annually)"
 msgstr ""
 
 #. module: website
-#: model:ir.model.fields,field_description:website.field_res_config_settings_website_id
-#: model:ir.ui.view,arch_db:website.menu_search
+#: model:ir.model.fields,field_description:website.field_res_config_settings__website_id
+#: model_terms:ir.ui.view,arch_db:website.menu_search
 msgid "website"
 msgstr "weboldal"
 
@@ -3661,6 +3564,11 @@ msgid "website.published.mixin"
 msgstr ""
 
 #. module: website
-#: model:ir.ui.view,arch_db:website.500
+#: model_terms:ir.ui.view,arch_db:website.brand_promotion
+msgid "with"
+msgstr "ezzel"
+
+#. module: website
+#: model_terms:ir.ui.view,arch_db:website.500
 msgid "yes"
 msgstr "igen"

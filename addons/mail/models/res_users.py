@@ -11,11 +11,12 @@ class Users(models.Model):
         - make a new user follow itself
         - add a welcome message
         - add suggestion preference
-        - if adding groups to an user, check mail.channels linked to this user
+        - if adding groups to a user, check mail.channels linked to this user
           group, and the user. This is done by overriding the write method.
     """
     _name = 'res.users'
     _inherit = ['res.users']
+    _description = 'Users'
 
     alias_id = fields.Many2one('mail.alias', 'Alias', ondelete="set null", required=False,
             help="Email address internally associated with this user. Incoming "\
@@ -23,7 +24,7 @@ class Users(models.Model):
     alias_contact = fields.Selection([
         ('everyone', 'Everyone'),
         ('partners', 'Authenticated Partners'),
-        ('followers', 'Followers only')], string='Alias Contact Security', related='alias_id.alias_contact')
+        ('followers', 'Followers only')], string='Alias Contact Security', related='alias_id.alias_contact', readonly=False)
     notification_type = fields.Selection([
         ('email', 'Handle by Emails'),
         ('inbox', 'Handle in Odoo')],
@@ -31,6 +32,39 @@ class Users(models.Model):
         help="Policy on how to handle Chatter notifications:\n"
              "- Handle by Emails: notifications are sent to your email address\n"
              "- Handle in Odoo: notifications appear in your Odoo Inbox")
+    # channel-specific: moderation
+    is_moderator = fields.Boolean(string='Is moderator', compute='_compute_is_moderator')
+    moderation_counter = fields.Integer(string='Moderation count', compute='_compute_moderation_counter')
+    moderation_channel_ids = fields.Many2many(
+        'mail.channel', 'mail_channel_moderator_rel',
+        string='Moderated channels')
+
+    @api.depends('moderation_channel_ids.moderation', 'moderation_channel_ids.moderator_ids')
+    @api.multi
+    def _compute_is_moderator(self):
+        moderated = self.env['mail.channel'].search([
+            ('id', 'in', self.mapped('moderation_channel_ids').ids),
+            ('moderation', '=', True),
+            ('moderator_ids', 'in', self.ids)
+        ])
+        user_ids = moderated.mapped('moderator_ids')
+        for user in self:
+            user.is_moderator = user in user_ids
+
+    @api.multi
+    def _compute_moderation_counter(self):
+        self._cr.execute("""
+SELECT channel_moderator.res_users_id, COUNT(msg.id)
+FROM "mail_channel_moderator_rel" AS channel_moderator
+JOIN "mail_message" AS msg
+ON channel_moderator.mail_channel_id = msg.res_id
+    AND channel_moderator.res_users_id IN %s
+    AND msg.model = 'mail.channel'
+    AND msg.moderation_status = 'pending_moderation'
+GROUP BY channel_moderator.res_users_id""", [tuple(self.ids)])
+        result = dict(self._cr.fetchall())
+        for user in self:
+            user.moderation_counter = result.get(user.id, 0)
 
     def __init__(self, pool, cr):
         """ Override of __init__ to add access rights on notification_email_send
@@ -72,19 +106,22 @@ class Users(models.Model):
         return write_res
 
     @api.model
-    def activity_user_count(self):
+    def systray_get_activities(self):
         query = """SELECT m.id, count(*), act.res_model as model,
                         CASE
-                            WHEN now()::date - act.date_deadline::date = 0 Then 'today'
-                            WHEN now()::date - act.date_deadline::date > 0 Then 'overdue'
-                            WHEN now()::date - act.date_deadline::date < 0 Then 'planned'
+                            WHEN %(today)s::date - act.date_deadline::date = 0 Then 'today'
+                            WHEN %(today)s::date - act.date_deadline::date > 0 Then 'overdue'
+                            WHEN %(today)s::date - act.date_deadline::date < 0 Then 'planned'
                         END AS states
                     FROM mail_activity AS act
                     JOIN ir_model AS m ON act.res_model_id = m.id
-                    WHERE user_id = %s
+                    WHERE user_id = %(user_id)s
                     GROUP BY m.id, states, act.res_model;
                     """
-        self.env.cr.execute(query, [self.env.uid])
+        self.env.cr.execute(query, {
+            'today': fields.Date.context_today(self),
+            'user_id': self.env.uid,
+        })
         activity_data = self.env.cr.dictfetchall()
         model_ids = [a['id'] for a in activity_data]
         model_names = {n[0]: n[1] for n in self.env['ir.model'].browse(model_ids).name_get()}
@@ -95,6 +132,7 @@ class Users(models.Model):
                 user_activities[activity['model']] = {
                     'name': model_names[activity['id']],
                     'model': activity['model'],
+                    'type': 'activity',
                     'icon': modules.module.get_module_icon(self.env[activity['model']]._original_module),
                     'total_count': 0, 'today_count': 0, 'overdue_count': 0, 'planned_count': 0,
                 }
@@ -112,6 +150,7 @@ class res_groups_mail_channel(models.Model):
     """
     _name = 'res.groups'
     _inherit = 'res.groups'
+    _description = 'Access Groups'
 
     @api.multi
     def write(self, vals, context=None):

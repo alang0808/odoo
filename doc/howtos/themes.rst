@@ -659,18 +659,18 @@ The template contains the HTML markup that will be displayed by the snippet.
      <section class="snippet_testimonial">
        <div class="container text-center">
          <div class="row">
-           <div class="col-md-4">
-             <img alt="client" class="img-circle" src="/theme_tutorial/static/src/img/client_1.jpg"/>
+           <div class="col-lg-4">
+             <img alt="client" class="rounded-circle" src="/theme_tutorial/static/src/img/client_1.jpg"/>
              <h3>Client Name</h3>
              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
            </div>
-           <div class="col-md-4">
-             <img alt="client" class="img-circle" src="/theme_tutorial/static/src/img/client_2.jpg"/>
+           <div class="col-lg-4">
+             <img alt="client" class="rounded-circle" src="/theme_tutorial/static/src/img/client_2.jpg"/>
              <h3>Client Name</h3>
              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
            </div>
-           <div class="col-md-4">
-             <img alt="client" class="img-circle" src="/theme_tutorial/static/src/img/client_3.jpg"/>
+           <div class="col-lg-4">
+             <img alt="client" class="rounded-circle" src="/theme_tutorial/static/src/img/client_3.jpg"/>
              <h3>Client Name</h3>
              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
            </div>
@@ -686,7 +686,7 @@ The previous code will create the snippet’s content, but we still need to plac
 .. code-block:: xml
 
    <template id="place_into_bar" inherit_id="website.snippets" name="Place into bar">
-     <xpath expr="//div[@id='snippet_content']/div[@class='o_panel_body']" position="inside">
+     <xpath expr="//div[@id='snippet_structure']/div[@class='o_panel_body']" position="inside">
        <t t-snippet="theme_tutorial.snippet_testimonial"
           t-thumbnail="/theme_tutorial/static/src/img/ui/snippet_thumb.jpg"/>
      </xpath>
@@ -763,11 +763,11 @@ We start by adding a new file in our views folder - name it **options.xml** and 
       <div data-selector=".snippet_testimonial"> <!-- Options group -->
         <li class="dropdown-submenu">
           <a href="#">Your Option</a>
-          <ul class="dropdown-menu"> <!-- Options list -->
-            <li data-select-class="opt_shadow"><a>Shadow Images</a></li>
-            <li data-select-class="opt_grey_bg"><a>Grey Bg</a></li>
-            <li data-select-class=""><a>None</a></li>
-          </ul>
+          <div class="dropdown-menu"> <!-- Options list -->
+            <a href="#" class="dropdown-item" data-select-class="opt_shadow">Shadow Images</a>
+            <a href="#" class="dropdown-item" data-select-class="opt_grey_bg">Grey Bg</a>
+            <a href="#" class="dropdown-item" data-select-class="">None</a>
+          </div>
         </li>
       </div>
     </xpath>
@@ -931,8 +931,8 @@ Layout
 ``<section />``
   Any section element can be edited like a block of content. The publisher can move or duplicate it. It’s also possible to set a background image or color. Section is the standard main container of any snippet.
 
-``.row > .col-md-*``
-  Any medium  bootstrap columns  directly descending from a .row element, will be resizable by the publisher.
+``.row > .col-lg-*``
+  Any large bootstrap columns directly descending from a .row element, will be resizable by the publisher.
 
 ``contenteditable="False"``
   This attribute will prevent editing to the element and all its children.

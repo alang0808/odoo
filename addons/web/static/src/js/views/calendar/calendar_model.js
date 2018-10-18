@@ -373,7 +373,9 @@ return AbstractModel.extend({
             domain.push([field, 'in', authorizedValues[field]]);
         }
         for (var field in avoidValues) {
-            domain.push([field, 'not in', avoidValues[field]]);
+            if (avoidValues[field].length > 0) {
+                domain.push([field, 'not in', avoidValues[field]]);
+            }
         }
 
         return domain;
@@ -403,6 +405,7 @@ return AbstractModel.extend({
             dayNames: moment.weekdays(),
             dayNamesShort: moment.weekdaysShort(),
             firstDay: _t.database.parameters.week_start,
+            slotLabelFormat: _t.database.parameters.time_format.search("%H") != -1 ? 'H:mm': 'h(:mm)a',
         };
     },
     /**

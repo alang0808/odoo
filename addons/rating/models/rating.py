@@ -38,7 +38,7 @@ class Rating(models.Model):
     res_id = fields.Integer(string='Document', required=True, help="Identifier of the rated object", index=True)
     parent_res_name = fields.Char('Parent Document Name', compute='_compute_parent_res_name', store=True)
     parent_res_model_id = fields.Many2one('ir.model', 'Parent Related Document Model', index=True, ondelete='cascade')
-    parent_res_model = fields.Char('Parent Document Model', store=True, related='parent_res_model_id.model', index=True)
+    parent_res_model = fields.Char('Parent Document Model', store=True, related='parent_res_model_id.model', index=True, readonly=False)
     parent_res_id = fields.Integer('Parent Document', index=True)
     rated_partner_id = fields.Many2one('res.partner', string="Rated person", help="Owner of the rated resource")
     partner_id = fields.Many2one('res.partner', string='Customer', help="Author of the rating")
@@ -106,9 +106,11 @@ class Rating(models.Model):
             'parent_res_id': False,
         }
         if hasattr(current_record, 'rating_get_parent'):
-            parent_res_model = getattr(current_record, current_record.rating_get_parent())
-            data['parent_res_model_id'] = self.env['ir.model']._get(parent_res_model._name).id
-            data['parent_res_id'] = parent_res_model.id
+            current_record_parent = current_record.rating_get_parent()
+            if current_record_parent:
+                parent_res_model = getattr(current_record, current_record_parent)
+                data['parent_res_model_id'] = self.env['ir.model']._get(parent_res_model._name).id
+                data['parent_res_id'] = parent_res_model.id
         return data
 
     @api.multi
@@ -137,8 +139,8 @@ class RatingMixin(models.AbstractModel):
 
     rating_ids = fields.One2many('rating.rating', 'res_id', string='Rating', domain=lambda self: [('res_model', '=', self._name)], auto_join=True)
     rating_last_value = fields.Float('Rating Last Value', compute='_compute_rating_last_value', compute_sudo=True, store=True)
-    rating_last_feedback = fields.Text('Rating Last Feedback', related='rating_ids.feedback')
-    rating_last_image = fields.Binary('Rating Last Image', related='rating_ids.rating_image')
+    rating_last_feedback = fields.Text('Rating Last Feedback', related='rating_ids.feedback', readonly=False)
+    rating_last_image = fields.Binary('Rating Last Image', related='rating_ids.rating_image', readonly=False)
     rating_count = fields.Integer('Rating count', compute="_compute_rating_count")
 
     @api.multi
@@ -213,12 +215,33 @@ class RatingMixin(models.AbstractModel):
         return rating.access_token
 
     @api.multi
-    def rating_send_request(self, template, lang=False, force_send=True):
+    def rating_send_request(self, template, lang=False, subtype_id=False, force_send=True, composition_mode='comment', notif_layout=None):
         """ This method send rating request by email, using a template given
-        in parameter. """
-        lang = lang or 'en_US'
+        in parameter.
+
+         :param template: a mail.template record used to compute the message body;
+         :param lang: optional lang; it can also be specified directly on the template
+           itself in the lang field;
+         :param subtype_id: optional subtype to use when creating the message; is
+           a note by default to avoid spamming followers;
+         :param force_send: whether to send the request directly or use the mail
+           queue cron (preferred option);
+         :param composition_mode: comment (message_post) or mass_mail (template.send_mail);
+         :param notif_layout: layout used to encapsulate the content when sending email;
+        """
+        if lang:
+            template = template.with_context(lang=lang)
+        if subtype_id is False:
+            subtype_id = self.env['ir.model.data'].xmlid_to_res_id('mail.mt_note')
+        if force_send:
+            self = self.with_context(mail_notify_force_send=True)
         for record in self:
-            template.with_context(lang=lang).send_mail(record.id, force_send=force_send)
+            record.message_post_with_template(
+                template.id,
+                composition_mode=composition_mode,
+                notif_layout=notif_layout if notif_layout is not None else 'mail.mail_notification_light',
+                subtype_id=subtype_id
+            )
 
     @api.multi
     def rating_apply(self, rate, token=None, feedback=None, subtype=None):

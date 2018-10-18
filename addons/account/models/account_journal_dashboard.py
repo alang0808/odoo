@@ -26,13 +26,10 @@ class account_journal(models.Model):
     kanban_dashboard_graph = fields.Text(compute='_kanban_dashboard_graph')
     show_on_dashboard = fields.Boolean(string='Show journal on dashboard', help="Whether this journal should be displayed on the dashboard or not", default=True)
     color = fields.Integer("Color Index", default=0)
-    account_setup_bank_data_done = fields.Boolean(string='Bank setup marked as done', related='company_id.account_setup_bank_data_done', help="Technical field used in the special view for the setup bar step.")
 
     def _graph_title_and_key(self):
-        if self.type == 'sale':
-            return ['', _('Sales: Untaxed Total')]
-        elif self.type == 'purchase':
-            return ['', _('Purchase: Untaxed Total')]
+        if self.type in ['sale', 'purchase']:
+            return ['', _('Residual amount')]
         elif self.type == 'cash':
             return ['', _('Cash: Balance')]
         elif self.type == 'bank':
@@ -78,7 +75,7 @@ class account_journal(models.Model):
                         """
         self.env.cr.execute(query, (self.id, last_month, today))
         for val in self.env.cr.dictfetchall():
-            date = datetime.strptime(val['date'], DF)
+            date = val['date']
             if val['date'] != today.strftime(DF):  # make sure the last point in the graph is today
                 data[:0] = [build_graph_data(date, amount)]
             amount -= val['amount']
@@ -94,7 +91,7 @@ class account_journal(models.Model):
     @api.multi
     def get_bar_graph_datas(self):
         data = []
-        today = datetime.strptime(fields.Date.context_today(self), DF)
+        today = fields.Datetime.now(self)
         data.append({'label': _('Past'), 'value':0.0, 'type': 'past'})
         day_of_week = int(format_datetime(today, 'e', locale=self._context.get('lang') or 'en_US'))
         first_day_of_week = today + timedelta(days=-day_of_week+1)
@@ -118,12 +115,12 @@ class account_journal(models.Model):
         start_date = (first_day_of_week + timedelta(days=-7))
         for i in range(0,6):
             if i == 0:
-                query += "("+select_sql_clause+" and date < '"+start_date.strftime(DF)+"')"
+                query += "("+select_sql_clause+" and date_due < '"+start_date.strftime(DF)+"')"
             elif i == 5:
-                query += " UNION ALL ("+select_sql_clause+" and date >= '"+start_date.strftime(DF)+"')"
+                query += " UNION ALL ("+select_sql_clause+" and date_due >= '"+start_date.strftime(DF)+"')"
             else:
                 next_date = start_date + timedelta(days=7)
-                query += " UNION ALL ("+select_sql_clause+" and date >= '"+start_date.strftime(DF)+"' and date < '"+next_date.strftime(DF)+"')"
+                query += " UNION ALL ("+select_sql_clause+" and date_due >= '"+start_date.strftime(DF)+"' and date_due < '"+next_date.strftime(DF)+"')"
                 start_date = next_date
 
         self.env.cr.execute(query, query_args)
@@ -141,7 +138,7 @@ class account_journal(models.Model):
         the bar graph's data as its first element, and the arguments dictionary
         for it as its second.
         """
-        return ("""SELECT sum(residual_company_signed) as total, min(date) as aggr_date
+        return ("""SELECT sum(residual_company_signed) as total, min(date_due) as aggr_date
                FROM account_invoice
                WHERE journal_id = %(journal_id)s and state = 'open'""", {'journal_id':self.id})
 
@@ -160,7 +157,7 @@ class account_journal(models.Model):
                             FROM account_bank_statement_line AS line
                             LEFT JOIN account_bank_statement AS st
                             ON line.statement_id = st.id
-                            WHERE st.journal_id IN %s AND st.state = 'open' AND line.amount != 0.0
+                            WHERE st.journal_id IN %s AND st.state = 'open' AND line.amount != 0.0 AND line.account_id IS NULL
                             AND not exists (select 1 from account_move_line aml where aml.statement_line_id = line.id)
                         """, (tuple(self.ids),))
             number_to_reconcile = self.env.cr.fetchone()[0]
@@ -323,8 +320,10 @@ class account_journal(models.Model):
                 action_name = 'action_view_bank_statement_tree'
             elif self.type == 'sale':
                 action_name = 'action_invoice_tree1'
+                self = self.with_context(use_domain=[('type', '=', 'out_invoice')])
             elif self.type == 'purchase':
-                action_name = 'action_invoice_tree2'
+                action_name = 'action_vendor_bill_template'
+                self = self.with_context(use_domain=[('type', '=', 'in_invoice')])
             else:
                 action_name = 'action_move_journal_line'
 
@@ -354,11 +353,14 @@ class account_journal(models.Model):
         action['context'] = ctx
         action['domain'] = self._context.get('use_domain', [])
         account_invoice_filter = self.env.ref('account.view_account_invoice_filter', False)
-        if action_name in ['action_invoice_tree1', 'action_invoice_tree2']:
+        if action_name in ['action_invoice_tree1', 'action_vendor_bill_template']:
             action['search_view_id'] = account_invoice_filter and account_invoice_filter.id or False
         if action_name in ['action_bank_statement_tree', 'action_view_bank_statement_tree']:
             action['views'] = False
             action['view_id'] = False
+        if self.type == 'purchase':
+            new_help = self.env['account.invoice'].with_context(ctx).complete_empty_list_help()
+            action.update({'help': action.get('help', '') + new_help})
         return action
 
     @api.multi
@@ -408,7 +410,6 @@ class account_journal(models.Model):
     @api.multi
     def create_bank_statement(self):
         """return action to create a bank statements. This button should be called only on journals with type =='bank'"""
-        self.bank_statements_source = 'manual'
         action = self.env.ref('account.action_bank_statement_tree').read()[0]
         action.update({
             'views': [[False, 'form']],
@@ -434,23 +435,10 @@ class account_journal(models.Model):
     #####################
     # Setup Steps Stuff #
     #####################
-    @api.model
-    def retrieve_account_dashboard_setup_bar(self):
-        """ Returns the data used by the setup bar on the Accounting app dashboard."""
-        company = self.env.user.company_id
-        return {
-            'show_setup_bar': not company.account_setup_bar_closed,
-            'company': company.account_setup_company_data_done,
-            'bank': company.account_setup_bank_data_done,
-            'fiscal_year': company.account_setup_fy_data_done,
-            'chart_of_accounts': company.account_setup_coa_done,
-            'initial_balance': company.opening_move_posted(),
-        }
-
     def mark_bank_setup_as_done_action(self):
         """ Marks the 'bank setup' step as done in the setup bar and in the company."""
-        self.company_id.account_setup_bank_data_done = True
+        self.company_id.set_onboarding_step_done('account_setup_bank_data_state')
 
     def unmark_bank_setup_as_done_action(self):
         """ Marks the 'bank setup' step as not done in the setup bar and in the company."""
-        self.company_id.account_setup_bank_data_done = False
+        self.company_id.account_setup_bank_data_state = 'not_done'

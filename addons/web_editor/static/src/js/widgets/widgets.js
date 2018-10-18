@@ -83,7 +83,7 @@ var AltDialog = Dialog.extend({
         this.$editable = $editable;
         this.media = media;
         this.alt = ($(this.media).attr('alt') || "").replace(/&quot;/g, '"');
-        this.title = ($(this.media).attr('title') || "").replace(/&quot;/g, '"');
+        this.tag_title = ($(this.media).attr('title') || "").replace(/&quot;/g, '"');
     },
 
     //--------------------------------------------------------------------------
@@ -291,6 +291,10 @@ var ImageWidget = MediaWidget.extend({
         }
 
         var img = this.images[0];
+        if (!img) {
+            return this.media;
+        }
+
         var def = $.when();
         if (!img.access_token) {
             def = this._rpc({
@@ -308,7 +312,10 @@ var ImageWidget = MediaWidget.extend({
                     img.src += _.str.sprintf('?access_token=%s', img.access_token);
                 }
                 if (!self.$media.is('img')) {
-                    self._replaceMedia($('<img/>'));
+                    // Note: by default the images receive the bootstrap opt-in
+                    // img-fluid class. We cannot make them all responsive
+                    // by design because of libraries and client databases img.
+                    self._replaceMedia($('<img/>', {class: 'img-fluid o_we_custom_image'}));
                 }
                 self.$media.attr('src', img.src);
 
@@ -356,10 +363,12 @@ var ImageWidget = MediaWidget.extend({
         if (!noRender) {
             this.$('input.url').val('').trigger('input').trigger('change');
         }
+        // TODO: Expand this for adding SVG
         var domain = this.domain.concat(['|', ['mimetype', '=', false], ['mimetype', this.options.document ? 'not in' : 'in', ['image/gif', 'image/jpe', 'image/jpeg', 'image/jpg', 'image/gif', 'image/png']]]);
         if (needle && needle.length) {
             domain.push('|', ['datas_fname', 'ilike', needle], ['name', 'ilike', needle]);
         }
+        domain.push('!', ['datas_fname', '=like', '%.crop'], '!', ['name', '=like', '%.crop']);
         return this._rpc({
             model: 'ir.attachment',
             method: 'search_read',
@@ -381,13 +390,13 @@ var ImageWidget = MediaWidget.extend({
                 .sortBy(function (r) {
                     if (_.any(self.firstFilters, function (filter) {
                         var regex = new RegExp(filter, 'i');
-                        return r.name.match(regex) || r.datas_fname.match(regex);
+                        return r.name.match(regex) || r.datas_fname && r.datas_fname.match(regex);
                     })) {
                         return -1;
                     }
                     if (_.any(self.lastFilters, function (filter) {
                         var regex = new RegExp(filter, 'i');
-                        return r.name.match(regex) || r.datas_fname.match(regex);
+                        return r.name.match(regex) || r.datas_fname && r.datas_fname.match(regex);
                     })) {
                         return 1;
                     }
@@ -442,7 +451,7 @@ var ImageWidget = MediaWidget.extend({
             .values()
             .value();
 
-        this.$('.help-block').empty();
+        this.$('.form-text').empty();
 
         this.$('.existing-attachments').replaceWith(QWeb.render('web_editor.dialog.image.existing.content', {rows: rows}));
 
@@ -451,7 +460,7 @@ var ImageWidget = MediaWidget.extend({
             var $div = $(el);
             if (/gif|jpe|jpg|png/.test($div.data('mimetype'))) {
                 var $img = $('<img/>', {
-                    class: 'img-responsive',
+                    class: 'img-fluid',
                     src: $div.data('url') || $div.data('src'),
                 });
                 var def = $.Deferred();
@@ -508,7 +517,7 @@ var ImageWidget = MediaWidget.extend({
             self.$('.well > span').remove();
             self.$('.well > div').show();
             _.each(attachments, function (record) {
-                record.src = record.url || '/web/image/' + record.id;
+                record.src = record.url || _.str.sprintf('/web/image/%s/%s', record.id, encodeURI(record.name)); // Name is added for SEO purposes
                 record.isDocument = !(/gif|jpe|jpg|png/.test(record.mimetype));
             });
             if (error || !attachments.length) {
@@ -530,7 +539,8 @@ var ImageWidget = MediaWidget.extend({
                     self._toggleImage(attachment, true);
                 } else {
                     $button.addClass('btn-danger');
-                    self.$el.addClass('has-error').find('.help-block').text(error);
+                    self.$el.addClass('o_has_error').find('.form-control, .custom-select').addClass('is-invalid');
+                    self.$el.find('.form-text').text(error);
                 }
 
                 if (!self.multiImages) {
@@ -568,7 +578,8 @@ var ImageWidget = MediaWidget.extend({
     _onImageSelection: function () {
         var $form = this.$('form');
         this.$el.addClass('nosave');
-        $form.removeClass('has-error').find('.help-block').empty();
+        $form.removeClass('o_has_error').find('.form-control, .custom-select').removeClass('is-invalid');
+        $form.find('.form-text').empty();
         this.$('.o_upload_image_button').removeClass('btn-danger btn-success');
         this._uploadImage();
     },
@@ -577,7 +588,7 @@ var ImageWidget = MediaWidget.extend({
      */
     _onRemoveClick: function (ev) {
         var self = this;
-        var $helpBlock = this.$('.help-block').empty();
+        var $helpBlock = this.$('.form-text').empty();
         var $a = $(ev.currentTarget);
         var id = parseInt($a.data('id'), 10);
         var attachment = _.findWhere(this.records, {id: id});
@@ -603,9 +614,9 @@ var ImageWidget = MediaWidget.extend({
      */
     _onSearchInput: function (ev) {
         var $input = $(ev.currentTarget);
-        var $button = $input.next('button');
+        var $button = $input.next('.input-group-append').children();
         var emptyValue = ($input.val() === '');
-        $button.toggleClass('btn-default', emptyValue).toggleClass('btn-primary', !emptyValue)
+        $button.toggleClass('btn-secondary', emptyValue).toggleClass('btn-primary', !emptyValue)
                .prop('disabled', emptyValue);
     },
     /**
@@ -950,6 +961,9 @@ var VideoWidget = MediaWidget.extend({
             return {errorCode: 1};
         }
 
+        if (ytMatch) {
+            $video.attr('src', $video.attr('src') + '&rel=0');
+        }
         if (options.loop && (ytMatch || vimMatch)) {
             $video.attr('src', $video.attr('src') + '&loop=1');
         }
@@ -979,8 +993,8 @@ var VideoWidget = MediaWidget.extend({
     _updateVideo: function () {
         // Reset the feedback
         this.$content.empty();
-        this.$('#o_video_form_group').removeClass('has-error has-success');
-        this.$('.o_video_dialog_options li').addClass('hidden');
+        this.$('#o_video_form_group').removeClass('o_has_error o_has_success').find('.form-control, .custom-select').removeClass('is-invalid is-valid');
+        this.$('.o_video_dialog_options li').addClass('d-none');
 
         // Check video code
         var $textarea = this.$('textarea#o_video_text');
@@ -1009,20 +1023,23 @@ var VideoWidget = MediaWidget.extend({
         var $opt_box = this.$('.o_video_dialog_options');
 
         // Show / Hide preview elements
-        this.$el.find('.o_video_dialog_preview_text, .media_iframe_video_size').add($opt_box).toggleClass('hidden', !query.$video);
+        this.$el.find('.o_video_dialog_preview_text, .media_iframe_video_size').add($opt_box).toggleClass('d-none', !query.$video);
         // Toggle validation classes
-        this.$el.find('#o_video_form_group').toggleClass('has-error', !query.$video).toggleClass('has-success', !!query.$video);
+        this.$el.find('#o_video_form_group')
+            .toggleClass('o_has_error', !query.$video).find('.form-control, .custom-select').toggleClass('is-invalid', !query.$video)
+            .end()
+            .toggleClass('o_has_success', !!query.$video).find('.form-control, .custom-select').toggleClass('is-valid', !!query.$video);
 
         // Individually show / hide options base on the video provider
-        $opt_box.find('li.o_' + query.type + '_option').removeClass('hidden');
+        $opt_box.find('li.o_' + query.type + '_option').removeClass('d-none');
 
         // Hide the entire options box if no options are available
-        $opt_box.toggleClass('hidden', $opt_box.find('li:not(.hidden)').length === 0);
+        $opt_box.toggleClass('d-none', $opt_box.find('li:not(.d-none)').length === 0);
 
         if (query.type === 'yt') {
             // Youtube only: If 'hide controls' is checked, hide 'fullscreen'
             // and 'youtube logo' options too
-            this.$('input#o_video_hide_fullscreen, input#o_video_hide_yt_logo').closest('li').toggleClass('hidden', this.$('input#o_video_hide_controls').is(':checked'));
+            this.$('input#o_video_hide_fullscreen, input#o_video_hide_yt_logo').closest('li').toggleClass('d-none', this.$('input#o_video_hide_controls').is(':checked'));
         }
 
         var $content = query.$video;
@@ -1091,10 +1108,11 @@ var MediaDialog = Dialog.extend({
     events : _.extend({}, Dialog.prototype.events, {
         'input input#icon-search': '_onSearchInput',
         'shown.bs.tab a[data-toggle="tab"]': '_onTabChange',
-        'click .pager > li > a:not(.disabled)': '_onPagerClick',
+        'click .previous:not(.disabled), .next:not(.disabled)': '_onPagerClick',
     }),
     custom_events: _.extend({}, Dialog.prototype.custom_events || {}, {
         save_request: '_onSaveRequest',
+        update_control_panel: '_updateControlPanel',
     }),
 
     /**
@@ -1136,22 +1154,19 @@ var MediaDialog = Dialog.extend({
         }
 
         this.opened(function () {
-            if (!self.media) {
-                return;
-            }
-            if (self.$media.is('img')) {
-                self.$('[href="#editor-media-image"]').tab('show');
+            var tabToShow = 'icon';
+            if (!self.media || self.$media.is('img')) {
+                tabToShow = 'image';
             } else if (self.$media.is('a.o_image')) {
-                self.$('[href="#editor-media-document"]').tab('show');
+                tabToShow = 'document';
             } else if (self.$media.attr('class').match(/(^|\s)media_iframe_video($|\s)/)) {
-                self.$('[href="#editor-media-video"]').tab('show');
+                tabToShow = 'video';
             } else if (self.$media.parent().attr('class').match(/(^|\s)media_iframe_video($|\s)/)) {
                 self.$media = self.$media.parent();
                 self.media = self.$media[0];
-                self.$('[href="#editor-media-video"]').tab('show');
-            } else if (self.$media.attr('class').match(/(^|\s)fa($|\s)/)) {
-                self.$('[href="#editor-media-icon"]').tab('show');
+                tabToShow = 'video';
             }
+            self.$('[href="#editor-media-' + tabToShow + '"]').tab('show');
         });
 
         this._onSearchInput = _.debounce(this._onSearchInput, 250);
@@ -1219,7 +1234,7 @@ var MediaDialog = Dialog.extend({
         }
 
         return $.when(this.active.save()).then(function (media) {
-            if (!self.media) {
+            if (!self.media && media) {
                 self.range.insertNode(media, true);
             }
             self.media = media;
@@ -1231,7 +1246,7 @@ var MediaDialog = Dialog.extend({
 
             // Update editor bar after image edition (in case the image change to icon or other)
             _.defer(function () {
-                if (!self.media.parentNode) {
+                if (!self.media || !self.media.parentNode) {
                     return;
                 }
                 range.createFromNode(self.media).select();
@@ -1259,10 +1274,10 @@ var MediaDialog = Dialog.extend({
      */
     _updateControlPanel: function () {
         var cpConfig = this.active.getControlPanelConfig();
-        this.$('li.search').toggleClass("hidden", !cpConfig.searchEnabled);
-        this.$('li.previous, li.next').toggleClass("hidden", !cpConfig.pagerEnabled);
-        this.$('li.previous > a').toggleClass("disabled", !cpConfig.pagerLeftEnabled);
-        this.$('li.next > a').toggleClass("disabled", !cpConfig.pagerRightEnabled);
+        this.$('li.search').toggleClass('d-none', !cpConfig.searchEnabled);
+        this.$('.previous, .next').toggleClass('d-none', !cpConfig.pagerEnabled);
+        this.$('.previous').toggleClass("disabled", !cpConfig.pagerLeftEnabled);
+        this.$('.next').toggleClass("disabled", !cpConfig.pagerRightEnabled);
     },
 
     //--------------------------------------------------------------------------
@@ -1273,7 +1288,7 @@ var MediaDialog = Dialog.extend({
      * @private
      */
     _onPagerClick: function (ev) {
-        this.active.goToPage(this.active.page + ($(ev.currentTarget).parent().hasClass('previous') ? -1 : 1));
+        this.active.goToPage(this.active.page + ($(ev.currentTarget).hasClass('previous') ? -1 : 1));
         this._updateControlPanel();
     },
     /**
@@ -1403,6 +1418,8 @@ var LinkDialog = Dialog.extend({
                     if (dom.ancestor(nodes[i], dom.isImg)) {
                         this.data.images.push(dom.ancestor(nodes[i], dom.isImg));
                         text += '[IMG]';
+                    } else if (!is_link && nodes[i].nodeType === 1) {
+                        // just use text nodes from listBetween
                     } else if (!is_link && i===0) {
                         text += nodes[i].textContent.slice(so, Infinity);
                     } else if (!is_link && i===nodes.length-1) {
@@ -1441,6 +1458,21 @@ var LinkDialog = Dialog.extend({
             this.$('input[name="url"]').val(match ? match[1] : this.data.url);
         }
 
+        // Hide the duplicate color buttons (most of the times, primary = alpha
+        // and secondary = beta for example but this may depend on the theme)
+        this.opened().then(function () {
+            var colors = [];
+            _.each(self.$('.o_btn_preview.o_link_dialog_color_item'), function (btn) {
+                var $btn = $(btn);
+                var color = $btn.css('background-color');
+                if (_.contains(colors, color)) {
+                    $btn.remove();
+                } else {
+                    colors.push(color);
+                }
+            });
+        });
+
         this._adaptPreview();
 
         this.$('input:visible:first').focus();
@@ -1459,14 +1491,14 @@ var LinkDialog = Dialog.extend({
         var data = this._getData();
         if (data === null) {
             var $url = this.$('input[name="url"]');
-            $url.closest('.form-group').addClass('has-error');
+            $url.closest('.form-group').addClass('o_has_error').find('.form-control, .custom-select').addClass('is-invalid');
             $url.focus();
             return $.Deferred().reject();
         }
         this.data.text = data.label;
         this.data.url = data.url;
         this.data.className = data.classes.replace(/\s+/gi, ' ').replace(/^\s+|\s+$/gi, '');
-        if (data.classes.replace(/(^|[ ])(btn-default|btn-success|btn-primary|btn-info|btn-warning|btn-danger)([ ]|$)/gi, ' ')) {
+        if (data.classes.replace(/(^|[ ])(btn-secondary|btn-success|btn-primary|btn-info|btn-warning|btn-danger)([ ]|$)/gi, ' ')) {
             this.data.style = {'background-color': '', 'color': ''};
         }
         this.data.isNewWindow = data.isNewWindow;
@@ -1490,7 +1522,7 @@ var LinkDialog = Dialog.extend({
         $preview.attr({
             target: data.isNewWindow ? '_blank' : '',
             href: data.url && data.url.length ? data.url : '#',
-            class: data.classes.replace(/pull-\w+/, '') + ' o_btn_preview',
+            class: data.classes.replace(/float-\w+/, '') + ' o_btn_preview',
         }).html((data.label && data.label.length) ? data.label : data.url);
     },
     /**
@@ -1512,13 +1544,18 @@ var LinkDialog = Dialog.extend({
         }
 
         var style = this.$('input[name="link_style_color"]:checked').val() || '';
+        var shape = this.$('select[name="link_style_shape"]').val() || '';
         var size = this.$('select[name="link_style_size"]').val() || '';
+        var shapes = shape.split(',');
+        var outline = shapes[0] === 'outline';
+        shape = shapes.slice(outline ? 1 : 0).join(' ');
         var classes = (this.data.className || '')
-            + ((style && style.length) ? (' btn btn-' + style) : '')
-            + ((size && size.length) ? (' btn-' + size) : '');
+            + (style ? (' btn btn-' + (outline ? 'outline-' : '') + style) : '')
+            + (shape ? (' ' + shape) : '')
+            + (size ? (' btn-' + size) : '');
         var isNewWindow = this.$('input[name="is_new_window"]').prop('checked');
 
-        if (url.indexOf('@') >= 0 && url.indexOf('mailto:') < 0) {
+        if (url.indexOf('@') >= 0 && url.indexOf('mailto:') < 0 && !url.match(/^http[s]?/i)) {
             url = ('mailto:' + url);
         }
         return {
@@ -1543,9 +1580,9 @@ var LinkDialog = Dialog.extend({
      * @private
      */
     _onURLInput: function (ev) {
-        $(ev.currentTarget).closest('.form-group').removeClass('has-error');
+        $(ev.currentTarget).closest('.form-group').removeClass('o_has_error').find('.form-control, .custom-select').removeClass('is-invalid');
         var isLink = $(ev.currentTarget).val().indexOf('@') < 0;
-        this.$('input[name="is_new_window"]').closest('.form-group').toggleClass('hidden', !isLink);
+        this.$('input[name="is_new_window"]').closest('.form-group').toggleClass('d-none', !isLink);
     },
 });
 
@@ -1573,23 +1610,21 @@ var CropImageDialog = Dialog.extend({
     init: function (parent, options, $editable, media) {
         this.media = media;
         this.$media = $(this.media);
-        var srcSplit = this.$media.attr('src').split('?');
-        var src = srcSplit[0];
-        this.imageData = {
-            initialSrc: src,
-            src: src, // the original src for cropped DB images will be fetched later
-            srcParams: $.deparam(srcSplit[1] || ''),
-            mimetype: _.str.endsWith(src, '.png') ? 'image/png' : 'image/jpeg', // the mimetype for DB images will be fetched later
-            aspectRatio: this.$media.data('aspectRatio') || 0,
-            isExternalImage: src[0] !== '/' && src.indexOf(window.location.host) < 0,
-        };
+        var src = this.$media.attr('src').split('?')[0];
         this.aspectRatioList = [
-            [_t("Free"), 0],
-            ['16:9', 16 / 9],
-            ['4:3', 4 / 3],
-            ['1:1', 1],
-            ['2:3', 2 / 3],
+            [_t("Free"), '0/0', 0],
+            ["16:9", '16/9', 16 / 9],
+            ["4:3", '4/3', 4 / 3],
+            ["1:1", '1/1', 1],
+            ["2:3", '2/3', 2 / 3],
         ];
+        this.imageData = {
+            imageSrc: src,
+            originalSrc: this.$media.data('crop:originalSrc') || src, // the original src for cropped DB images will be fetched later
+            mimetype: this.$media.data('crop:mimetype') || (_.str.endsWith(src, '.png') ? 'image/png' : 'image/jpeg'), // the mimetype for DB images will be fetched later
+            aspectRatio: this.$media.data('aspectRatio') || this.aspectRatioList[0][1],
+            isExternalImage: src.substr(0, 5) !== 'data:' && src[0] !== '/' && src.indexOf(window.location.host) < 0,
+        };
         this.options = _.extend({
             title: _t("Crop Image"),
             buttons: this.imageData.isExternalImage ? [{
@@ -1619,12 +1654,12 @@ var CropImageDialog = Dialog.extend({
         var defs = [def, ajax.loadLibs(this)];
         var params = {};
         var isDBImage = false;
-        var matchImageID = this.imageData.src.match(/^\/web\/image\/(\d+)/);
+        var matchImageID = this.imageData.imageSrc.match(/^\/web\/image\/(\d+)/);
         if (matchImageID) {
             params['image_id'] = parseInt(matchImageID[1]);
             isDBImage = true;
         } else {
-            var matchXmlID = this.imageData.src.match(/^\/web\/image\/([^/?]+)/);
+            var matchXmlID = this.imageData.imageSrc.match(/^\/web\/image\/([^/?]+)/);
             if (matchXmlID) {
                 params['xml_id'] = matchXmlID[1];
                 isDBImage = true;
@@ -1646,10 +1681,19 @@ var CropImageDialog = Dialog.extend({
     start: function () {
         this.$cropperImage = this.$('.o_cropper_image');
         if (this.$cropperImage.length) {
+            var data = this.$media.data();
+            var ratio = 0;
+            for (var i = 0 ; i < this.aspectRatioList.length ; i++) {
+                if (this.aspectRatioList[i][1] === data.aspectRatio) {
+                    ratio = this.aspectRatioList[i][2];
+                    break;
+                }
+            }
             this.$cropperImage.cropper({
                 viewMode: 1,
                 autoCropArea: 1,
-                data: _.pick(this.$media.data(), 'aspectRatio', 'x', 'y', 'width', 'height', 'rotate', 'scaleX', 'scaleY')
+                aspectRatio: ratio,
+                data: _.pick(data, 'x', 'y', 'width', 'height', 'rotate', 'scaleX', 'scaleY')
             });
         }
         return this._super.apply(this, arguments);
@@ -1664,115 +1708,47 @@ var CropImageDialog = Dialog.extend({
         this._super.apply(this, arguments);
     },
     /**
-     * Stores the cropped image in database.
+     * Updates the DOM image with cropped data and associates required
+     * information for a potential future save (where required cropped data
+     * attachments will be created).
      *
-     * @private
-     * @returns {Deferred}
+     * @override
      */
     save: function () {
-        var _super = this._super.bind(this);
-        var def;
-        if (this.imageData.initialSrc === this.imageData.src) {
-            // When this is a new image being cropped
-            def = this._createImage();
-        } else {
-            // When this is a previously cropped image
-            def = this._updateImage();
-        }
-        return def.then(_super);
-    },
-
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
-    /**
-     * Gets the base64 data from the cropper canvas.
-     *
-     * @private
-     * @returns {string} base64 image data
-     */
-    _getImageBase64: function () {
+        var self = this;
         var cropperData = this.$cropperImage.cropper('getData');
-        var canvas = this.$cropperImage.cropper('getCroppedCanvas', {
-            width: cropperData.width,
-            height: cropperData.height,
-        });
-        return canvas.toDataURL(this.imageData.mimetype).split(',')[1];
-    },
-    /**
-     * Creates a new attachment for the cropped image data and updates the image
-     * with the correct URL.
-     *
-     * @private
-     * @returns {Deferred}
-     */
-    _createImage: function () {
-        var self = this;
-        var name = this.imageData.src + '.crop';
-        return this._rpc({
-            model: 'ir.attachment',
-            method: 'create',
-            args: [{
-                res_model: this.options.res_model,
-                res_id: this.options.res_id,
-                name: name,
-                datas_fname: name,
-                datas: this._getImageBase64(),
-                mimetype: this.imageData.mimetype,
-                url: this.imageData.src, // To save the original image that was cropped
-            }],
-        }).then(function (attachmentID) {
-            return self._rpc({
-                model: 'ir.attachment',
-                method: 'generate_access_token',
-                args: [[attachmentID]],
-            }).then(function (access_token) {
-                var params = _.omit(self.imageData.srcParams, 'unique');
-                params.access_token = access_token[0];
-                self.$media.attr('src', '/web/image/' + attachmentID + '?' + $.param(params));
-                self._setCropBoxData();
-            });
-        });
-    },
-    /**
-     * Writes the cropped image attachment with the new data and forces a
-     * refresh of the image.
-     *
-     * @private
-     * @returns {Deferred}
-     */
-    _updateImage: function () {
-        var self = this;
-        return this._rpc({
-            model: 'ir.attachment',
-            method: 'write',
-            args: [[this.imageData.id], {datas: this._getImageBase64()}],
-        }).then(function () {
-            self.$media.addClass('o_cropped_img_to_clean');
-            var params = _.clone(self.imageData.srcParams);
-            params.unique = new Date().getTime();
-            self.$media.attr('src', '/web/image/' + self.imageData.id + '?' + $.param(params));
-            self._setCropBoxData();
-        });
-    },
-    /**
-     * Saves current crop configuration data as image attributes for future
-     * edition.
-     *
-     * @private
-     */
-    _setCropBoxData: function () {
-        var self = this;
-        var cropBoxData = _.extend({
-            aspectRatio: this.imageData.aspectRatio, // Library's getData does not export aspect ratio
-        }, this.$cropperImage.cropper('getData'));
-        _.each(cropBoxData, function (value, key) {
+
+        // Mark the media for later creation of required cropped attachments...
+        this.$media.addClass('o_cropped_img_to_save');
+
+        // ... and attach required data
+        this.$media.data('crop:resModel', this.options.res_model);
+        this.$media.data('crop:resID', this.options.res_id);
+        this.$media.data('crop:id', this.imageData.id);
+        this.$media.data('crop:mimetype', this.imageData.mimetype);
+        this.$media.data('crop:originalSrc', this.imageData.originalSrc);
+
+        // Mark the media with the cropping information which is required for
+        // a future crop edition
+        this.$media
+            .attr('data-aspect-ratio', this.imageData.aspectRatio)
+            .data('aspectRatio', this.imageData.aspectRatio);
+        _.each(cropperData, function (value, key) {
             key = _.str.dasherize(key);
             self.$media.attr('data-' + key, value);
             self.$media.data(key, value);
         });
+
+        // Update the media with base64 source for preview before saving
+        var canvas = this.$cropperImage.cropper('getCroppedCanvas', {
+            width: cropperData.width,
+            height: cropperData.height,
+        });
+        this.$media.attr('src', canvas.toDataURL(this.imageData.mimetype));
+
         this.$media.trigger('content_changed');
+
+        return this._super.apply(this, arguments);
     },
 
     //--------------------------------------------------------------------------
@@ -1786,17 +1762,14 @@ var CropImageDialog = Dialog.extend({
      * @param {MouseEvent} ev
      */
     _onCropOptionClick: function (ev) {
-        ev.preventDefault();
         var $option = $(ev.currentTarget);
         var opt = $option.data('event');
         var value = $option.data('value');
         switch (opt) {
             case 'ratio':
-                $option.siblings().removeClass('active');
-                $option.addClass('active');
                 this.$cropperImage.cropper('reset');
-                this.imageData.aspectRatio = value;
-                this.$cropperImage.cropper('setAspectRatio', this.imageData.aspectRatio);
+                this.imageData.aspectRatio = $option.data('label');
+                this.$cropperImage.cropper('setAspectRatio', value);
                 break;
             case 'zoom':
             case 'rotate':
@@ -1819,5 +1792,6 @@ return {
     MediaDialog: MediaDialog,
     LinkDialog: LinkDialog,
     CropImageDialog: CropImageDialog,
+    ImageWidget: ImageWidget,
 };
 });

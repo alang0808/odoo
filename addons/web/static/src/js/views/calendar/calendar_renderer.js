@@ -78,6 +78,9 @@ var SidebarFilter = Widget.extend(FieldManagerMixin, {
                     {
                         mode: 'edit',
                         can_create: false,
+                        attrs: {
+                            'placeholder': _.str.sprintf(_t("Add %s"), self.title),
+                        },
                     });
             });
             defs.push(def);
@@ -95,7 +98,7 @@ var SidebarFilter = Widget.extend(FieldManagerMixin, {
             this.many2one.filter_ids = _.without(_.pluck(this.filters, 'value'), 'all');
         }
         this.$el.on('click', '.o_remove', this._onFilterRemove.bind(this));
-        this.$el.on('click', '.o_checkbox input', this._onFilterActive.bind(this));
+        this.$el.on('click', '.custom-checkbox input', this._onFilterActive.bind(this));
     },
 
     //--------------------------------------------------------------------------
@@ -388,7 +391,8 @@ return AbstractRenderer.extend({
                 if (!event.allDay) {
                     var start = event.r_start || event.start;
                     var end = event.r_end || event.end;
-                    display_hour = start.format('HH:mm') + ' - ' + end.format('HH:mm');
+                    var timeFormat = _t.database.parameters.time_format.search("%H") != -1 ? 'HH:mm': 'h:mma';
+                    display_hour = start.format(timeFormat) + ' - ' + end.format(timeFormat);
                     if (display_hour === '00:00 - 00:00') {
                         display_hour = _t('All day');
                     }
@@ -409,6 +413,7 @@ return AbstractRenderer.extend({
             },
             height: 'parent',
             unselectAuto: false,
+            isRTL: _t.database.parameters.direction === "rtl",
         });
 
         this.$calendar.fullCalendar(fc_options);

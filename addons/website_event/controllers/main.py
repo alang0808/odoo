@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import fields, http, _
 from odoo.addons.http_routing.models.ir_http import slug
-from odoo.http import request
+from odoo.http import content_disposition, request
 
 
 class WebsiteEventController(http.Controller):
@@ -28,7 +28,6 @@ class WebsiteEventController(http.Controller):
         searches.setdefault('type', 'all')
         searches.setdefault('country', 'all')
 
-        domain_search = {}
 
         def sdn(date):
             return fields.Datetime.to_string(date.replace(hour=23, minute=59, second=59))
@@ -58,13 +57,13 @@ class WebsiteEventController(http.Controller):
                 ("date_end", ">=", sd(today.replace(day=1) + relativedelta(months=1))),
                 ("date_begin", "<", (today.replace(day=1) + relativedelta(months=2)).strftime('%Y-%m-%d 00:00:00'))],
                 0],
-            ['old', _('Old Events'), [
+            ['old', _('Past Events'), [
                 ("date_end", "<", today.strftime('%Y-%m-%d 00:00:00'))],
                 0],
         ]
 
         # search domains
-        # TDE note: WTF ???
+        domain_search = {'website_specific': request.website.website_domain()}
         current_date = None
         current_type = None
         current_country = None
@@ -119,9 +118,12 @@ class WebsiteEventController(http.Controller):
             step=step,
             scope=5)
 
-        order = 'website_published desc, date_begin'
+        order = 'date_begin'
         if searches.get('date', 'all') == 'old':
-            order = 'website_published desc, date_begin desc'
+            order = 'date_begin desc'
+        if searches["country"] != 'all':   # if we are looking for a specific country
+            order = 'is_online, ' + order  # show physical events first
+        order = 'is_published desc, ' + order
         events = Event.search(dom_without("none"), limit=step, offset=pager['offset'], order=order)
 
         values = {
@@ -139,8 +141,11 @@ class WebsiteEventController(http.Controller):
 
         return request.render("website_event.index", values)
 
-    @http.route(['/event/<model("event.event"):event>/page/<path:page>'], type='http', auth="public", website=True, sitemap=False)
+    @http.route(['''/event/<model("event.event", "[('website_id', 'in', (False, current_website_id))]"):event>/page/<path:page>'''], type='http', auth="public", website=True, sitemap=False)
     def event_page(self, event, page, **post):
+        if not event.can_access_from_current_website():
+            raise werkzeug.exceptions.NotFound()
+
         values = {
             'event': event,
             'main_object': event
@@ -159,8 +164,11 @@ class WebsiteEventController(http.Controller):
 
         return request.render(page, values)
 
-    @http.route(['/event/<model("event.event"):event>'], type='http', auth="public", website=True)
+    @http.route(['''/event/<model("event.event", "[('website_id', 'in', (False, current_website_id))]"):event>'''], type='http', auth="public", website=True)
     def event(self, event, **post):
+        if not event.can_access_from_current_website():
+            raise werkzeug.exceptions.NotFound()
+
         if event.menu_id and event.menu_id.child_id:
             target_url = event.menu_id.child_id[0].url
         else:
@@ -169,13 +177,16 @@ class WebsiteEventController(http.Controller):
             target_url += '?enable_editor=1'
         return request.redirect(target_url)
 
-    @http.route(['/event/<model("event.event"):event>/register'], type='http', auth="public", website=True, sitemap=False)
+    @http.route(['''/event/<model("event.event", "[('website_id', 'in', (False, current_website_id))]"):event>/register'''], type='http', auth="public", website=True, sitemap=False)
     def event_register(self, event, **post):
+        if not event.can_access_from_current_website():
+            raise werkzeug.exceptions.NotFound()
+
         values = {
             'event': event,
             'main_object': event,
             'range': range,
-            'registrable': event._is_event_registrable()
+            'registrable': event.sudo()._is_event_registrable()
         }
         return request.render("website_event.event_description_full", values)
 
@@ -193,6 +204,7 @@ class WebsiteEventController(http.Controller):
             'date_begin': fields.Date.to_string(date_begin),
             'date_end': fields.Date.to_string((date_begin + timedelta(days=(1)))),
             'seats_available': 1000,
+            'website_id': request.website.id,
         }
         return request.env['event.event'].with_context(context or {}).create(vals)
 
@@ -208,11 +220,12 @@ class WebsiteEventController(http.Controller):
         country_code = request.session['geoip'].get('country_code')
         result = {'events': [], 'country': False}
         events = None
+        domain = request.website.website_domain()
         if country_code:
             country = request.env['res.country'].search([('code', '=', country_code)], limit=1)
-            events = Event.search(['|', ('address_id', '=', None), ('country_id.code', '=', country_code), ('date_begin', '>=', '%s 00:00:00' % fields.Date.today()), ('state', '=', 'confirm')], order="date_begin")
+            events = Event.search(domain + ['|', ('address_id', '=', None), ('country_id.code', '=', country_code), ('date_begin', '>=', '%s 00:00:00' % fields.Date.today()), ('state', '=', 'confirm')], order="date_begin")
         if not events:
-            events = Event.search([('date_begin', '>=', '%s 00:00:00' % fields.Date.today()), ('state', '=', 'confirm')], order="date_begin")
+            events = Event.search(domain + [('date_begin', '>=', '%s 00:00:00' % fields.Date.today()), ('state', '=', 'confirm')], order="date_begin")
         for event in events:
             if country_code and event.country_id.code == country_code:
                 result['country'] = country
@@ -250,8 +263,11 @@ class WebsiteEventController(http.Controller):
                 registration[key] = value
         return list(registrations.values())
 
-    @http.route(['/event/<model("event.event"):event>/registration/confirm'], type='http', auth="public", methods=['POST'], website=True)
+    @http.route(['''/event/<model("event.event", "[('website_id', 'in', (False, current_website_id))]"):event>/registration/confirm'''], type='http', auth="public", methods=['POST'], website=True)
     def registration_confirm(self, event, **post):
+        if not event.can_access_from_current_website():
+            raise werkzeug.exceptions.NotFound()
+
         Attendees = request.env['event.registration']
         registrations = self._process_registration_details(post)
 
@@ -262,21 +278,20 @@ class WebsiteEventController(http.Controller):
 
         urls = event._get_event_resource_urls(Attendees.ids)
         return request.render("website_event.registration_complete", {
-            'attendees': Attendees,
+            'attendees': Attendees.sudo(),
             'event': event,
             'google_url': urls.get('google_url'),
             'iCal_url': urls.get('iCal_url')
         })
 
-    @http.route(['/event/<model("event.event"):event>/ics/<string:name>.ics'], type='http', auth="public", website=True)
+    @http.route(['''/event/<model("event.event", "[('website_id', 'in', (False, current_website_id))]"):event>/ics'''], type='http', auth="public", website=True)
     def make_event_ics_file(self, event, **kwargs):
         if not event or not event.registration_ids:
             return request.not_found()
-        attendee_ids = list(json.loads(kwargs.get('attendees', '{}').replace("'", '"')).values())
-        files = event.get_ics_file(attendee_ids)
+        files = event._get_ics_file()
         content = files[event.id]
         return request.make_response(content, [
             ('Content-Type', 'application/octet-stream'),
             ('Content-Length', len(content)),
-            ('Content-Disposition', 'attachment; filename=' + event.name + '.ics')
+            ('Content-Disposition', content_disposition('%s.ics' % event.name))
         ])

@@ -50,6 +50,7 @@ var BasicRenderer = AbstractRenderer.extend({
                 invalidFields.push(widget.name);
             }
             widget.$el.toggleClass('o_field_invalid', !canBeSaved);
+            widget.$el.attr('aria-invalid', !canBeSaved);
         });
         return invalidFields;
     },
@@ -135,13 +136,6 @@ var BasicRenderer = AbstractRenderer.extend({
             dom.setSelectionRange(field.getFocusableElement().get(0), {start: offset, end: offset});
         }
     },
-
-    /**
-     * Order to focus to be given to the content of the current view
-     */
-    giveFocus:function() {
-    },
-
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
@@ -158,7 +152,6 @@ var BasicRenderer = AbstractRenderer.extend({
         // widget's $el
         $node = $node.length ? $node : widget.$el;
         $node.tooltip({
-            delay: { show: 1000, hide: 0 },
             title: function () {
                 return qweb.render('WidgetLabel.tooltip', {
                     debug: config.debug,
@@ -175,9 +168,10 @@ var BasicRenderer = AbstractRenderer.extend({
      * @private
      * @param {Object} record
      * @param {integer} currentIndex
-     * @param {Object} [options]
+     * @param {Object} [options={}]
      * @param {integer} [options.inc=1] - the increment to use when searching for the
      *   "next" possible one
+     * @param {boolean} [options.noAutomaticCreate=false]
      * @param {boolean} [options.wrap=false] if true, when we arrive at the end of the
      *   list of widget, we wrap around and try to activate widgets starting at
      *   the beginning. Otherwise, we just stop trying and return -1
@@ -191,7 +185,11 @@ var BasicRenderer = AbstractRenderer.extend({
 
         var recordWidgets = this.allFieldWidgets[record.id] || [];
         for (var i = 0 ; i < recordWidgets.length ; i++) {
-            var activated = recordWidgets[currentIndex].activate({event: options.event});
+            var activated = recordWidgets[currentIndex].activate(
+                {
+                    event: options.event,
+                    noAutomaticCreate: options.noAutomaticCreate || false
+                });
             if (activated) {
                 return currentIndex;
             }
@@ -220,11 +218,12 @@ var BasicRenderer = AbstractRenderer.extend({
      * @private
      * @param {Object} record
      * @param {integer} currentIndex
+     * @param {Object|undefined} options
      * @return {integer}
      */
-    _activateNextFieldWidget: function (record, currentIndex) {
+    _activateNextFieldWidget: function (record, currentIndex, options) {
         currentIndex = (currentIndex + 1) % (this.allFieldWidgets[record.id] || []).length;
-        return this._activateFieldWidget(record, currentIndex, {inc: 1});
+        return this._activateFieldWidget(record, currentIndex, _.extend({inc: 1}, options));
     },
     /**
      * This is a wrapper of the {@see _activateFieldWidget} function to select
@@ -668,15 +667,23 @@ var BasicRenderer = AbstractRenderer.extend({
 
         // Prepare widget rendering and save the related deferred
         var def = widget._widgetRenderAndInsert(function () {});
-        if (def.state() === 'pending') {
+        var async = def.state() === 'pending';
+        if (async) {
             this.defs.push(def);
         }
+        var $el = async ? $('<div>') : widget.$el;
 
-        // handle other attributes/modifiers
-        this._handleAttributes(widget.$el, node);
-        this._registerModifiers(node, record, widget);
-        widget.$el.addClass('o_widget');
-        return widget.$el;
+        var self = this;
+        def.then(function () {
+            self._handleAttributes(widget.$el, node);
+            self._registerModifiers(node, record, widget);
+            widget.$el.addClass('o_widget');
+            if (async) {
+                $el.replaceWith(widget.$el);
+            }
+        });
+
+        return $el;
     },
 
     /**

@@ -27,7 +27,7 @@ class PortalWizard(models.TransientModel):
     """
 
     _name = 'portal.wizard'
-    _description = 'Portal Access Management'
+    _description = 'Grant Portal Access'
 
     def _default_user_ids(self):
         # for each partner, determine corresponding portal.wizard.user records
@@ -134,7 +134,7 @@ class PortalWizardUser(models.TransientModel):
                     if wizard_user.partner_id.company_id:
                         company_id = wizard_user.partner_id.company_id.id
                     else:
-                        company_id = self.env['res.company']._company_default_get('res.users')
+                        company_id = self.env['res.company']._company_default_get('res.users').id
                     user_portal = wizard_user.sudo().with_context(company_id=company_id)._create_user()
                 else:
                     user_portal = user
@@ -143,7 +143,7 @@ class PortalWizardUser(models.TransientModel):
                     wizard_user.user_id.write({'active': True, 'groups_id': [(4, group_portal.id)]})
                     # prepare for the signup process
                     wizard_user.user_id.partner_id.signup_prepare()
-                    wizard_user.with_context(active_test=True)._send_email()
+                wizard_user.with_context(active_test=True)._send_email()
                 wizard_user.refresh()
             else:
                 # remove the user (if it exists) from the portal group

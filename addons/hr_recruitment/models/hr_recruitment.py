@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from datetime import datetime
-
-from odoo import api, fields, models, tools, SUPERUSER_ID
+from odoo import api, fields, models, SUPERUSER_ID
 from odoo.tools.translate import _
 from odoo.exceptions import UserError
 
@@ -46,7 +44,7 @@ class RecruitmentSource(models.Model):
 
 class RecruitmentStage(models.Model):
     _name = "hr.recruitment.stage"
-    _description = "Stage of Recruitment"
+    _description = "Recruitment Stages"
     _order = 'sequence'
 
     name = fields.Char("Stage name", required=True, translate=True)
@@ -63,6 +61,12 @@ class RecruitmentStage(models.Model):
     fold = fields.Boolean(
         "Folded in Recruitment Pipe",
         help="This stage is folded in the kanban view when there are no records in that stage to display.")
+    legend_blocked = fields.Char(
+        'Red Kanban Label', default=lambda self: _('Blocked'), translate=True, required=True)
+    legend_done = fields.Char(
+        'Green Kanban Label', default=lambda self: _('Ready for Next Stage'), translate=True, required=True)
+    legend_normal = fields.Char(
+        'Grey Kanban Label', default=lambda self: _('In Progress'), translate=True, required=True)
 
     @api.model
     def default_get(self, fields):
@@ -75,7 +79,7 @@ class RecruitmentStage(models.Model):
 
 class RecruitmentDegree(models.Model):
     _name = "hr.recruitment.degree"
-    _description = "Degree of Recruitment"
+    _description = "Applicant Degree"
     _sql_constraints = [
         ('name_uniq', 'unique (name)', 'The name of the Degree of Recruitment must be unique!')
     ]
@@ -120,7 +124,6 @@ class Applicant(models.Model):
     probability = fields.Float("Probability")
     partner_id = fields.Many2one('res.partner', "Contact")
     create_date = fields.Datetime("Creation Date", readonly=True, index=True)
-    write_date = fields.Datetime("Update Date", readonly=True)
     stage_id = fields.Many2one('hr.recruitment.stage', 'Stage', ondelete='restrict', track_visibility='onchange',
                                domain="['|', ('job_id', '=', False), ('job_id', '=', job_id)]",
                                copy=False, index=True,
@@ -154,20 +157,29 @@ class Applicant(models.Model):
     emp_id = fields.Many2one('hr.employee', string="Employee", track_visibility="onchange", help="Employee linked to the applicant.")
     user_email = fields.Char(related='user_id.email', type="char", string="User Email", readonly=True)
     attachment_number = fields.Integer(compute='_get_attachment_number', string="Number of Attachments")
-    employee_name = fields.Char(related='emp_id.name', string="Employee Name")
+    employee_name = fields.Char(related='emp_id.name', string="Employee Name", readonly=False)
     attachment_ids = fields.One2many('ir.attachment', 'res_id', domain=[('res_model', '=', 'hr.applicant')], string='Attachments')
+    kanban_state = fields.Selection([
+        ('normal', 'Grey'),
+        ('done', 'Green'),
+        ('blocked', 'Red')], string='Kanban State',
+        copy=False, default='normal', required=True)
+    legend_blocked = fields.Char(related='stage_id.legend_blocked', string='Kanban Blocked', readonly=False)
+    legend_done = fields.Char(related='stage_id.legend_done', string='Kanban Valid', readonly=False)
+    legend_normal = fields.Char(related='stage_id.legend_normal', string='Kanban Ongoing', readonly=False)
+    
 
     @api.depends('date_open', 'date_closed')
     @api.one
     def _compute_day(self):
         if self.date_open:
-            date_create = datetime.strptime(self.create_date, tools.DEFAULT_SERVER_DATETIME_FORMAT)
-            date_open = datetime.strptime(self.date_open, tools.DEFAULT_SERVER_DATETIME_FORMAT)
+            date_create = self.create_date
+            date_open = self.date_open
             self.day_open = (date_open - date_create).total_seconds() / (24.0 * 3600)
 
         if self.date_closed:
-            date_create = datetime.strptime(self.create_date, tools.DEFAULT_SERVER_DATETIME_FORMAT)
-            date_closed = datetime.strptime(self.date_closed, tools.DEFAULT_SERVER_DATETIME_FORMAT)
+            date_create = self.create_date
+            date_closed = self.date_closed
             self.day_close = (date_closed - date_create).total_seconds() / (24.0 * 3600)
             self.delay_close = self.day_close - self.day_open
 
@@ -267,6 +279,8 @@ class Applicant(models.Model):
         if 'stage_id' in vals:
             vals['date_last_stage_update'] = fields.Datetime.now()
             vals.update(self._onchange_stage_id_internal(vals.get('stage_id'))['value'])
+            if 'kanban_state' not in vals:
+                vals['kanban_state'] = 'normal'
             for applicant in self:
                 vals['last_stage_id'] = applicant.stage_id.id
                 res = super(Applicant, self).write(vals)
@@ -321,7 +335,11 @@ class Applicant(models.Model):
         applicant = self[0]
         changes, dummy = tracking[applicant.id]
         if 'stage_id' in changes and applicant.stage_id.template_id:
-            res['stage_id'] = (applicant.stage_id.template_id, {'composition_mode': 'mass_mail'})
+            res['stage_id'] = (applicant.stage_id.template_id, {
+                'auto_delete_message': True,
+                'subtype_id': self.env['ir.model.data'].xmlid_to_res_id('mail.mt_note'),
+                'notif_layout': 'mail.mail_notification_light'
+            })
         return res
 
     @api.multi
@@ -380,7 +398,7 @@ class Applicant(models.Model):
             defaults.update(custom_values)
         return super(Applicant, self).message_new(msg, custom_values=defaults)
 
-    def _message_post_after_hook(self, message, values, notif_layout, notif_values):
+    def _message_post_after_hook(self, message, *args, **kwargs):
         if self.email_from and not self.partner_id:
             # we consider that posting a message with a specified recipient (not a follower, a specific one)
             # on a document without customer means that it was created through the chatter using
@@ -391,7 +409,7 @@ class Applicant(models.Model):
                     ('partner_id', '=', False),
                     ('email_from', '=', new_partner.email),
                     ('stage_id.fold', '=', False)]).write({'partner_id': new_partner.id})
-        return super(Applicant, self)._message_post_after_hook(message, values, notif_layout, notif_values)
+        return super(Applicant, self)._message_post_after_hook(message, *args, **kwargs)
 
     @api.multi
     def create_employee_from_applicant(self):
@@ -428,13 +446,13 @@ class Applicant(models.Model):
                 applicant.job_id.message_post(
                     body=_('New Employee %s Hired') % applicant.partner_name if applicant.partner_name else applicant.name,
                     subtype="hr_recruitment.mt_job_applicant_hired")
-                employee._broadcast_welcome()
             else:
                 raise UserError(_('You must define an Applied Job and a Contact Name for this applicant.'))
 
         employee_action = self.env.ref('hr.open_view_employee_list')
         dict_act_window = employee_action.read([])[0]
         dict_act_window['context'] = {'form_view_initial_mode': 'edit'}
+        dict_act_window['res_id'] = employee.id
         return dict_act_window
 
     @api.multi

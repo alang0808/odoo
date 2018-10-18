@@ -47,7 +47,7 @@ QUnit.module('base_settings_tests', {
                             '<div class="notFound o_hidden">No Record Found</div>' +
                             '<div class="app_settings_block" string="CRM" data-key="crm">' +
                                 '<div class="row mt16 o_settings_container">'+
-                                    '<div class="col-xs-12 col-md-6 o_setting_box">'+
+                                    '<div class="col-12 col-lg-6 o_setting_box">'+
                                         '<div class="o_setting_left_pane">' +
                                             '<field name="bar"/>'+
                                         '</div>'+
@@ -58,7 +58,7 @@ QUnit.module('base_settings_tests', {
                                             '</div>'+
                                         '</div>' +
                                     '</div>'+
-                                    '<div class="col-xs-12 col-md-6 o_setting_box">'+
+                                    '<div class="col-12 col-lg-6 o_setting_box">'+
                                         '<div class="o_setting_left_pane">' +
                                             '<field name="foo"/>'+
                                         '</div>'+
@@ -126,7 +126,7 @@ QUnit.module('base_settings_tests', {
 
         actionManager.doAction(1);
         actionManager.$('button[name="4"]').click();
-        $('.o_control_panel .breadcrumb li a').click();
+        $('.o_control_panel .breadcrumb-item a').click();
         assert.verifySteps([
             'load_views', // initial setting action
             'default_get', // this is a setting view => create new record
@@ -139,5 +139,44 @@ QUnit.module('base_settings_tests', {
 
         actionManager.destroy();
     });
+
+    QUnit.test('settings view does not display other settings after reload', function (assert) {
+        assert.expect(2);
+
+        var form = createView({
+            View: BaseSettingsView,
+            model: 'project',
+            data: this.data,
+            arch: '<form string="Settings" class="oe_form_configuration o_base_settings">' +
+                    '<div class="o_panel">' +
+                        '<div class="setting_search">' +
+                            '<input type="text" class="searchInput" placeholder="Search..."/>' +
+                        '</div> ' +
+                    '</div> ' +
+                    '<header>' +
+                        '<button string="Save" type="object" name="execute" class="oe_highlight" />' +
+                        '<button string="Cancel" type="object" name="cancel" class="oe_link" />' +
+                    '</header>' +
+                    '<div class="o_setting_container">' +
+                        '<div class="settings_tab"/>'+
+                        '<div class="settings">' +
+                            '<div class="notFound o_hidden">No Record Found</div>' +
+                            '<div class="app_settings_block" string="CRM" data-key="crm">' +
+                                'crm tab' +
+                            '</div>' +
+                            '<div class="app_settings_block o_not_app" string="Other App" data-key="otherapp">' +
+                                'other app tab' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</form>',
+        });
+
+        assert.strictEqual(form.$('.app_settings_block').text().replace(/\s/g,''), 'CRMcrmtab');
+        form.reload();
+        assert.strictEqual(form.$('.app_settings_block').text().replace(/\s/g,''), 'CRMcrmtab');
+        form.destroy();
+    });
+
 });
 });

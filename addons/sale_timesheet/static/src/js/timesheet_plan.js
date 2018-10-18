@@ -5,10 +5,11 @@ var AbstractAction = require('web.AbstractAction');
 var ControlPanelMixin = require('web.ControlPanelMixin');
 var core = require('web.core');
 var data = require('web.data');
-var pyeval = require('web.pyeval');
+var pyUtils = require('web.py_utils');
 var SearchView = require('web.SearchView');
 
 var _t = core._t;
+var QWeb = core.qweb;
 
 var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
     events: {
@@ -76,7 +77,6 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
 
         return $.when(def1, def2).then(function(){
             self.searchview.do_search();
-            self._updateControlPanel();
         });
     },
 
@@ -89,7 +89,7 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
      */
     do_show: function () {
         this._super.apply(this, arguments);
-        this._updateControlPanel();
+        this.searchview.do_search();
         this.action_manager.do_push_state({
             action: this.action.id,
             active_id: this.action.context.active_id,
@@ -109,6 +109,7 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
     _refreshPlan: function (dom) {
         this.$el.html(dom);
     },
+
     /**
      * Call controller to get the html content
      *
@@ -123,13 +124,22 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
             params: {domain: domain},
         }).then(function(result){
             self._refreshPlan(result.html_content);
+            self._updateControlPanel(result.actions);
             self.project_ids = result.project_ids;
         });
     },
     /**
      * @private
      */
-    _updateControlPanel: function () {
+    _updateControlPanel: function (buttons) {
+        // set actions button
+        if (this.$buttons) {
+            this.$buttons.off().destroy();
+        }
+        var buttons = buttons || [];
+        this.$buttons = $(QWeb.render("project.plan.ControlButtons", {'buttons': buttons}));
+        this.$buttons.on('click', '.o_timesheet_plan_btn_action', this._onClickControlButton.bind(this));
+        // refresh control panel
         this.update_control_panel({
             cp_content: {
                 $buttons: this.$buttons,
@@ -195,6 +205,21 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
         });
     },
     /**
+     * Call the action of the action button from control panel, based on the data attribute on the button DOM
+     *
+     * @param {MouseEvent} event
+     * @private
+     */
+    _onClickControlButton: function (ev) {
+        var $target = $(ev.target);
+        var action_id = $target.data('action-id');
+        var context = $target.data('context');
+
+        return this.do_action(action_id, {
+            'additional_context': context,
+        });
+    },
+    /**
      * @private
      * @param {MouseEvent} event
      */
@@ -207,7 +232,7 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
             views: [[false, 'list'], [false, 'form']],
             view_type: 'list',
             view_mode: 'form',
-            domain: domain,
+            domain: domain || [],
         });
     },
     /**
@@ -217,12 +242,16 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
     _onClickStatButton: function (event) {
         var self = this;
         var data = $(event.currentTarget).data();
+        var parameters = {
+            domain: data.domain || [],
+            res_model: data.resModel,
+        }
+        if (data.resId) {
+            parameters['res_id'] = data.resId;
+        }
         return this._rpc({
             route:"/timesheet/plan/action",
-            params: {
-                domain: data.domain,
-                res_model: data.resModel,
-            },
+            params: parameters,
         }).then(function(action){
             self.do_action(action);
         });
@@ -272,7 +301,7 @@ var ProjectPlan = AbstractAction.extend(ControlPanelMixin, {
         event.stopPropagation();
         var session = this.getSession();
         // group by are disabled, so we don't take care of them
-        var result = pyeval.eval_domains_and_contexts({
+        var result = pyUtils.eval_domains_and_contexts({
             domains: event.data.domains,
             contexts: [session.user_context].concat(event.data.contexts)
         });

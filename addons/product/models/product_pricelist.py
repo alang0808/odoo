@@ -42,7 +42,7 @@ class Pricelist(models.Model):
         return [(pricelist.id, '%s (%s)' % (pricelist.name, pricelist.currency_id.name)) for pricelist in self]
 
     @api.model
-    def name_search(self, name, args=None, operator='ilike', limit=100):
+    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
         if name and operator == '=' and not args:
             # search on the name of the pricelist and its currency, opposite of name_get(),
             # Used by the magic context filter in the product search view.
@@ -75,10 +75,10 @@ class Pricelist(models.Model):
             self._cr.execute(query, query_args)
             ids = [r[0] for r in self._cr.fetchall()]
             # regular search() to apply ACLs - may limit results below limit in some cases
-            pricelists = self.search([('id', 'in', ids)], limit=limit)
-            if pricelists:
-                return pricelists.name_get()
-        return super(Pricelist, self).name_search(name, args, operator=operator, limit=limit)
+            pricelist_ids = self._search([('id', 'in', ids)], limit=limit, access_rights_uid=name_get_uid)
+            if pricelist_ids:
+                return self.browse(pricelist_ids).name_get()
+        return super(Pricelist, self)._name_search(name, args, operator=operator, limit=limit, name_get_uid=name_get_uid)
 
     def _compute_price_rule_multi(self, products_qty_partner, date=False, uom_id=False):
         """ Low-level method - Multi pricelist, multi products
@@ -305,33 +305,49 @@ class Pricelist(models.Model):
             :param company_id: if passed, used for looking up properties,
              instead of current user's company
         """
+        res = self._get_partner_pricelist_multi([partner_id], company_id)
+        return res[partner_id].id
+
+    def _get_partner_pricelist_multi(self, partner_ids, company_id=None):
+        """ Retrieve the applicable pricelist for given partners in a given company.
+
+            :param company_id: if passed, used for looking up properties,
+                instead of current user's company
+            :return: a dict {partner_id: pricelist}
+        """
         Partner = self.env['res.partner']
         Property = self.env['ir.property'].with_context(force_company=company_id or self.env.user.company_id.id)
+        Pricelist = self.env['product.pricelist']
 
-        p = Partner.browse(partner_id)
-        pl = Property.get('property_product_pricelist', Partner._name, '%s,%s' % (Partner._name, p.id))
-        if pl:
-            pl = pl[0].id
+        # retrieve values of property
+        result = Property.get_multi('property_product_pricelist', Partner._name, partner_ids)
 
-        if not pl:
-            if p.country_id.code:
-                pls = self.env['product.pricelist'].search([('country_group_ids.country_ids.code', '=', p.country_id.code)], limit=1)
-                pl = pls and pls[0].id
+        remaining_partner_ids = [pid for pid, val in result.items() if not val]
+        if remaining_partner_ids:
+            # get fallback pricelist when no pricelist for a given country
+            pl_fallback = (
+                Pricelist.search([('country_group_ids', '=', False)], limit=1) or
+                Property.get('property_product_pricelist', 'res.partner') or
+                Pricelist.search([], limit=1)
+            )
+            # group partners by country, and find a pricelist for each country
+            domain = [('id', 'in', remaining_partner_ids)]
+            groups = Partner.read_group(domain, ['country_id'], ['country_id'])
+            for group in groups:
+                country_id = group['country_id'] and group['country_id'][0]
+                pl = Pricelist.search([('country_group_ids.country_ids', '=', country_id)], limit=1)
+                pl = pl or pl_fallback
+                for pid in Partner.search(group['__domain']).ids:
+                    result[pid] = pl
 
-        if not pl:
-            # search pl where no country
-            pls = self.env['product.pricelist'].search([('country_group_ids', '=', False)], limit=1)
-            pl = pls and pls[0].id
+        return result
 
-        if not pl:
-            prop = Property.get('property_product_pricelist', 'res.partner')
-            pl = prop and prop[0].id
-
-        if not pl:
-            pls = self.env['product.pricelist'].search([], limit=1)
-            pl = pls and pls[0].id
-
-        return pl
+    @api.model
+    def get_import_templates(self):
+        return [{
+            'label': _('Import Template for Pricelists'),
+            'template': '/product/static/xls/product_pricelist.xls'
+        }]
 
 
 class ResCountryGroup(models.Model):
@@ -343,7 +359,7 @@ class ResCountryGroup(models.Model):
 
 class PricelistItem(models.Model):
     _name = "product.pricelist.item"
-    _description = "Pricelist item"
+    _description = "Pricelist Item"
     _order = "applied_on, min_quantity desc, categ_id desc, id"
 
     product_tmpl_id = fields.Many2one(
@@ -418,13 +434,13 @@ class PricelistItem(models.Model):
     @api.constrains('base_pricelist_id', 'pricelist_id', 'base')
     def _check_recursion(self):
         if any(item.base == 'pricelist' and item.pricelist_id and item.pricelist_id == item.base_pricelist_id for item in self):
-            raise ValidationError(_('Error! You cannot assign the Main Pricelist as Other Pricelist in PriceList Item!'))
+            raise ValidationError(_('You cannot assign the Main Pricelist as Other Pricelist in PriceList Item'))
         return True
 
     @api.constrains('price_min_margin', 'price_max_margin')
     def _check_margin(self):
         if any(item.price_min_margin > item.price_max_margin for item in self):
-            raise ValidationError(_('Error! The minimum margin should be lower than the maximum margin.'))
+            raise ValidationError(_('The minimum margin should be lower than the maximum margin.'))
         return True
 
     @api.one
@@ -470,4 +486,3 @@ class PricelistItem(models.Model):
                 'price_min_margin': 0.0,
                 'price_max_margin': 0.0,
             })
-

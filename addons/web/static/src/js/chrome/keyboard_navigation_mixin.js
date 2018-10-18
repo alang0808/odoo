@@ -26,7 +26,6 @@ odoo.define('web.KeyboardNavigationMixin', function (require) {
     var KeyboardNavigationMixin = {
         events: {
             'keydown': '_onKeyDown',
-            'keypress': '_onKeyPress',
             'keyup': '_onKeyUp',
         },
 
@@ -104,6 +103,14 @@ odoo.define('web.KeyboardNavigationMixin', function (require) {
          * return {undefined|false}
          */
         _onKeyDown: function (keyDownEvent) {
+            if ($('body.o_ui_blocked').length &&
+            (keyDownEvent.altKey || keyDownEvent.key === 'Alt') &&
+            !keyDownEvent.ctrlKey) {
+                if (keyDownEvent.preventDefault) keyDownEvent.preventDefault(); else keyDownEvent.returnValue = false;
+                if (keyDownEvent.stopPropagation) keyDownEvent.stopPropagation();
+                if (keyDownEvent.cancelBubble) keyDownEvent.cancelBubble = true;
+                return false;
+            }
             if (!this._areAccessKeyVisible &&
                 (keyDownEvent.altKey || keyDownEvent.key === 'Alt') &&
                 !keyDownEvent.ctrlKey) {
@@ -114,7 +121,10 @@ odoo.define('web.KeyboardNavigationMixin', function (require) {
 
                 var usedAccessKey = this._getAllUsedAccessKeys();
 
-                var buttonsWithoutAccessKey = this.$el.find('button.btn:visible').not('[accesskey]').not('[disabled]');
+                var buttonsWithoutAccessKey = this.$el.find('button.btn:visible')
+                    .not('[accesskey]')
+                    .not('[disabled]')
+                    .not('[tabindex="-1"]');
                 _.each(buttonsWithoutAccessKey, function (elem) {
                     var buttonString = [elem.innerText, elem.title, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"].join('');
                     for (var letterIndex = 0; letterIndex < buttonString.length; letterIndex++) {
@@ -127,8 +137,20 @@ odoo.define('web.KeyboardNavigationMixin', function (require) {
                         }
                     }
                 });
+
+                var elementsWithoutAriaKeyshortcut = this.$el.find('[accesskey]').not('[aria-keyshortcuts]');
+                _.each(elementsWithoutAriaKeyshortcut, function (elem) {
+                    elem.setAttribute('aria-keyshortcuts', 'Alt+Shift+' + elem.accessKey);
+                });
                 this._addAccessKeyOverlays();
             }
+            // on mac, there are a number of keys that are only accessible though the usage of
+            // the ALT key (like the @ sign in most keyboards)
+            // for them we do not facilitate the access keys, so they will need to be activated classically
+            // though Control + Alt + key (case sensitive), see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey
+            if (this.BrowserDetection.isOsMac())
+                return;
+
             if (keyDownEvent.altKey && !keyDownEvent.ctrlKey && keyDownEvent.key.length === 1) { // we don't want to catch the Alt key down, only the characters A to Z and number keys
                 var elementWithAccessKey = [];
                 if (keyDownEvent.keyCode >= 65 && keyDownEvent.keyCode <= 90 || keyDownEvent.keyCode >= 97 && keyDownEvent.keyCode <= 122) {
@@ -138,6 +160,7 @@ odoo.define('web.KeyboardNavigationMixin', function (require) {
                     if (elementWithAccessKey.length) {
                         if (this.BrowserDetection.isOsMac() ||
                             !this.BrowserDetection.isBrowserChrome()) { // on windows and linux, chrome does not prevent the default of the accesskeys
+                            elementWithAccessKey[0].focus();
                             elementWithAccessKey[0].click();
                             if (keyDownEvent.preventDefault) keyDownEvent.preventDefault(); else keyDownEvent.returnValue = false;
                             if (keyDownEvent.stopPropagation) keyDownEvent.stopPropagation();
@@ -175,21 +198,6 @@ odoo.define('web.KeyboardNavigationMixin', function (require) {
                         }
                     }
                 }
-            }
-        },
-        /**
-         * hides the shortcut overlays when key press event is triggered on the ALT key
-         *
-         * @private
-         * @param keyPressEvent {jQueryKeyboardEvent} the keyboard event triggered
-         * @return {undefined|false}
-         */
-        _onKeyPress: function (keyPressEvent) {
-            if ((keyPressEvent.altKey || keyPressEvent.key === 'Alt') && !keyPressEvent.ctrlKey) {
-                if (keyPressEvent.preventDefault) keyPressEvent.preventDefault(); else keyPressEvent.returnValue = false;
-                if (keyPressEvent.stopPropagation) keyPressEvent.stopPropagation();
-                if (keyPressEvent.cancelBubble) keyPressEvent.cancelBubble = true;
-                return false;
             }
         },
         /**

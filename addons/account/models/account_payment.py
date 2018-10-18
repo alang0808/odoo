@@ -43,7 +43,7 @@ class account_abstract_payment(models.AbstractModel):
         help="Manual: Get paid by cash, check or any other method outside of Odoo.\n"\
         "Electronic: Get paid automatically through a payment acquirer by requesting a transaction on a card saved by the customer when buying or subscribing online (payment token).\n"\
         "Check: Pay bill by check and print it from Odoo.\n"\
-        "Batch Deposit: Encase several customer checks at once by generating a batch deposit to submit to your bank. When encoding the bank statement in Odoo, you are suggested to reconcile the transaction with the batch deposit.To enable batch deposit,module account_batch_deposit must be installed.\n"\
+        "Batch Deposit: Encase several customer checks at once by generating a batch deposit to submit to your bank. When encoding the bank statement in Odoo, you are suggested to reconcile the transaction with the batch deposit.To enable batch deposit, module account_batch_payment must be installed.\n"\
         "SEPA Credit Transfer: Pay bill from a SEPA Credit Transfer file you submit to your bank. To enable sepa credit transfer, module account_sepa must be installed ")
     payment_method_code = fields.Char(related='payment_method_id.code',
         help="Technical field used to adapt the interface to the payment type selected.", readonly=True)
@@ -66,6 +66,8 @@ class account_abstract_payment(models.AbstractModel):
         string='Journal Item Label',
         help='Change label of the counterpart that will hold the payment difference',
         default='Write-Off')
+    partner_bank_account_id = fields.Many2one('res.partner.bank', string="Recipient Bank Account")
+    show_partner_bank_account = fields.Boolean(compute='_compute_show_partner_bank', help='Technical field used to know whether the field `partner_bank_account_id` needs to be displayed or not in the payments form views')
 
     @api.model
     def default_get(self, fields):
@@ -90,6 +92,7 @@ class account_abstract_payment(models.AbstractModel):
         multi = any(inv.commercial_partner_id != invoices[0].commercial_partner_id
             or MAP_INVOICE_TYPE_PARTNER_TYPE[inv.type] != MAP_INVOICE_TYPE_PARTNER_TYPE[invoices[0].type]
             or inv.account_id != invoices[0].account_id
+            or inv.partner_bank_id != invoices[0].partner_bank_id
             for inv in invoices)
 
         currency = invoices[0].currency_id
@@ -114,6 +117,17 @@ class account_abstract_payment(models.AbstractModel):
         if self.amount < 0:
             raise ValidationError(_('The payment amount cannot be negative.'))
 
+    @api.model
+    def _get_method_codes_using_bank_account(self):
+        return []
+
+    @api.depends('payment_method_code')
+    def _compute_show_partner_bank(self):
+        """ Computes if the destination bank account must be displayed in the payment form view. By default, it
+        won't be displayed but some modules might change that, depending on the payment type."""
+        for payment in self:
+            payment.show_partner_bank_account = payment.payment_method_code in self._get_method_codes_using_bank_account() and not self.multi
+
     @api.multi
     @api.depends('payment_type', 'journal_id')
     def _compute_hide_payment_method(self):
@@ -137,11 +151,36 @@ class account_abstract_payment(models.AbstractModel):
         if self.journal_id:
             # Set default payment method (we consider the first to be the default one)
             payment_methods = self.payment_type == 'inbound' and self.journal_id.inbound_payment_method_ids or self.journal_id.outbound_payment_method_ids
-            self.payment_method_id = payment_methods and payment_methods[0] or False
+            payment_methods_list = payment_methods.ids
+
+            default_payment_method_id = self.env.context.get('default_payment_method_id')
+            if default_payment_method_id:
+                # Ensure the domain will accept the provided default value
+                payment_methods_list.append(default_payment_method_id)
+            else:
+                self.payment_method_id = payment_methods and payment_methods[0] or False
+
             # Set payment method domain (restrict to methods enabled for the journal and to selected payment type)
             payment_type = self.payment_type in ('outbound', 'transfer') and 'outbound' or 'inbound'
-            return {'domain': {'payment_method_id': [('payment_type', '=', payment_type), ('id', 'in', payment_methods.ids)]}}
+            return {'domain': {'payment_method_id': [('payment_type', '=', payment_type), ('id', 'in', payment_methods_list)]}}
         return {}
+
+    @api.onchange('partner_id')
+    def _onchange_partner_id(self):
+        if not self.multi and self.invoice_ids and self.invoice_ids[0].partner_bank_id:
+            self.partner_bank_account_id = self.invoice_ids[0].partner_bank_id
+        elif self.partner_id != self.partner_bank_account_id.partner_id:
+            # This condition ensures we use the default value provided into
+            # context for partner_bank_account_id properly when provided with a
+            # default partner_id. Without it, the onchange recomputes the bank account
+            # uselessly and might assign a different value to it.
+            if self.partner_id and len(self.partner_id.bank_ids) > 0:
+                self.partner_bank_account_id = self.partner_id.bank_ids[0]
+            elif self.partner_id and len(self.partner_id.commercial_partner_id.bank_ids) > 0:
+                self.partner_bank_account_id = self.partner_id.commercial_partner_id.bank_ids[0]
+            else:
+                self.partner_bank_account_id = False
+        return {'domain': {'partner_bank_account_id': [('partner_id', 'in', [self.partner_id.id, self.partner_id.commercial_partner_id.id])]}}
 
     def _compute_journal_domain_and_types(self):
         journal_type = ['bank', 'cash']
@@ -185,13 +224,14 @@ class account_abstract_payment(models.AbstractModel):
         :param currency: If not specified, search a default currency on wizard/journal.
         :return: The total amount to pay the invoices.
         '''
-        # Get the payment currency
-        if not currency:
-            currency = self.currency_id or self.journal_id.currency_id or self.journal_id.company_id.currency_id
 
         # Get the payment invoices
         if not invoices:
             invoices = self.invoice_ids
+
+        # Get the payment currency
+        if not currency:
+            currency = self.currency_id or self.journal_id.currency_id or self.journal_id.company_id.currency_id or invoices and invoices[0].currency_id
 
         # Avoid currency rounding issues by summing the amounts according to the company_currency_id before
         total = 0.0
@@ -208,7 +248,30 @@ class account_abstract_payment(models.AbstractModel):
 class account_register_payments(models.TransientModel):
     _name = "account.register.payments"
     _inherit = 'account.abstract.payment'
-    _description = "Register payments on multiple invoices"
+    _description = "Register Payments"
+
+    group_invoices = fields.Boolean(string="Group Invoices", help="""If enabled, groups invoices by commercial partner, invoice account,
+                                                                    type and recipient bank account in the generated payments. If disabled,
+                                                                    a distinct payment will be generated for each invoice.""")
+    show_communication_field = fields.Boolean(compute='_compute_show_communication_field')
+
+    @api.depends('invoice_ids.partner_id', 'group_invoices')
+    def _compute_show_communication_field(self):
+        """ We allow choosing a common communication for payments if the group
+        option has been activated, and all the invoices relate to the same
+        partner.
+        """
+        for record in self:
+            record.show_communication_field = len(record.invoice_ids) == 1 \
+                                              or record.group_invoices and len(record.mapped('invoice_ids.partner_id.commercial_partner_id')) == 1
+
+    @api.onchange('journal_id')
+    def _onchange_journal(self):
+        res = super(account_register_payments, self)._onchange_journal()
+        active_ids = self._context.get('active_ids')
+        invoices = self.env['account.invoice'].browse(active_ids)
+        self.amount = abs(self._compute_payment_amount(invoices))
+        return res
 
     @api.model
     def default_get(self, fields):
@@ -222,18 +285,27 @@ class account_register_payments(models.TransientModel):
 
     @api.multi
     def _groupby_invoices(self):
-        '''Split the invoices linked to the wizard according to their commercial partner,
-         their account and their type.
+        '''Groups the invoices linked to the wizard.
 
-        :return: a dictionary mapping (partner_id, account_id, invoice_type) => invoices recordset.
+        If the group_invoices option is activated, invoices will be grouped
+        according to their commercial partner, their account, their type and
+        the account where the payment they expect should end up. Otherwise,
+        invoices will be grouped so that each of them belongs to a
+        distinct group.
+
+        :return: a dictionary mapping, grouping invoices as a recordset under each of its keys.
         '''
+        if not self.group_invoices:
+            return {inv.id: inv for inv in self.invoice_ids}
+
         results = {}
-        # Create a dict dispatching invoices according to their commercial_partner_id and type
+        # Create a dict dispatching invoices according to their commercial_partner_id, account_id, invoice_type and partner_bank_id
         for inv in self.invoice_ids:
             partner_id = inv.commercial_partner_id.id
             account_id = inv.account_id.id
             invoice_type = MAP_INVOICE_TYPE_PARTNER_TYPE[inv.type]
-            key = (partner_id, account_id, invoice_type)
+            recipient_account =  inv.partner_bank_id
+            key = (partner_id, account_id, invoice_type, recipient_account)
             if not key in results:
                 results[key] = self.env['account.invoice']
             results[key] += inv
@@ -248,17 +320,23 @@ class account_register_payments(models.TransientModel):
         '''
         amount = self._compute_payment_amount(invoices=invoices) if self.multi else self.amount
         payment_type = ('inbound' if amount > 0 else 'outbound') if self.multi else self.payment_type
+        bank_account = self.multi and invoices[0].partner_bank_id or self.partner_bank_account_id
+        pmt_communication = self.show_communication_field and self.communication \
+                            or self.group_invoices and ' '.join([inv.reference or inv.number for inv in invoices]) \
+                            or invoices[0].reference # in this case, invoices contains only one element, since group_invoices is False
         return {
             'journal_id': self.journal_id.id,
             'payment_method_id': self.payment_method_id.id,
             'payment_date': self.payment_date,
-            'communication': self.communication,
+            'communication': pmt_communication,
             'invoice_ids': [(6, 0, invoices.ids)],
             'payment_type': payment_type,
             'amount': abs(amount),
             'currency_id': self.currency_id.id,
             'partner_id': invoices[0].commercial_partner_id.id,
             'partner_type': MAP_INVOICE_TYPE_PARTNER_TYPE[invoices[0].type],
+            'partner_bank_account_id': bank_account.id,
+            'multi': False,
         }
 
     @api.multi
@@ -309,11 +387,6 @@ class account_payment(models.Model):
     _description = "Payments"
     _order = "payment_date desc, name desc"
 
-    @api.one
-    @api.depends('invoice_ids')
-    def _get_has_invoices(self):
-        self.has_invoices = bool(self.invoice_ids)
-
     @api.multi
     @api.depends('move_line_ids.reconciled')
     def _get_move_reconciled(self):
@@ -325,7 +398,7 @@ class account_payment(models.Model):
             payment.move_reconciled = rec
 
     company_id = fields.Many2one('res.company', related='journal_id.company_id', string='Company', readonly=True)
-    name = fields.Char(readonly=True, copy=False, default="Draft Payment") # The name is attributed upon post()
+    name = fields.Char(readonly=True, copy=False) # The name is attributed upon post()
     state = fields.Selection([('draft', 'Draft'), ('posted', 'Posted'), ('sent', 'Sent'), ('reconciled', 'Reconciled'), ('cancelled', 'Cancelled')], readonly=True, default='draft', copy=False, string="Status")
 
     payment_type = fields.Selection(selection_add=[('transfer', 'Internal Transfer')])
@@ -339,8 +412,11 @@ class account_payment(models.Model):
     # For money transfer, money goes from journal_id to a transfer account, then from the transfer account to destination_journal_id
     destination_journal_id = fields.Many2one('account.journal', string='Transfer To', domain=[('type', 'in', ('bank', 'cash'))])
 
-    invoice_ids = fields.Many2many('account.invoice', 'account_invoice_payment_rel', 'payment_id', 'invoice_id', string="Invoices", copy=False, readonly=True)
-    has_invoices = fields.Boolean(compute="_get_has_invoices", help="Technical field used for usability purposes")
+    invoice_ids = fields.Many2many('account.invoice', 'account_invoice_payment_rel', 'payment_id', 'invoice_id', string="Invoices", copy=False, readonly=True, help="""Technical field containing the invoices for which the payment has been generated.
+                                                                                                                                                                       This does not especially correspond to the invoices reconciled with the payment,
+                                                                                                                                                                       as it can have been generated first, and reconciled later""")
+    reconciled_invoice_ids = fields.Many2many('account.invoice', string='Reconciled Invoices', compute='_compute_reconciled_invoice_ids', help="Invoices whose journal items have been reconciled with this payment's.")
+    has_invoices = fields.Boolean(compute="_compute_reconciled_invoice_ids", help="Technical field used for usability purposes")
 
     # FIXME: ondelete='restrict' not working (eg. cancel a bank statement reconciliation with a payment)
     move_line_ids = fields.One2many('account.move.line', 'payment_id', readonly=True, copy=False, ondelete='restrict')
@@ -387,8 +463,16 @@ class account_payment(models.Model):
             default_account = self.env['ir.property'].get('property_account_payable_id', 'res.partner')
             self.destination_account_id = default_account.id
 
+    @api.depends('move_line_ids.matched_debit_ids', 'move_line_ids.matched_credit_ids')
+    def _compute_reconciled_invoice_ids(self):
+        for record in self:
+            record.reconciled_invoice_ids = (record.move_line_ids.mapped('matched_debit_ids.debit_move_id.invoice_id') |
+                                            record.move_line_ids.mapped('matched_credit_ids.credit_move_id.invoice_id'))
+            record.has_invoices = bool(record.reconciled_invoice_ids)
+
     @api.onchange('partner_type')
     def _onchange_partner_type(self):
+        self.ensure_one()
         # Set partner_id domain
         if self.partner_type:
             return {'domain': {'partner_id': [(self.partner_type, '=', True)]}}
@@ -427,6 +511,18 @@ class account_payment(models.Model):
             rec['amount'] = invoice['residual']
         return rec
 
+    @api.model
+    def create(self, vals):
+        rslt = super(account_payment, self).create(vals)
+        # When a payment is created by the multi payments wizard in 'multi' mode,
+        # its partner_bank_account_id will never be displayed, and hence stay empty,
+        # even if the payment method requires it. This condition ensures we set
+        # the first (and thus most prioritary) account of the partner in this field
+        # in that situation.
+        if not rslt.partner_bank_account_id and rslt.show_partner_bank_account and rslt.partner_id.bank_ids:
+            rslt.partner_bank_account_id = rslt.partner_id.bank_ids[0]
+        return rslt
+
     @api.multi
     def button_journal_entries(self):
         return {
@@ -441,14 +537,19 @@ class account_payment(models.Model):
 
     @api.multi
     def button_invoices(self):
+        if self.partner_type == 'supplier':
+            views = [(self.env.ref('account.invoice_supplier_tree').id, 'tree'), (self.env.ref('account.invoice_supplier_form').id, 'form')]
+        else:
+            views = [(self.env.ref('account.invoice_tree').id, 'tree'), (self.env.ref('account.invoice_form').id, 'form')]
         return {
             'name': _('Paid Invoices'),
             'view_type': 'form',
             'view_mode': 'tree,form',
             'res_model': 'account.invoice',
             'view_id': False,
+            'views': views,
             'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.invoice_ids])],
+            'domain': [('id', 'in', [x.id for x in self.reconciled_invoice_ids])],
         }
 
     @api.multi
@@ -479,7 +580,7 @@ class account_payment(models.Model):
     @api.multi
     def unlink(self):
         if any(bool(rec.move_line_ids) for rec in self):
-            raise UserError(_("You can not delete a payment that is already posted"))
+            raise UserError(_("You cannot delete a payment that is already posted."))
         if any(rec.move_name for rec in self):
             raise UserError(_('It is not allowed to delete a payment that already created a journal entry since it would create a gap in the numbering. You should create the journal entry again and cancel it thanks to a regular revert.'))
         return super(account_payment, self).unlink()
@@ -500,23 +601,25 @@ class account_payment(models.Model):
             if any(inv.state != 'open' for inv in rec.invoice_ids):
                 raise ValidationError(_("The payment cannot be processed because the invoice is not open!"))
 
-            # Use the right sequence to set the name
-            if rec.payment_type == 'transfer':
-                sequence_code = 'account.payment.transfer'
-            else:
-                if rec.partner_type == 'customer':
-                    if rec.payment_type == 'inbound':
-                        sequence_code = 'account.payment.customer.invoice'
-                    if rec.payment_type == 'outbound':
-                        sequence_code = 'account.payment.customer.refund'
-                if rec.partner_type == 'supplier':
-                    if rec.payment_type == 'inbound':
-                        sequence_code = 'account.payment.supplier.refund'
-                    if rec.payment_type == 'outbound':
-                        sequence_code = 'account.payment.supplier.invoice'
-            rec.name = self.env['ir.sequence'].with_context(ir_sequence_date=rec.payment_date).next_by_code(sequence_code)
-            if not rec.name and rec.payment_type != 'transfer':
-                raise UserError(_("You have to define a sequence for %s in your company.") % (sequence_code,))
+            # keep the name in case of a payment reset to draft
+            if not rec.name:
+                # Use the right sequence to set the name
+                if rec.payment_type == 'transfer':
+                    sequence_code = 'account.payment.transfer'
+                else:
+                    if rec.partner_type == 'customer':
+                        if rec.payment_type == 'inbound':
+                            sequence_code = 'account.payment.customer.invoice'
+                        if rec.payment_type == 'outbound':
+                            sequence_code = 'account.payment.customer.refund'
+                    if rec.partner_type == 'supplier':
+                        if rec.payment_type == 'inbound':
+                            sequence_code = 'account.payment.supplier.refund'
+                        if rec.payment_type == 'outbound':
+                            sequence_code = 'account.payment.supplier.invoice'
+                rec.name = self.env['ir.sequence'].with_context(ir_sequence_date=rec.payment_date).next_by_code(sequence_code)
+                if not rec.name and rec.payment_type != 'transfer':
+                    raise UserError(_("You have to define a sequence for %s in your company.") % (sequence_code,))
 
             # Create the journal entry
             amount = rec.amount * (rec.payment_type in ('outbound', 'transfer') and 1 or -1)
@@ -588,7 +691,8 @@ class account_payment(models.Model):
             aml_obj.create(liquidity_aml_dict)
 
         #validate the payment
-        move.post()
+        if not self.journal_id.post_at_bank_rec:
+            move.post()
 
         #reconcile the invoice receivable/payable line(s) with the payment
         if self.invoice_ids:
@@ -624,20 +728,15 @@ class account_payment(models.Model):
                 'amount_currency': -self.amount,
             })
         transfer_debit_aml = aml_obj.create(transfer_debit_aml_dict)
-        dst_move.post()
+        if not self.destination_journal_id.post_at_bank_rec:
+            dst_move.post()
         return transfer_debit_aml
 
     def _get_move_vals(self, journal=None):
         """ Return dict to create the payment move
         """
         journal = journal or self.journal_id
-        if not journal.sequence_id:
-            raise UserError(_('Configuration Error !\nThe journal %s does not have a sequence, please specify one.') % journal.name)
-        if not journal.sequence_id.active:
-            raise UserError(_('Configuration Error !\nThe sequence of journal %s is deactivated.') % journal.name)
-        name = self.move_name or journal.with_context(ir_sequence_date=self.payment_date).sequence_id.next_by_id()
         return {
-            'name': name,
             'date': self.payment_date,
             'ref': self.communication or '',
             'company_id': self.company_id.id,

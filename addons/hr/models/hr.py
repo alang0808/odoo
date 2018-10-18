@@ -107,9 +107,9 @@ class Employee(models.Model):
 
     # resource and user
     # required on the resource, make sure required="True" set in the view
-    name = fields.Char(related='resource_id.name', store=True, oldname='name_related')
-    user_id = fields.Many2one('res.users', 'User', related='resource_id.user_id', store=True)
-    active = fields.Boolean('Active', related='resource_id.active', default=True, store=True)
+    name = fields.Char(related='resource_id.name', store=True, oldname='name_related', readonly=False)
+    user_id = fields.Many2one('res.users', 'User', related='resource_id.user_id', store=True, readonly=False)
+    active = fields.Boolean('Active', related='resource_id.active', default=True, store=True, readonly=False)
     # private partner
     address_home_id = fields.Many2one(
         'res.partner', 'Private Address', help='Enter here the private address of the employee, not the one linked to your company.',
@@ -203,7 +203,7 @@ class Employee(models.Model):
     def _check_parent_id(self):
         for employee in self:
             if not employee._check_recursion():
-                raise ValidationError(_('Error! You cannot create recursive hierarchy of Employee(s).'))
+                raise ValidationError(_('You cannot create a recursive hierarchy.'))
 
     @api.onchange('job_id')
     def _onchange_job_id(self):
@@ -229,19 +229,32 @@ class Employee(models.Model):
         if self.user_id:
             self.update(self._sync_user(self.user_id))
 
+    @api.onchange('resource_calendar_id')
+    def _onchange_timezone(self):
+        if self.resource_calendar_id and not self.tz:
+            self.tz = self.resource_calendar_id.tz
+
     def _sync_user(self, user):
-        return dict(
+        vals = dict(
             name=user.name,
             image=user.image,
             work_email=user.email,
         )
+        if user.tz:
+            vals['tz'] = user.tz
+        return vals
 
     @api.model
     def create(self, vals):
         if vals.get('user_id'):
             vals.update(self._sync_user(self.env['res.users'].browse(vals['user_id'])))
         tools.image_resize_images(vals)
-        return super(Employee, self).create(vals)
+        employee = super(Employee, self).create(vals)
+        if employee.department_id:
+            self.env['mail.channel'].sudo().search([
+                ('subscription_department_ids', 'in', employee.department_id.id)
+            ])._subscribe_users()
+        return employee
 
     @api.multi
     def write(self, vals):
@@ -249,8 +262,17 @@ class Employee(models.Model):
             account_id = vals.get('bank_account_id') or self.bank_account_id.id
             if account_id:
                 self.env['res.partner.bank'].browse(account_id).partner_id = vals['address_home_id']
+        if vals.get('user_id'):
+            vals.update(self._sync_user(self.env['res.users'].browse(vals['user_id'])))
         tools.image_resize_images(vals)
-        return super(Employee, self).write(vals)
+        res = super(Employee, self).write(vals)
+        if vals.get('department_id') or vals.get('user_id'):
+            department_id = vals['department_id'] if vals.get('department_id') else self[:1].department_id.id
+            # When added to a department or changing user, subscribe to the channels auto-subscribed by department
+            self.env['mail.channel'].sudo().search([
+                ('subscription_department_ids', 'in', department_id)
+            ])._subscribe_users()
+        return res
 
     @api.multi
     def unlink(self):
@@ -267,6 +289,13 @@ class Employee(models.Model):
                 employee.is_address_home_a_company = employee.address_home_id.parent_id.id is not False
             except AccessError:
                 employee.is_address_home_a_company = False
+
+    @api.model
+    def get_import_templates(self):
+        return [{
+            'label': _('Import Template for Employees'),
+            'template': '/hr/static/xls/hr_employee.xls'
+        }]
 
 
 class Department(models.Model):
@@ -299,7 +328,7 @@ class Department(models.Model):
     @api.constrains('parent_id')
     def _check_parent_id(self):
         if not self._check_recursion():
-            raise ValidationError(_('Error! You cannot create recursive departments.'))
+            raise ValidationError(_('You cannot create recursive departments.'))
 
     @api.model
     def create(self, vals):

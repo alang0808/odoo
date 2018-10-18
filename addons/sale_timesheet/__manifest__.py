@@ -13,7 +13,6 @@ This module set the right product on all timesheet lines
 according to the order/contract you work on. This allows to
 have real delivered quantities in sales orders.
 """,
-    'website': 'https://www.odoo.com/page/warehouse',
     'depends': ['sale_management', 'hr_timesheet'],
     'data': [
         'security/ir.model.access.csv',
@@ -28,9 +27,15 @@ have real delivered quantities in sales orders.
         'report/project_profitability_report_analysis_views.xml',
         'data/sale_timesheet_filters.xml',
         'wizard/project_task_assign_so_line_views.xml',
+        'wizard/project_create_sale_order_views.xml',
+        'wizard/project_create_invoice_views.xml',
     ],
     'demo': [
         'data/sale_service_demo.xml',
     ],
+    'qweb': [
+        'static/src/xml/timesheet_plan.xml',
+    ],
     'auto_install': True,
+    'uninstall_hook': 'uninstall_hook',
 }

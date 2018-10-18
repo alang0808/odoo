@@ -23,7 +23,7 @@ QUnit.module('Views', {
                     foo: {string: "Foo", type: "char"},
                     bar: {string: "Bar", type: "boolean"},
                     date: {string: "Some Date", type: "date"},
-                    int_field: {string: "int_field", type: "integer", sortable: true},
+                    int_field: {string: "int_field", type: "integer", sortable: true, group_operator: "sum"},
                     qux: {string: "my float", type: "float"},
                     m2o: {string: "M2O field", type: "many2one", relation: "bar"},
                     o2m: {string: "O2M field", type: "one2many", relation: "bar"},
@@ -307,6 +307,73 @@ QUnit.module('Views', {
         assert.strictEqual(list.$('th:contains(Bar)').length, 1, "should contain Bar");
         assert.strictEqual(list.$('tr.o_group_header').length, 2, "should have 2 .o_group_header");
         assert.strictEqual(list.$('th.o_group_name').length, 2, "should have 2 .o_group_name");
+    });
+
+    QUnit.test('basic grouped list rendering 1 col without selector', function (assert) {
+        assert.expect(1);
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree ><field name="foo"/></tree>',
+            groupBy: ['bar'],
+            hasSelectors: false,
+        });
+
+        assert.strictEqual(list.$('.o_group_header:first').children().length, 1,
+        "group header should have exactly 1 column");
+        list.destroy();
+    });
+
+    QUnit.test('basic grouped list rendering 1 col with selector', function (assert) {
+        assert.expect(1);
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree ><field name="foo"/></tree>',
+            groupBy: ['bar'],
+            hasSelectors: true,
+        });
+
+        assert.strictEqual(list.$('.o_group_header:first').children().length, 1,
+            "group header should have exactly 1 column");
+        list.destroy();
+    });
+
+    QUnit.test('basic grouped list rendering 2 col without selector', function (assert) {
+        assert.expect(1);
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree ><field name="foo"/><field name="bar"/></tree>',
+            groupBy: ['bar'],
+            hasSelectors: false,
+        });
+
+        assert.strictEqual(list.$('.o_group_header:first').children().length, 2,
+            "group header should have exactly 2 column");
+        list.destroy();
+    });
+
+    QUnit.test('basic grouped list rendering 2 col with selector', function (assert) {
+        assert.expect(1);
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree ><field name="foo"/><field name="bar"/></tree>',
+            groupBy: ['bar'],
+            hasSelectors: true,
+        });
+
+        assert.strictEqual(list.$('.o_group_header:first').children().length, 2,
+        "group header should have exactly 2 column");
         list.destroy();
     });
 
@@ -397,6 +464,50 @@ QUnit.module('Views', {
         assert.ok($third_td.hasClass('o_readonly_modifier'),
             "int_field cell should be readonly in edit mode");
         list.destroy();
+    });
+
+    QUnit.test('editable list view: no active element', function (assert) {
+        assert.expect(3);
+        this.data.bar= {
+            fields: {
+                titi: {string: "Char", type: "char"},
+                grosminet: {string: "Bool", type: "boolean"},
+            },
+            records: [
+                {titi: 'cui', grosminet: true},
+                {titi: 'cuicui', grosminet: false},
+            ]
+        };
+        this.data.foo.records[0].o2m = [1, 2];
+        var form = createView({
+            View: FormView,
+            model: 'foo',
+            data: this.data,
+            res_id: 1,
+            viewOptions: { mode: 'edit' },
+            arch: '<form>'+
+                    '<field name="o2m">'+
+                        '<tree editable="top">'+
+                            '<field name="titi" readonly="1"/>'+
+                            '<field name="grosminet" widget="boolean_toggle"/>'+
+                        '</tree>'+
+                    '</field>'+
+                '</form>',
+        });
+        var $td = form.$('.o_data_cell').first();
+        var $td2 = form.$('.o_data_cell').eq(1);
+        assert.ok($td.hasClass("o_readonly_modifier"), "first field must be readonly");
+        assert.ok($td2.hasClass("o_boolean_toggle_cell"), "second field must be not activable but updatable on click (boolean toggle in this case)");
+        $td.click(); //select row first
+        var $slider = $td2.find('.slider').first();
+        try {
+            $slider.click(); //toggle boolean
+            assert.ok(true);
+        }
+        catch(e) {
+            assert.ok(false, "should not crash when clicking on the slider");
+        }
+        form.destroy();
     });
 
     QUnit.test('basic operations for editable list renderer', function (assert) {
@@ -619,6 +730,45 @@ QUnit.module('Views', {
         list.destroy();
     });
 
+    QUnit.test('selection is kept on render without reload', function (assert) {
+        assert.expect(5);
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            groupBy: ['foo'],
+            viewOptions: {hasSidebar: true},
+            arch: '<tree>' +
+                    '<field name="foo"/>' +
+                    '<field name="int_field" sum="Sum"/>' +
+                '</tree>',
+        });
+
+        // open blip grouping and check all lines
+        list.$('.o_group_header:contains("blip (2)")').click();
+        list.$('.o_data_row input').click();
+        assert.strictEqual(true, list.sidebar.$el.is(':visible'),
+            "element checked so sidebar")
+
+        // open yop grouping and verify blip are still checked
+        list.$('.o_group_header:contains("yop (1)")').click()
+        assert.strictEqual(2, list.$('.o_data_row input:checked').length,
+            "opening a grouping does not uncheck others");
+        assert.strictEqual(true, list.sidebar.$el.is(':visible'),
+            "element checked so sidebar")
+
+        // close and open blip grouping and verify blip are unchecked
+        list.$('.o_group_header:contains("blip (2)")').click();
+        list.$('.o_group_header:contains("blip (2)")').click();
+        assert.strictEqual(0, list.$('.o_data_row input:checked').length,
+            "opening and closing a grouping uncheck its elements");
+        assert.strictEqual(false, list.sidebar.$el.is(':visible'),
+            "no element checked so no sidebar")
+
+        list.destroy();
+    });
+
     QUnit.test('aggregates are computed correctly', function (assert) {
         assert.expect(4);
 
@@ -657,7 +807,7 @@ QUnit.module('Views', {
             model: 'foo',
             data: this.data,
             groupBy: ['m2o'],
-            arch: '<tree editable="bottom"><field name="int_field" sum="Sum"/></tree>',
+            arch: '<tree editable="bottom"><field name="foo" /><field name="int_field" sum="Sum"/></tree>',
         });
 
         var $groupHeader1 = list.$('.o_group_header').filter(function (index, el) {
@@ -666,13 +816,13 @@ QUnit.module('Views', {
         var $groupHeader2 = list.$('.o_group_header').filter(function (index, el) {
             return $(el).data('group').res_id === 2;
         });
-        assert.strictEqual($groupHeader1.find('td:nth(1)').text(), "23", "first group total should be 23");
-        assert.strictEqual($groupHeader2.find('td:nth(1)').text(), "9", "second group total should be 9");
-        assert.strictEqual(list.$('tfoot td:nth(2)').text(), "32", "total should be 32");
+        assert.strictEqual($groupHeader1.find('td:last()').text(), "23", "first group total should be 23");
+        assert.strictEqual($groupHeader2.find('td:last()').text(), "9", "second group total should be 9");
+        assert.strictEqual(list.$('tfoot td:last()').text(), "32", "total should be 32");
 
         $groupHeader1.click();
         list.$('tbody .o_list_record_selector input').first().click();
-        assert.strictEqual(list.$('tfoot td:nth(2)').text(), "10",
+        assert.strictEqual(list.$('tfoot td:last()').text(), "10",
                         "total should be 10 as first record of first group is selected");
         list.destroy();
     });
@@ -718,13 +868,12 @@ QUnit.module('Views', {
 
     QUnit.test('groups can be sorted on aggregates', function (assert) {
         assert.expect(10);
-
         var list = createView({
             View: ListView,
             model: 'foo',
             data: this.data,
             groupBy: ['foo'],
-            arch: '<tree editable="bottom"><field name="int_field" sum="Sum"/></tree>',
+            arch: '<tree editable="bottom"><field name="foo" /><field name="int_field" sum="Sum"/></tree>',
             mockRPC: function (route, args) {
                 if (args.method === 'read_group') {
                     assert.step(args.kwargs.orderby || 'default order');
@@ -735,22 +884,63 @@ QUnit.module('Views', {
 
         assert.strictEqual(list.$('tbody .o_list_number').text(), '10517',
             "initial order should be 10, 5, 17");
-        assert.strictEqual(list.$('tfoot td:nth(2)').text(), '32', "total should be 32");
+        assert.strictEqual(list.$('tfoot td:last()').text(), '32', "total should be 32");
 
         list.$('.o_column_sortable').click(); // sort (int_field ASC)
-        assert.strictEqual(list.$('tfoot td:nth(2)').text(), '32', "total should still be 32");
+        assert.strictEqual(list.$('tfoot td:last()').text(), '32', "total should still be 32");
         assert.strictEqual(list.$('tbody .o_list_number').text(), '51017',
             "order should be 5, 10, 17");
 
         list.$('.o_column_sortable').click(); // sort (int_field DESC)
         assert.strictEqual(list.$('tbody .o_list_number').text(), '17105',
             "initial order should be 17, 10, 5");
-        assert.strictEqual(list.$('tfoot td:nth(2)').text(), '32', "total should still be 32");
+        assert.strictEqual(list.$('tfoot td:last()').text(), '32', "total should still be 32");
 
         assert.verifySteps(['default order', 'int_field ASC', 'int_field DESC']);
 
         list.destroy();
     });
+
+    QUnit.test('groups cannot be sorted on non-aggregable fields', function (assert) {
+        assert.expect(6);
+        this.data.foo.fields.sort_field = {string: "sortable_field", type: "sting", sortable: true, default: "value"};
+        _.each(this.data.records, function(elem) {
+            elem.sort_field = "value" + elem.id;
+        });
+        this.data.foo.fields.foo.sortable= true;
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            groupBy: ['foo'],
+            arch: '<tree editable="bottom"><field name="foo" /><field name="int_field"/><field name="sort_field"/></tree>',
+            mockRPC: function (route, args) {
+                if (args.method === 'read_group') {
+                    assert.step(args.kwargs.orderby || 'default order');
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+        //we cannot sort by sort_field since it doesn't have a group_operator
+        list.$('.o_column_sortable:eq(2)').click(); // sort (sort_field ASC(invalid) -> default order)
+        //we can sort by int_field since it has a group_operator
+        list.$('.o_column_sortable:eq(1)').click(); // sort (int_field ASC)
+        //we keep previous order
+        list.$('.o_column_sortable:eq(2)').click(); // sort (sort_field ASC(invalid) -> int_field ASC)
+        //we can sort on foo since we are groupped by foo + previous order
+        list.$('.o_column_sortable:eq(0)').click(); // sort (foo ASC, int_field ASK")
+
+        assert.verifySteps([
+            'default order',
+            'default order',
+            'int_field ASC',
+            'int_field ASC',
+            'foo ASC, int_field ASC'
+        ]);
+
+        list.destroy();
+    });
+
 
     QUnit.test('properly apply onchange in simple case', function (assert) {
         assert.expect(2);
@@ -781,7 +971,7 @@ QUnit.module('Views', {
     });
 
     QUnit.test('column width should not change when switching mode', function (assert) {
-        assert.expect(10);
+        assert.expect(4);
 
         // Warning: this test is css dependant
         var list = createView({
@@ -795,23 +985,31 @@ QUnit.module('Views', {
                         '<field name="m2m" widget="many2many_tags"/>' +
                     '</tree>',
         });
+
         var startWidths = _.pluck(list.$('thead th'), 'offsetWidth');
+        var startWidth = list.$('table').addBack('table').width();
 
         // start edition of first row
         list.$('td:not(.o_list_record_selector)').first().click();
 
         var editionWidths = _.pluck(list.$('thead th'), 'offsetWidth');
+        var editionWidth = list.$('table').addBack('table').width();
 
         // leave edition
         list.$buttons.find('.o_list_button_save').click();
-        var readonlyWidths = _.pluck(list.$('thead th'), 'offsetWidth');
 
-        for (var i = 0; i < startWidths.length; i++) {
-            assert.strictEqual(startWidths[i], editionWidths[i],
-                'width of columns should remain unchanged which switching from readonly to edit mode');
-            assert.strictEqual(editionWidths[i], readonlyWidths[i],
-                'width of columns should remain unchanged which switching from edit to readonly mode');
-        }
+        var readonlyWidths = _.pluck(list.$('thead th'), 'offsetWidth');
+        var readonlyWidth = list.$('table').addBack('table').width();
+
+        assert.strictEqual(editionWidth, startWidth,
+            "table should have kept the same width when switching from readonly to edit mode");
+        assert.deepEqual(editionWidths, startWidths,
+            "width of columns should remain unchanged when switching from readonly to edit mode");
+        assert.strictEqual(readonlyWidth, editionWidth,
+            "table should have kept the same width when switching from edit to readonly mode");
+        assert.deepEqual(readonlyWidths, editionWidths,
+            "width of columns should remain unchanged when switching from edit to readonly mode");
+
         list.destroy();
     });
 
@@ -836,7 +1034,7 @@ QUnit.module('Views', {
         list.sidebar.$('a:contains(Delete)').click();
         assert.ok($('body').hasClass('modal-open'), 'body should have modal-open clsss');
 
-        $('body .modal-dialog button span:contains(Ok)').click();
+        $('body .modal button span:contains(Ok)').click();
 
         assert.strictEqual(list.$('tbody td.o_list_record_selector').length, 3, "should have 3 records");
         list.destroy();
@@ -873,12 +1071,12 @@ QUnit.module('Views', {
         assert.verifySteps(['/web/dataset/search_read']);
         list.sidebar.$('a:contains(Archive)').click();
         assert.strictEqual($('.modal').length, 1, 'a confirm modal should be displayed');
-        $('.modal .modal-footer .btn-default').click(); // Click on 'Cancel'
+        $('.modal-footer .btn-secondary').click(); // Click on 'Cancel'
         assert.strictEqual(list.$('tbody td.o_list_record_selector').length, 4, "still should have 4 records");
 
         list.sidebar.$('a:contains(Archive)').click();
         assert.strictEqual($('.modal').length, 1, 'a confirm modal should be displayed');
-        $('.modal .modal-footer .btn-primary').click(); // Click on 'Ok'
+        $('.modal-footer .btn-primary').click(); // Click on 'Ok'
         assert.strictEqual(list.$('tbody td.o_list_record_selector').length, 3, "should have 3 records");
         assert.verifySteps(['/web/dataset/search_read', '/web/dataset/call_kw/foo/write', '/web/dataset/search_read']);
         list.destroy();
@@ -2102,13 +2300,15 @@ QUnit.module('Views', {
                     '<field name="foo" required="1"/>' +
                     '<field name="bar"/>' +
                 '</tree>',
-            services: [NotificationService.extend({
-                notify: function (params) {
-                    if (params.type === 'warning') {
-                        warnings++;
+            services: {
+                notification: NotificationService.extend({
+                    notify: function (params) {
+                        if (params.type === 'warning') {
+                            warnings++;
+                        }
                     }
-                }
-            })],
+                }),
+            },
         });
 
         // Start first line edition
@@ -2192,7 +2392,7 @@ QUnit.module('Views', {
     });
 
     QUnit.test('pressing tab on last cell of editable list view', function (assert) {
-        assert.expect(7);
+        assert.expect(9);
 
         var list = createView({
             View: ListView,
@@ -2209,6 +2409,10 @@ QUnit.module('Views', {
         assert.strictEqual(document.activeElement.name, "foo",
             "focus should be on an input with name = foo");
 
+        //it will not create a new line unless a modification is made
+        document.activeElement.value = "blip-changed";
+        $(document.activeElement).trigger({type: 'change'});
+
         list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: 9}); // tab
         assert.strictEqual(document.activeElement.name, "int_field",
             "focus should be on an input with name = int_field");
@@ -2220,7 +2424,10 @@ QUnit.module('Views', {
         assert.strictEqual(document.activeElement.name, "foo",
             "focus should be on an input with name = foo");
 
-        assert.verifySteps(['/web/dataset/search_read', '/web/dataset/call_kw/foo/default_get']);
+        assert.verifySteps(['/web/dataset/search_read',
+            '/web/dataset/call_kw/foo/write',
+            '/web/dataset/call_kw/foo/read',
+            '/web/dataset/call_kw/foo/default_get']);
         list.destroy();
     });
 
@@ -2303,8 +2510,8 @@ QUnit.module('Views', {
         var $actions = $('.o_web_client .o_control_panel .btn-group .dropdown-menu')[1].children;
         assert.strictEqual($actions.length, 3,
             "there should be 3 actions");
-        var $customAction = $('.o_web_client .o_control_panel .btn-group .dropdown-menu li a')[2];
-        assert.strictEqual($customAction.text.trim(), 'Action event',
+        var $customAction = $('.o_web_client .o_control_panel .btn-group .dropdown-item:nth(2)');
+        assert.strictEqual($customAction.text().trim(), 'Action event',
             "the custom action should have 'Action event' as name");
 
         list.destroy();
@@ -2339,31 +2546,7 @@ QUnit.module('Views', {
         list.destroy();
     });
 
-    QUnit.test('inputs are disabled when unselecting rows', function (assert) {
-        assert.expect(1);
-
-        var list = createView({
-            View: ListView,
-            model: 'foo',
-            data: this.data,
-            arch: '<tree editable="bottom"><field name="foo"/></tree>',
-            mockRPC: function (route, args) {
-                if (args.method === 'write') {
-                    assert.strictEqual($input.prop('disabled'), true,
-                        "input should be disabled");
-                }
-                return this._super.apply(this, arguments);
-            },
-        });
-
-        list.$('td:contains(gnap)').click();
-        var $input = list.$('tr.o_selected_row input[name="foo"]');
-        $input.val('lemon').trigger('input');
-        $input.trigger({type: 'keydown', which: $.ui.keyCode.DOWN});
-        list.destroy();
-    });
-
-    QUnit.test('navigation with tab and readonly field', function (assert) {
+    QUnit.test('navigation with tab and readonly field (no modification)', function (assert) {
         // This test makes sure that if we have 2 cells in a row, the first in
         // edit mode, and the second one readonly, then if we press TAB when the
         // focus is on the first, then the focus skip the readonly cells and
@@ -2379,6 +2562,43 @@ QUnit.module('Views', {
 
         // click on first td and press TAB
         list.$('td:contains(yop)').last().click();
+
+        list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: $.ui.keyCode.TAB});
+
+        assert.ok(list.$('tr.o_data_row:eq(1)').hasClass('o_selected_row'),
+            "2nd row should be selected");
+
+        // we do it again. This was broken because the this.currentRow variable
+        // was not properly set, and the second TAB could cause a crash.
+        list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: $.ui.keyCode.TAB});
+        assert.ok(list.$('tr.o_data_row:eq(2)').hasClass('o_selected_row'),
+            "3rd row should be selected");
+
+        list.destroy();
+    });
+
+
+    QUnit.test('navigation with tab and readonly field (with modification)', function (assert) {
+        // This test makes sure that if we have 2 cells in a row, the first in
+        // edit mode, and the second one readonly, then if we press TAB when the
+        // focus is on the first, then the focus skips the readonly cells and
+        // directly goes to the next line instead.
+        assert.expect(2);
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree editable="bottom"><field name="foo"/><field name="int_field" readonly="1"/></tree>',
+        });
+
+        // click on first td and press TAB
+        list.$('td:contains(yop)').last().click();
+
+        //modity the cell content
+        document.activeElement.value = "blip-changed";
+        $(document.activeElement).trigger({type: 'change'});
+
         list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: $.ui.keyCode.TAB});
 
         assert.ok(list.$('tr.o_data_row:eq(1)').hasClass('o_selected_row'),
@@ -2414,7 +2634,7 @@ QUnit.module('Views', {
 
         // Press 'Tab' -> should go to next line
         // add a value in the cell because the Tab on an empty first cell would activate the next widget in the view
-        list.$('.o_selected_row input').val(11).trigger('input'); 
+        list.$('.o_selected_row input').val(11).trigger('input');
         list.$('.o_selected_row input').trigger({type: 'keydown', which: 9});
         assert.ok(list.$('.o_data_row:nth(3)').hasClass('o_selected_row'),
             "fourth row should be in edition");
@@ -2442,6 +2662,7 @@ QUnit.module('Views', {
                             '<field name="display_name"/>' +
                         '</tree>' +
                     '</field>' +
+                    '<field name="foo"/>' +
                 '</sheet></form>',
             res_id: 1,
             viewOptions: {
@@ -2461,10 +2682,10 @@ QUnit.module('Views', {
         assert.ok(form.$('.o_field_widget[name=o2m] .o_data_row:nth(1)').hasClass('o_selected_row'),
             "second row should be in edition");
 
-        // Press 'Tab' -> should go back to first line as the create action isn't available
+        // Press 'Tab' -> should get out of the one to many and go to the next field of the form
         form.$('.o_field_widget[name=o2m] .o_selected_row input').trigger({type: 'keydown', which: 9});
-        assert.ok(form.$('.o_field_widget[name=o2m] .o_data_row:first').hasClass('o_selected_row'),
-            "first row should be in edition");
+        assert.strictEqual(document.activeElement, form.$('input[name="foo"]')[0],
+            "the next field should be selected");
 
         form.destroy();
     });
@@ -2487,12 +2708,12 @@ QUnit.module('Views', {
                 }
                 return this._super.apply(this, arguments);
             },
-            fieldDebounce: 1
+            fieldDebounce: 1,
         });
 
         // click on first td and press TAB
         list.$('td:contains(yop)').click();
-        list.$('tr.o_selected_row input[name="foo"]').val('new value').trigger('input');
+        list.$('tr.o_selected_row input[name="foo"]').val('new value').trigger('change');
         list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: $.ui.keyCode.TAB});
 
         assert.strictEqual(list.$('tbody tr:first td:contains(new value)').length, 1,
@@ -2577,7 +2798,7 @@ QUnit.module('Views', {
         list.destroy();
     });
 
-    QUnit.test('navigation: moving down with keydown', function (assert) {
+    QUnit.test('navigation: not moving down with keydown', function (assert) {
         assert.expect(2);
 
         var list = createView({
@@ -2591,12 +2812,12 @@ QUnit.module('Views', {
         assert.ok(list.$('tr.o_data_row:eq(0)').hasClass('o_selected_row'),
             "1st row should be selected");
         list.$('tr.o_selected_row input[name="foo"]').trigger({type: 'keydown', which: $.ui.keyCode.DOWN});
-        assert.ok(list.$('tr.o_data_row:eq(1)').hasClass('o_selected_row'),
-            "2nd row should be selected");
+        assert.ok(list.$('tr.o_data_row:eq(0)').hasClass('o_selected_row'),
+            "1st row should still be selected");
         list.destroy();
     });
 
-    QUnit.test('navigation: moving right with keydown from text field', function (assert) {
+    QUnit.test('navigation: moving right with keydown from text field does not move the focus', function (assert) {
         assert.expect(6);
 
         this.data.foo.fields.foo.type = 'text';
@@ -2625,12 +2846,12 @@ QUnit.module('Views', {
         assert.ok(textarea.selectionStart === 3 && textarea.selectionEnd === 3,
             "textarea value ('yop') should not be selected and cursor should be at the end");
         $(textarea).trigger({type: 'keydown', which: $.ui.keyCode.RIGHT});
-        assert.strictEqual(document.activeElement, list.$('[name="bar"] input')[0],
+        assert.strictEqual(document.activeElement, list.$('textarea[name="foo"]')[0],
             "next field (checkbox) should now be focused");
         list.destroy();
     });
 
-    QUnit.test('navigation: moving left/right with keydown', function (assert) {
+    QUnit.skip('navigation: moving left/right with keydown', function (assert) {
         assert.expect(8);
 
         this.data.foo.fields.foo.type = 'text';
@@ -2996,20 +3217,118 @@ QUnit.module('Views', {
         list.destroy();
     });
 
+    QUnit.test('result of consecutive resequences is correctly sorted', function (assert) {
+        assert.expect(9);
+        this.data = { // we want the data to be minimal to have a minimal test
+            foo: {
+                fields: {int_field: {string: "int_field", type: "integer", sortable: true}},
+                records: [
+                    {id: 1, int_field: 0},
+                    {id: 2, int_field: 1},
+                    {id: 3, int_field: 2},
+                    {id: 4, int_field: 3},
+                ]
+            }
+        };
+        var moves = 0;
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree>' +
+                    '<field name="int_field" widget="handle"/>' +
+                    '<field name="id"/>' +
+                  '</tree>',
+            mockRPC: function (route, args) {
+                if (route === '/web/dataset/resequence') {
+                    if (moves === 0) {
+                        assert.deepEqual(args, {
+                            model: "foo",
+                            ids: [4, 3],
+                            offset: 2,
+                            field: "int_field",
+                        });
+                    }
+                    if (moves === 1) {
+                        assert.deepEqual(args, {
+                            model: "foo",
+                            ids: [1, 4, 2, 3],
+                            field: "int_field",
+                        });
+                    }
+                    if (moves === 2) {
+                        assert.deepEqual(args, {
+                            model: "foo",
+                            ids: [2, 4],
+                            offset: 1,
+                            field: "int_field",
+                        });
+                    }
+                    if (moves === 3) {
+                        assert.deepEqual(args, {
+                            model: "foo",
+                            ids: [1, 4, 2, 3],
+                            field: "int_field",
+                        });
+                    }
+                    moves += 1;
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+        assert.strictEqual(list.$('tbody tr td.o_list_number').text(), '1234',
+            "default should be sorted by id");
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(3),
+            list.$('tbody tr').eq(2),
+            {position: 'top'}
+        );
+        assert.strictEqual(list.$('tbody tr td.o_list_number').text(), '1243',
+            "the int_field (sequence) should have been correctly updated");
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(2),
+            list.$('tbody tr').eq(1),
+            {position: 'top'}
+        );
+        assert.deepEqual(list.$('tbody tr td.o_list_number').text(), '1423',
+            "the int_field (sequence) should have been correctly updated");
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(1),
+            list.$('tbody tr').eq(3),
+            {position: 'top'}
+        );
+        assert.deepEqual(list.$('tbody tr td.o_list_number').text(), '1243',
+            "the int_field (sequence) should have been correctly updated");
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(2),
+            list.$('tbody tr').eq(1),
+            {position: 'top'}
+        );
+        assert.deepEqual(list.$('tbody tr td.o_list_number').text(), '1423',
+            "the int_field (sequence) should have been correctly updated");
+        list.destroy();
+    });
+
     QUnit.test('editable list with handle widget', function (assert) {
         assert.expect(12);
+
+        // resequence makes sense on a sequence field, not on arbitrary fields
+        this.data.foo.records[0].int_field = 0;
+        this.data.foo.records[1].int_field = 1;
+        this.data.foo.records[2].int_field = 2;
+        this.data.foo.records[3].int_field = 3;
 
         var list = createView({
             View: ListView,
             model: 'foo',
             data: this.data,
-            arch: '<tree editable="top">' +
+            arch: '<tree editable="top" default_order="int_field">' +
                     '<field name="int_field" widget="handle"/>' +
                     '<field name="amount" widget="float" digits="[5,0]"/>' +
                   '</tree>',
             mockRPC: function (route, args) {
                 if (route === '/web/dataset/resequence') {
-                    assert.strictEqual(args.offset, -4,
+                    assert.strictEqual(args.offset, 1,
                         "should write the sequence starting from the lowest current one");
                     assert.strictEqual(args.field, 'int_field',
                         "should write the right field as sequence");
@@ -3054,8 +3373,84 @@ QUnit.module('Views', {
         list.destroy();
     });
 
+    QUnit.test('editable list, handle widget locks and unlocks on sort', function (assert) {
+        assert.expect(6);
+
+        // we need another sortable field to lock/unlock the handle
+        this.data.foo.fields.amount.sortable = true;
+        // resequence makes sense on a sequence field, not on arbitrary fields
+        this.data.foo.records[0].int_field = 0;
+        this.data.foo.records[1].int_field = 1;
+        this.data.foo.records[2].int_field = 2;
+        this.data.foo.records[3].int_field = 3;
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree editable="top" default_order="int_field">' +
+                    '<field name="int_field" widget="handle"/>' +
+                    '<field name="amount" widget="float"/>' +
+                  '</tree>',
+        });
+
+        assert.strictEqual(list.$('tbody span[name="amount"]').text(), '1200.00500.00300.000.00',
+            "default should be sorted by int_field");
+
+        // Drag and drop the fourth line in second position
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(3),
+            list.$('tbody tr').first(),
+            {position: 'bottom'}
+        );
+
+        // Handle should be unlocked at this point
+        assert.strictEqual(list.$('tbody span[name="amount"]').text(), '1200.000.00500.00300.00',
+            "drag and drop should have succeeded, as the handle is unlocked");
+
+        // Sorting by a field different for int_field should lock the handle
+        list.$('.o_column_sortable').eq(1).click();
+
+        assert.strictEqual(list.$('tbody span[name="amount"]').text(), '0.00300.00500.001200.00',
+            "should have been sorted by amount");
+
+        // Drag and drop the fourth line in second position (not)
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(3),
+            list.$('tbody tr').first(),
+            {position: 'bottom'}
+        );
+
+        assert.strictEqual(list.$('tbody span[name="amount"]').text(), '0.00300.00500.001200.00',
+            "drag and drop should have failed as the handle is locked");
+
+        // Sorting by int_field should unlock the handle
+        list.$('.o_column_sortable').eq(0).click();
+
+        assert.strictEqual(list.$('tbody span[name="amount"]').text(), '1200.000.00500.00300.00',
+            "records should be ordered as per the previous resequence");
+
+        // Drag and drop the fourth line in second position
+        testUtils.dragAndDrop(
+            list.$('.ui-sortable-handle').eq(3),
+            list.$('tbody tr').first(),
+            {position: 'bottom'}
+        );
+
+        assert.strictEqual(list.$('tbody span[name="amount"]').text(), '1200.00300.000.00500.00',
+            "drag and drop should have worked as the handle is unlocked");
+
+        list.destroy();
+    });
+
     QUnit.test('editable list with handle widget with slow network', function (assert) {
         assert.expect(15);
+
+        // resequence makes sense on a sequence field, not on arbitrary fields
+        this.data.foo.records[0].int_field = 0;
+        this.data.foo.records[1].int_field = 1;
+        this.data.foo.records[2].int_field = 2;
+        this.data.foo.records[3].int_field = 3;
 
         var def = $.Deferred();
 
@@ -3069,7 +3464,7 @@ QUnit.module('Views', {
                   '</tree>',
             mockRPC: function (route, args) {
                 if (route === '/web/dataset/resequence') {
-                    assert.strictEqual(args.offset, -4,
+                    assert.strictEqual(args.offset, 1,
                         "should write the sequence starting from the lowest current one");
                     assert.strictEqual(args.field, 'int_field',
                         "should write the right field as sequence");
@@ -3191,7 +3586,7 @@ QUnit.module('Views', {
         });
 
         assert.verifySteps(['bar', 'res_currency'], "should have done 1 name_get by model in reference values");
-        assert.strictEqual(list.$('tbody td').text(), "Value 1USDEUREUR",
+        assert.strictEqual(list.$('tbody td:not(.o_list_record_selector)').text(), "Value 1USDEUREUR",
             "should have the display_name of the reference");
         list.destroy();
     });
@@ -3431,6 +3826,47 @@ QUnit.module('Views', {
         testUtils.unpatch(mixins.ParentedMixin);
     });
 
+    QUnit.test('concurrent reloads finishing in inverse order', function (assert) {
+        assert.expect(3);
+
+        var blockSearchRead = false;
+        var def = $.Deferred();
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch: '<tree><field name="foo"/></tree>',
+            mockRPC: function (route) {
+                var result = this._super.apply(this, arguments);
+                if (route === '/web/dataset/search_read' && blockSearchRead) {
+                    return $.when(def).then(_.constant(result));
+                }
+                return result;
+            },
+        });
+
+        assert.strictEqual(list.$('.o_list_view .o_data_row').length, 4,
+            "list view should contain 4 records");
+
+        // reload with a domain (this request is blocked)
+        blockSearchRead = true;
+        list.reload({domain: [['foo', '=', 'yop']]});
+
+        assert.strictEqual(list.$('.o_list_view .o_data_row').length, 4,
+            "list view should still contain 4 records (search_read being blocked)");
+
+        // reload without the domain
+        blockSearchRead = false;
+        list.reload({domain: []});
+
+        // unblock the RPC
+        def.resolve();
+        assert.strictEqual(list.$('.o_list_view .o_data_row').length, 4,
+            "list view should still contain 4 records");
+
+        list.destroy();
+    });
+
     QUnit.test('list view on a "noCache" model', function (assert) {
         assert.expect(8);
 
@@ -3470,7 +3906,7 @@ QUnit.module('Views', {
         // delete a record
         list.$('.o_data_row:first .o_list_record_selector input').click();
         list.sidebar.$('a:contains(Delete)').click();
-        $('.modal .modal-footer .btn-primary').click(); // confirm
+        $('.modal-footer .btn-primary').click(); // confirm
 
         assert.verifySteps([
             'create',
@@ -3525,6 +3961,39 @@ QUnit.module('Views', {
 
         assert.verifySteps(['scroll', 'scroll', 'scroll'],
             "this is still working after a limit change");
+
+        list.destroy();
+    });
+
+    QUnit.test('list with handle field, override default_get, bottom when inline', function (assert) {
+        assert.expect(2);
+
+        this.data.foo.fields.int_field.default = 10;
+
+        var list = createView({
+            View: ListView,
+            model: 'foo',
+            data: this.data,
+            arch:
+                '<tree editable="bottom" default_order="int_field">'
+                    + '<field name="int_field" widget="handle"/>'
+                    + '<field name="foo"/>'
+                +'</tree>',
+        });
+
+        // starting condition
+        assert.strictEqual($('.o_data_cell').text(), "blipblipyopgnap");
+
+        // click add a new line
+        // save the record
+        // check line is at the correct place
+
+        var inputText = 'ninja';
+        $('.o_list_button_add').click();
+        list.$('.o_input[name="foo"]').val(inputText).trigger('input');
+        $('.o_list_button_add').click();
+
+        assert.strictEqual($('.o_data_cell').text(), "blipblipyopgnap" + inputText);
 
         list.destroy();
     });

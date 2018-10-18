@@ -11,7 +11,7 @@ var core = require('web.core');
 var BasicController = require('web.BasicController');
 var DataExport = require('web.DataExport');
 var Dialog = require('web.Dialog');
-var pyeval = require('web.pyeval');
+var pyUtils = require('web.py_utils');
 var Sidebar = require('web.Sidebar');
 
 var _t = core._t;
@@ -27,6 +27,7 @@ var ListController = BasicController.extend({
         selection_changed: '_onSelectionChanged',
         toggle_column_order: '_onToggleColumnOrder',
         toggle_group: '_onToggleGroup',
+        navigation_move: '_onNavigationMove',
     }),
     /**
      * @constructor
@@ -43,7 +44,7 @@ var ListController = BasicController.extend({
         this.toolbarActions = params.toolbarActions || {};
         this.editable = params.editable;
         this.noLeaf = params.noLeaf;
-        this.selectedRecords = []; // there is no selected record by default
+        this.selectedRecords = params.selectedRecords || [];
     },
 
     //--------------------------------------------------------------------------
@@ -67,7 +68,7 @@ var ListController = BasicController.extend({
         if (this.$('thead .o_list_record_selector input').prop('checked')) {
             var searchData = this.searchView.build_search_data();
             var userContext = this.getSession().user_context;
-            var results = pyeval.eval_domains_and_contexts({
+            var results = pyUtils.eval_domains_and_contexts({
                 domains: searchData.domains,
                 contexts: [userContext].concat(searchData.contexts),
                 group_by_seq: searchData.groupbys || []
@@ -104,6 +105,11 @@ var ListController = BasicController.extend({
         });
     },
     /**
+    * This key contains the name of the buttons template to render on top of
+    * the form view. It can be overridden to add buttons in specific child views.
+    */
+    buttons_template: 'ListView.buttons',
+    /**
      * Display and bind all buttons in the control panel
      *
      * Note: clicking on the "Save" button does nothing special. Indeed, all
@@ -115,7 +121,7 @@ var ListController = BasicController.extend({
      */
     renderButtons: function ($node) {
         if (!this.noLeaf && this.hasButtons) {
-            this.$buttons = $(qweb.render('ListView.buttons', {widget: this}));
+            this.$buttons = $(qweb.render(this.buttons_template, {widget: this}));
             this.$buttons.on('click', '.o_list_button_add', this._onCreateRecord.bind(this));
 
             this._assignCreateKeyboardBehavior(this.$buttons.find('.o_list_button_add'));
@@ -176,6 +182,25 @@ var ListController = BasicController.extend({
 
             this._toggleSidebar();
         }
+    },
+    /**
+     * Overrides to update the list of selected records
+     *
+     * @override
+     */
+    update: function (params, options) {
+        var self = this;
+        if (options && options.keepSelection) {
+            // filter out removed records from selection
+            var res_ids = this.model.get(this.handle).res_ids;
+            this.selectedRecords = _.filter(this.selectedRecords, function (id) {
+                return _.contains(res_ids, self.model.get(id).res_id);
+            });
+        } else {
+            this.selectedRecords = [];
+        }
+        params.selectedRecords = this.selectedRecords;
+        return this._super.apply(this, arguments);
     },
 
     //--------------------------------------------------------------------------
@@ -339,7 +364,6 @@ var ListController = BasicController.extend({
      * @returns {Deferred}
      */
     _update: function () {
-        this.selectedRecords = [];
         this._toggleSidebar();
         return this._super.apply(this, arguments);
     },
@@ -446,7 +470,10 @@ var ListController = BasicController.extend({
      */
     _onExportData: function () {
         var record = this.model.get(this.handle);
-        new DataExport(this, record).open();
+        var defaultExportFields = _.map(this.renderer.columns, function (field) {
+            return field.attrs.name;
+        });
+        new DataExport(this, record, defaultExportFields).open();
     },
     /**
      * Called when the renderer displays an editable row and the user tries to
@@ -544,7 +571,7 @@ var ListController = BasicController.extend({
     _onToggleGroup: function (event) {
         this.model
             .toggleGroup(event.data.group.id)
-            .then(this.update.bind(this, {}, {reload: false}));
+            .then(this.update.bind(this, {}, {keepSelection: true, reload: false}));
     },
 });
 

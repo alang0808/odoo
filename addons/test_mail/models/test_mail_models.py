@@ -37,9 +37,10 @@ class MailTestActivity(models.Model):
 
     name = fields.Char()
     email_from = fields.Char()
+    active = fields.Boolean(default=True)
 
     def action_start(self, action_summary):
-        self.activity_schedule(
+        return self.activity_schedule(
             'test_mail.mail_act_test_todo',
             summary=action_summary
         )
@@ -60,8 +61,8 @@ class MailTestFull(models.Model):
     count = fields.Integer(default=1)
     datetime = fields.Datetime(default=fields.Datetime.now)
     mail_template = fields.Many2one('mail.template', 'Template')
-    customer_id = fields.Many2one('res.partner', 'Customer', track_visibility='onchange')
-    user_id = fields.Many2one('res.users', 'Responsible', track_visibility='onchange')
+    customer_id = fields.Many2one('res.partner', 'Customer', track_visibility='onchange', track_sequence=2)
+    user_id = fields.Many2one('res.users', 'Responsible', track_visibility='onchange', track_sequence=1)
     umbrella_id = fields.Many2one('mail.test', track_visibility='onchange')
 
     def _track_template(self, tracking):
@@ -109,6 +110,7 @@ class MailTestAlias(models.Model):
 
 class MailModel(models.Model):
     _name = 'test_performance.mail'
+    _description = 'Test Performance Mail'
     _inherit = 'mail.thread'
 
     name = fields.Char()

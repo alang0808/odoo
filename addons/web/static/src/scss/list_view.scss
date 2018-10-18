@@ -5,9 +5,16 @@
     background-color: $o-view-background-color;
     margin-bottom: 0px;
 
-    &.table {
-        td, th {
-           vertical-align: middle;
+    // Don't understand why but without those, the list view appears broken
+    // in both form views and standalone list views.
+    border-collapse: initial;
+    border-spacing: 0;
+
+    // Checkbox in editable list
+    // should be clickable and activate the row
+    &.o_editable_list .o_data_row:not(.o_selected_row) .o_data_cell {
+        .custom-checkbox:not(.o_readonly_modifier) {
+            pointer-events: none;
         }
     }
 
@@ -33,7 +40,7 @@
 
     .o_column_sortable {
         position: relative;
-        @include user-select(none);  // Prevent unwanted selection while sorting
+        user-select: none;  // Prevent unwanted selection while sorting
 
         &::after {
             font-family: FontAwesome;
@@ -73,37 +80,35 @@
 
     .o_list_record_remove button {
         padding: 0px;
-        background-style: none;
+        background: none;
         border-style: none;
-        height: 0px;
         display: table-cell;
+        cursor: pointer;
     }
 
-    // Decoration of the row
-    .text-bf {
-        font-weight: bold;
-    }
-    .text-it {
-        font-style: italic;
-    }
-    .text-muted {
-        color: lighten($text-muted, 10%);
+    // Contextual classes
+    @each $color, $value in $theme-colors {
+        $safe: saturate(theme-color-level($color, 2), 10%);
+        @include text-emphasis-variant(".text-#{$color}", $safe);
     }
 
     // Grouped list views
     tbody > tr.o_group_header {
-        height: 31px;
-
+        > th, > td {
+            padding-top: ($table-cell-padding-sm*2);
+            padding-bottom: ($table-cell-padding-sm*2);
+        }
         .o_group_name {
             white-space: nowrap;
         }
         .o_group_pager {
             cursor: text;
-            @include user-select(none);
+            user-select: none;
             text-align: right;
-            padding-top: 0;
-            padding-bottom: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
             .o_pager_previous, .o_pager_next {
+                max-height: 30px;
                 background-color: $o-list-group-header-color;
                 &:hover {
                     background-color: darken($o-list-group-header-color, 10%);
@@ -119,13 +124,7 @@
         tr:focus-within {
             background-color: $o-form-lightsecondary;
         }
-        tr{
-            .focussed {
-                background-color: $o-form-lightsecondary;
-            }
-        }
     }
-
 
     // Values styling
     .o_list_number {
@@ -185,7 +184,7 @@
             width: 16px; // to have some space on the right
         }
         .o_input {
-            padding: $table-condensed-cell-padding;
+            padding: $table-cell-padding-sm;
             background-color: white;
 
             .o_input {
@@ -222,6 +221,13 @@
         }
         .o_field_boolean {
             width: auto!important; // Override the width computed in JS (needed for Chrome)
+        }
+    }
+
+    .o_field_x2many_list_row_add {
+        a:focus, a:active {
+            color: $link-hover-color;
+            outline: none;
         }
     }
 }

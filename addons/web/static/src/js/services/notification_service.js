@@ -18,13 +18,15 @@ var id = 0;
  */
 
 var NotificationService = AbstractService.extend({
-    name: 'notification',
 
     custom_events: {
         close: '_onCloseNotification',
     },
 
-    init: function () {
+    /**
+     * @override
+     */
+    start: function () {
         this._super.apply(this, arguments);
         this.notifications = {};
     },

@@ -19,9 +19,10 @@ var core = require('web.core');
 var Dialog = require('web.Dialog');
 var dom = require('web.dom');
 var framework = require('web.framework');
-var pyeval = require('web.pyeval');
+var pyUtils = require('web.py_utils');
 var Widget = require('web.Widget');
 
+var _t = core._t;
 var ActionManager = Widget.extend({
     className: 'o_content',
     custom_events: {
@@ -278,17 +279,21 @@ var ActionManager = Widget.extend({
      * Closes the current dialog, if any. Because we listen to the 'closed'
      * event triggered by the dialog when it is closed, this also destroys the
      * embedded controller and removes the reference to the corresponding action.
-     * This also executes the 'on_close' handler in some cases.
+     * This also executes the 'on_close' handler in some cases, and may also
+     * provide infos for closing this dialog.
      *
      * @private
-     * @param {boolean} [silent=false] if true, the 'on_close' handler won't be
-     *   called ; this is in general the case when the current dialog is closed
-     *   because another action is opened, so we don't want the former action
-     *   to execute its handler as it won't be displayed anyway
+     * @param {Object} options
+     * @param {Object} [options.infos] some infos related to the closing the
+     *   dialog.
+     * @param {boolean} [options.silent=false] if true, the 'on_close' handler
+     *   won't be called ; this is in general the case when the current dialog
+     *   is closed because another action is opened, so we don't want the former
+     *   action to execute its handler as it won't be displayed anyway
      */
-    _closeDialog: function (silent) {
+    _closeDialog: function (options) {
         if (this.currentDialogController) {
-            this.currentDialogController.dialog.destroy(silent);
+            this.currentDialogController.dialog.destroy(options);
         }
     },
     /**
@@ -339,7 +344,7 @@ var ActionManager = Widget.extend({
             })
             .then(function (controller) {
                 if (self.currentDialogController) {
-                    self._closeDialog(true);
+                    self._closeDialog({ silent: true });
                 }
 
                 // store the optional 'on_reverse_breadcrumb' handler
@@ -390,21 +395,33 @@ var ActionManager = Widget.extend({
         }
 
         return this._startController(controller).then(function (controller) {
+            var prevDialogOnClose;
             if (self.currentDialogController) {
-                self._closeDialog(true);
+                prevDialogOnClose = self.currentDialogController.onClose;
+                self._closeDialog({ silent: true });
             }
 
+            controller.onClose = prevDialogOnClose || options.on_close;
             var dialog = new Dialog(self, _.defaults({}, options, {
                 buttons: [],
                 dialogClass: controller.className,
                 title: action.name,
                 size: action.context.dialog_size,
             }));
-            dialog.on('closed', self, function (silent) {
+            /**
+             * @param {Object} [options={}]
+             * @param {Object} [options.infos] if provided and `silent` is
+             *   unset, the `on_close` handler will pass this information,
+             *   which gives some context for closing this dialog.
+             * @param {boolean} [options.silent=false] if set, do not call the
+             *   `on_close` handler.
+             */
+            dialog.on('closed', self, function (options) {
+                options = options || {};
                 self._removeAction(action.jsID);
                 self.currentDialogController = null;
-                if (silent !== true) {
-                    options.on_close();
+                if (options.silent !== true) {
+                    controller.onClose(options.infos);
                 }
             });
             controller.dialog = dialog;
@@ -482,23 +499,31 @@ var ActionManager = Widget.extend({
      * Executes actions of type 'ir.actions.act_window_close', i.e. closes the
      * last opened dialog.
      *
+     * The action may also specify an effect to display right after the close
+     * action (e.g. rainbow man), or provide a reason for the close action.
+     * This is useful for decision making for the `on_close` handler.
+     *
      * @private
      * @param {Object} action
+     * @param {Object} [action.effect] effect to show up, e.g. rainbow man.
+     * @param {Object} [action.infos] infos on performing the close action.
+     *   Useful for providing some context for the `on_close` handler.
      * @returns {Deferred} resolved immediately
      */
     _executeCloseAction: function (action, options) {
+        var result;
         if (!this.currentDialogController) {
-            options.on_close();
+            result = options.on_close(action.infos);
         }
 
-        this._closeDialog();
+        this._closeDialog({ infos: action.infos });
 
         // display some effect (like rainbowman) on appropriate actions
         if (action.effect) {
             this.trigger_up('show_effect', action.effect);
         }
 
-        return $.when();
+        return $.when(result);
     },
     /**
      * Executes actions of type 'ir.actions.server'.
@@ -547,7 +572,13 @@ var ActionManager = Widget.extend({
             framework.redirect(url);
             return $.Deferred();
         } else {
-            window.open(url, '_blank');
+            var w = window.open(url, '_blank');
+            if (!w || w.closed || typeof w.closed === 'undefined') {
+                var message = _t('A popup window has been blocked. You ' +
+                             'may need to change your browser settings to allow ' +
+                             'popup windows for this page.');
+                this.do_warn(_t('Warning'), message, true);
+            }
         }
 
         options.on_close();
@@ -768,17 +799,17 @@ var ActionManager = Widget.extend({
      * @param {Object} options see @doAction options
      */
     _preprocessAction: function (action, options) {
+        // ensure that the context and domain are evaluated
+        var context = new Context(this.userContext, options.additional_context, action.context);
+        action.context = pyUtils.eval('context', context);
+        if (action.domain) {
+            action.domain = pyUtils.eval('domain', action.domain, action.context);
+        }
+
         action._originalAction = JSON.stringify(action);
 
         action.jsID = _.uniqueId('action_');
         action.pushState = options.pushState;
-
-        // ensure that the context and domain are evaluated
-        var context = new Context(this.userContext, options.additional_context, action.context);
-        action.context = pyeval.eval('context', context);
-        if (action.domain) {
-            action.domain = pyeval.eval('domain', action.domain, action.context);
-        }
     },
     /**
      * Unlinks the given action and its controller from the internal structures

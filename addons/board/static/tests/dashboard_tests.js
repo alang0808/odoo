@@ -7,6 +7,7 @@ var ListController = require('web.ListController');
 var testUtils = require('web.test_utils');
 var ListRenderer = require('web.ListRenderer');
 
+var createActionManager = testUtils.createActionManager;
 var createView = testUtils.createView;
 
 QUnit.module('Dashboard', {
@@ -190,6 +191,61 @@ QUnit.test('basic functionality, with one sub action', function (assert) {
     form.destroy();
 });
 
+QUnit.test('can render an action without view_mode attribute', function (assert) {
+    // The view_mode attribute is automatically set to the 'action' nodes when
+    // the action is added to the dashboard using the 'Add to dashboard' button
+    // in the searchview. However, other dashboard views can be written by hand
+    // (see openacademy tutorial), and in this case, we don't want hardcode
+    // action's params (like context or domain), as the dashboard can directly
+    // retrieve them from the action. Same applies for the view_type, as the
+    // first view of the action can be used, by default.
+    assert.expect(3);
+
+    var form = createView({
+        View: BoardView,
+        model: 'board',
+        data: this.data,
+        arch: '<form string="My Dashboard">' +
+                '<board style="2-1">' +
+                    '<column>' +
+                        '<action string="ABC" name="51" context="{\'a\': 1}"></action>' +
+                    '</column>' +
+                '</board>' +
+            '</form>',
+        archs: {
+            'partner,4,list':
+                '<tree string="Partner"><field name="foo"/></tree>',
+        },
+        mockRPC: function (route, args) {
+            if (route === '/board/static/src/img/layout_1-1-1.png') {
+                return $.when();
+            }
+            if (route === '/web/action/load') {
+                return $.when({
+                    context: '{"b": 2}',
+                    domain: '[["foo", "=", "yop"]]',
+                    res_model: 'partner',
+                    views: [[4, 'list'], [false, 'form']],
+                });
+            }
+            if (args.method === 'load_views') {
+                assert.deepEqual(args.kwargs.context, {a: 1, b: 2},
+                    "should have mixed both contexts");
+            }
+            if (route === '/web/dataset/search_read') {
+                assert.deepEqual(args.domain, [['foo', '=', 'yop']],
+                    "should use the domain of the action");
+            }
+            return this._super.apply(this, arguments);
+        },
+    });
+
+    assert.strictEqual(form.$('.oe_action:contains(ABC) .o_list_view').length, 1,
+        "the list view (first view of action) should have been rendered correctly");
+
+    form.destroy();
+});
+
 QUnit.test('can sort a sub list', function (assert) {
     assert.expect(2);
 
@@ -265,6 +321,51 @@ QUnit.test('can open a record', function (assert) {
                     res_model: 'partner',
                     type: 'ir.actions.act_window',
                     views: [[false, 'form']],
+                }, "should do a do_action with correct parameters");
+            },
+        },
+    });
+
+    form.$('tr.o_data_row td:contains(yop)').click();
+    form.destroy();
+});
+
+QUnit.test('can open record using action form view', function (assert) {
+    assert.expect(1);
+
+    var form = createView({
+        View: BoardView,
+        model: 'board',
+        data: this.data,
+        arch: '<form string="My Dashboard">' +
+                '<board style="2-1">' +
+                    '<column>' +
+                        '<action context="{}" view_mode="list" string="ABC" name="51" domain="[]"></action>' +
+                    '</column>' +
+                '</board>' +
+            '</form>',
+        mockRPC: function (route) {
+            if (route === '/web/action/load') {
+                return $.when({
+                    res_model: 'partner',
+                    views: [[4, 'list'], [5, 'form']],
+                });
+            }
+            return this._super.apply(this, arguments);
+        },
+        archs: {
+            'partner,4,list':
+                '<tree string="Partner"><field name="foo"/></tree>',
+            'partner,5,form':
+                '<form string="Partner"><field name="display_name"/></form>',
+        },
+        intercepts: {
+            do_action: function (event) {
+                assert.deepEqual(event.data.action, {
+                    res_id: 1,
+                    res_model: 'partner',
+                    type: 'ir.actions.act_window',
+                    views: [[5, 'form']],
                 }, "should do a do_action with correct parameters");
             },
         },
@@ -554,6 +655,95 @@ QUnit.test('dashboard intercepts custom events triggered by sub controllers', fu
 
     testUtils.unpatch(ListController);
     board.destroy();
+});
+
+QUnit.test('save actions to dashboard', function (assert) {
+    assert.expect(4);
+
+    var actionManager = createActionManager({
+        data: this.data,
+        archs: {
+            'partner,false,list': '<list><field name="foo"/></list>',
+            'partner,false,search': '<search></search>',
+        },
+        mockRPC: function (route, args) {
+            if (route === '/board/add_to_dashboard') {
+                assert.strictEqual(args.action_id, 1,
+                    "should save the correct action");
+                assert.strictEqual(args.view_mode, 'list',
+                    "should save the correct view type");
+                return $.when(true);
+            }
+            return this._super.apply(this, arguments);
+        },
+    });
+
+    actionManager.doAction({
+        id: 1,
+        res_model: 'partner',
+        type: 'ir.actions.act_window',
+        views: [[false, 'list']],
+    });
+
+    assert.strictEqual(actionManager.$('.o_list_view').length, 1,
+        "should display the list view");
+    assert.strictEqual($('.o_add_to_dashboard_link').length, 1,
+        "should allow the 'Add to dashboard' feature");
+
+    // add this action to dashboard
+    $('.o_add_to_dashboard_button').click();
+
+    actionManager.destroy();
+});
+
+QUnit.test('save to dashboard actions with flag keepSearchView', function (assert) {
+    assert.expect(4);
+
+    var actionManager = createActionManager({
+        data: this.data,
+        archs: {
+            'partner,false,graph': '<graph><field name="foo"/></graph>',
+            'partner,false,list': '<list><field name="foo"/></list>',
+            'partner,false,search': '<search></search>',
+        },
+        mockRPC: function (route, args) {
+            if (route === '/board/add_to_dashboard') {
+                assert.strictEqual(args.action_id, 2,
+                    "should save the correct action");
+                assert.strictEqual(args.view_mode, 'graph',
+                    "should save the correct view type");
+                return $.when(true);
+            }
+            return this._super.apply(this, arguments);
+        },
+    });
+
+    // execute a first action
+    actionManager.doAction({
+        id: 1,
+        res_model: 'partner',
+        type: 'ir.actions.act_window',
+        views: [[false, 'list']],
+    });
+
+    // execute another action with flag 'keepSearchView' and add it to dashboard
+    var options = {keepSearchView: true};
+    actionManager.doAction({
+        id: 2,
+        res_model: 'partner',
+        type: 'ir.actions.act_window',
+        views: [[false, 'graph']],
+    }, options);
+
+    assert.strictEqual(actionManager.$('.o_graph').length, 1,
+        "should display the graph view");
+    assert.strictEqual($('.o_add_to_dashboard_link').length, 1,
+        "should allow the 'Add to dashboard' feature (this is the same searchview)");
+
+    // add this action to dashboard
+    $('.o_add_to_dashboard_button').click();
+
+    actionManager.destroy();
 });
 
 });

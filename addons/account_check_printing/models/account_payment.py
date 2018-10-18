@@ -34,7 +34,7 @@ class AccountRegisterPayments(models.TransientModel):
         res = super(AccountRegisterPayments, self)._prepare_payment_vals(invoices)
         if self.payment_method_id == self.env.ref('account_check_printing.account_payment_method_check'):
             res.update({
-                'check_manual_sequencing': self.check_manual_sequencing,
+                'check_amount_in_words': self.currency_id.amount_to_text(res['amount']) if self.multi else self.check_amount_in_words,
             })
         return res
 
@@ -162,12 +162,12 @@ class AccountPayment(models.Model):
 
         # Prepare the stub lines
         if not credits:
-            stub_lines = [self.make_stub_line(inv) for inv in invoices]
+            stub_lines = [self._check_make_stub_line(inv) for inv in invoices]
         else:
             stub_lines = [{'header': True, 'name': "Bills"}]
-            stub_lines += [self.make_stub_line(inv) for inv in debits]
+            stub_lines += [self._check_make_stub_line(inv) for inv in debits]
             stub_lines += [{'header': True, 'name': "Refunds"}]
-            stub_lines += [self.make_stub_line(inv) for inv in credits]
+            stub_lines += [self._check_make_stub_line(inv) for inv in credits]
 
         # Crop the stub lines or split them on multiple pages
         if not multi_stub:

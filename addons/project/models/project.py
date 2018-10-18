@@ -2,7 +2,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from datetime import timedelta
-from lxml import etree
 
 from odoo import api, fields, models, tools, SUPERUSER_ID, _
 from odoo.exceptions import UserError, AccessError, ValidationError
@@ -84,7 +83,7 @@ class Project(models.Model):
     def unlink(self):
         for project in self:
             if project.tasks:
-                raise UserError(_('You cannot delete a project containing tasks. You can either delete all the project\'s tasks and then delete the project or simply deactivate the project.'))
+                raise UserError(_('You cannot delete a project containing tasks. You can either archive it or first delete all of its tasks.'))
         return super(Project, self).unlink()
 
     def _compute_attached_docs_count(self):
@@ -187,7 +186,8 @@ class Project(models.Model):
         string='Members')
     is_favorite = fields.Boolean(compute='_compute_is_favorite', inverse='_inverse_is_favorite', string='Show Project on dashboard',
         help="Whether this project should be displayed on the dashboard or not")
-    label_tasks = fields.Char(string='Use Tasks as', default='Tasks', help="Gives label to tasks on project's kanban view.")
+    label_tasks = fields.Char(string='Use Tasks as', default=lambda s: _('Tasks'), translate=True,
+        help="Gives label to tasks on project's kanban view.")
     tasks = fields.One2many('project.task', 'project_id', string="Task Activities")
     resource_calendar_id = fields.Many2one(
         'resource.calendar', string='Working Time',
@@ -203,12 +203,12 @@ class Project(models.Model):
         help="Internal email associated with this project. Incoming emails are automatically synchronized "
              "with Tasks (or optionally Issues if the Issue Tracker module is installed).")
     privacy_visibility = fields.Selection([
-            ('followers', _('On invitation only')),
-            ('employees', _('Visible by all employees')),
-            ('portal', _('Visible by following customers')),
+            ('followers', 'On invitation only'),
+            ('employees', 'Visible by all employees'),
+            ('portal', 'Visible by following customers'),
         ],
         string='Privacy', required=True,
-        default='employees',
+        default='portal',
         help="Holds visibility of the tasks or issues that belong to the current project:\n"
                 "- On invitation only: Employees may only see the followed project, tasks or issues\n"
                 "- Visible by all employees: Employees may see all project, tasks or issues\n"
@@ -218,6 +218,9 @@ class Project(models.Model):
     doc_count = fields.Integer(compute='_compute_attached_docs_count', string="Number of documents attached")
     date_start = fields.Date(string='Start Date')
     date = fields.Date(string='Expiration Date', index=True, track_visibility='onchange')
+    subtask_project_id = fields.Many2one('project.project', string='Sub-task Project', ondelete="restrict",
+        help="Choosing a sub-tasks project will both enable sub-tasks and set their default project (possibly the project itself)")
+
     # rating fields
     percentage_satisfaction_task = fields.Integer(
         compute='_compute_percentage_satisfaction_task', string="Happy % on Task", store=True, default=-1)
@@ -239,10 +242,16 @@ class Project(models.Model):
         ('project_date_greater', 'check(date >= date_start)', 'Error! project start-date must be lower than project end-date.')
     ]
 
-    def _compute_portal_url(self):
-        super(Project, self)._compute_portal_url()
+    def _compute_access_url(self):
+        super(Project, self)._compute_access_url()
         for project in self:
-            project.portal_url = '/my/project/%s' % project.id
+            project.access_url = '/my/project/%s' % project.id
+
+    def _compute_access_warning(self):
+        super(Project, self)._compute_access_warning()
+        for project in self.filtered(lambda x: x.privacy_visibility != 'portal'):
+            project.access_warning = _(
+                "The project cannot be shared with the recipient(s) because the privacy of the project is too restricted. Set the privacy to 'Visible by following customers' in order to make it accessible by the recipient(s).")
 
     @api.depends('percentage_satisfaction_task')
     def _compute_percentage_satisfaction_project(self):
@@ -264,14 +273,23 @@ class Project(models.Model):
         for project in self:
             project.rating_request_deadline = fields.datetime.now() + timedelta(days=periods.get(project.rating_status_period, 0))
 
+    @api.model
+    def _map_tasks_default_valeus(self, task):
+        """ get the default value for the copied task on project duplication """
+        return {
+            'stage_id': task.stage_id.id,
+            'name': task.name,
+        }
+
     @api.multi
     def map_tasks(self, new_project_id):
         """ copy and map tasks from old to new project """
         tasks = self.env['project.task']
-        for task in self.tasks:
+        # We want to copy archived task, but do not propagate an active_test context key
+        task_ids = self.env['project.task'].with_context(active_test=False).search([('project_id', '=', self.id)]).ids
+        for task in self.env['project.task'].browse(task_ids):
             # preserve task name and stage, normally altered during copy
-            defaults = {'stage_id': task.stage_id.id,
-                        'name': task.name}
+            defaults = self._map_tasks_default_valeus(task)
             tasks += task.copy(defaults)
         return self.browse(new_project_id).write({'tasks': [(6, 0, tasks.ids)]})
 
@@ -280,7 +298,6 @@ class Project(models.Model):
     def copy(self, default=None):
         if default is None:
             default = {}
-        self = self.with_context(active_test=False)
         if not default.get('name'):
             default['name'] = _("%s (copy)") % (self.name)
         project = super(Project, self).copy(default)
@@ -295,6 +312,8 @@ class Project(models.Model):
         # Prevent double project creation
         self = self.with_context(mail_create_nosubscribe=True)
         project = super(Project, self).create(vals)
+        if not vals.get('subtask_project_id'):
+            project.subtask_project_id = project.id
         if project.privacy_visibility == 'portal' and project.partner_id:
             project.message_subscribe(project.partner_id.ids)
         return project
@@ -313,30 +332,6 @@ class Project(models.Model):
             for project in self.filtered(lambda project: project.privacy_visibility == 'portal'):
                 project.message_subscribe(project.partner_id.ids)
         return res
-
-    @api.multi
-    def get_access_action(self, access_uid=None):
-        """ Instead of the classic form view, redirect to website for portal users
-        that can read the project. """
-        self.ensure_one()
-        user, record = self.env.user, self
-        if access_uid:
-            user = self.env['res.users'].sudo().browse(access_uid)
-            record = self.sudo(user)
-
-        if user.share:
-            try:
-                record.check_access_rule('read')
-            except AccessError:
-                pass
-            else:
-                return {
-                    'type': 'ir.actions.act_url',
-                    'url': '/my/project/%s' % self.id,
-                    'target': 'self',
-                    'res_id': self.id,
-                }
-        return super(Project, self).get_access_action(access_uid)
 
     @api.multi
     def message_subscribe(self, partner_ids=None, channel_ids=None, subtype_ids=None):
@@ -394,6 +389,7 @@ class Project(models.Model):
         action_context = safe_eval(action['context']) if action['context'] else {}
         action_context.update(self._context)
         action_context['search_default_parent_res_name'] = self.name
+        action_context.pop('group_by', None)
         return dict(action, context=action_context)
 
     # ---------------------------------------------------
@@ -424,6 +420,7 @@ class Task(models.Model):
             result.update(self._subtask_values_from_parent(result['parent_id']))
         return result
 
+    @api.model
     def _get_default_partner(self):
         if 'default_project_id' in self.env.context:
             default_project_id = self.env['project.project'].browse(self.env.context['default_project_id'])
@@ -464,8 +461,8 @@ class Task(models.Model):
         ('blocked', 'Red')], string='Kanban State',
         copy=False, default='normal', required=True)
     kanban_state_label = fields.Char(compute='_compute_kanban_state_label', string='Kanban State Label', track_visibility='onchange')
-    create_date = fields.Datetime(index=True)
-    write_date = fields.Datetime(index=True)  #not displayed in the view but it might be useful with base_automation module (and it needs to be defined first for that)
+    create_date = fields.Datetime("Created On", readonly=True, index=True)
+    write_date = fields.Datetime("Last Updated On", readonly=True, index=True)
     date_start = fields.Datetime(string='Starting Date',
     default=fields.Datetime.now,
     index=True, copy=False)
@@ -492,7 +489,7 @@ class Task(models.Model):
         index=True, track_visibility='always')
     partner_id = fields.Many2one('res.partner',
         string='Customer',
-        default=_get_default_partner)
+        default=lambda self: self._get_default_partner())
     manager_id = fields.Many2one('res.users', string='Project Manager', related='project_id.user_id', readonly=True, related_sudo=False)
     company_id = fields.Many2one('res.company',
         string='Company',
@@ -508,6 +505,7 @@ class Task(models.Model):
     legend_normal = fields.Char(related='stage_id.legend_normal', string='Kanban Ongoing Explanation', readonly=True, related_sudo=False)
     parent_id = fields.Many2one('project.task', string='Parent Task', index=True)
     child_ids = fields.One2many('project.task', 'parent_id', string="Sub-tasks", context={'active_test': False})
+    subtask_project_id = fields.Many2one('project.project', related="project_id.subtask_project_id", string='Sub-task Project', readonly=True)
     subtask_count = fields.Integer("Sub-task count", compute='_compute_subtask_count')
     email_from = fields.Char(string='Email', help="These people will receive email.", index=True)
     email_cc = fields.Char(string='Watchers Emails', help="""These email addresses will be added to the CC field of all inbound
@@ -525,7 +523,7 @@ class Task(models.Model):
     def _compute_attachment_ids(self):
         for task in self:
             attachment_ids = self.env['ir.attachment'].search([('res_id', '=', task.id), ('res_model', '=', 'project.task')]).ids
-            message_attachment_ids = self.mapped('message_ids.attachment_ids').ids  # from mail_thread
+            message_attachment_ids = task.mapped('message_ids.attachment_ids').ids  # from mail_thread
             task.attachment_ids = list(set(attachment_ids) - set(message_attachment_ids))
 
     @api.multi
@@ -540,13 +538,13 @@ class Task(models.Model):
             if task.date_assign:
                 dt_date_assign = fields.Datetime.from_string(task.date_assign)
                 task.working_hours_open = task.project_id.resource_calendar_id.get_work_hours_count(
-                        dt_create_date, dt_date_assign, False, compute_leaves=True)
+                        dt_create_date, dt_date_assign, compute_leaves=True)
                 task.working_days_open = task.working_hours_open / 24.0
 
             if task.date_end:
                 dt_date_end = fields.Datetime.from_string(task.date_end)
                 task.working_hours_close = task.project_id.resource_calendar_id.get_work_hours_count(
-                    dt_create_date, dt_date_end, False, compute_leaves=True)
+                    dt_create_date, dt_date_end, compute_leaves=True)
                 task.working_days_close = task.working_hours_close / 24.0
 
         (self - task_linked_to_calendar).update(dict.fromkeys(
@@ -562,10 +560,16 @@ class Task(models.Model):
             else:
                 task.kanban_state_label = task.legend_done
 
-    def _compute_portal_url(self):
-        super(Task, self)._compute_portal_url()
+    def _compute_access_url(self):
+        super(Task, self)._compute_access_url()
         for task in self:
-            task.portal_url = '/my/task/%s' % task.id
+            task.access_url = '/my/task/%s' % task.id
+
+    def _compute_access_warning(self):
+        super(Task, self)._compute_access_warning()
+        for task in self.filtered(lambda x: x.project_id.privacy_visibility != 'portal'):
+            task.access_warning = _(
+                "The task cannot be shared with the recipient(s) because the privacy of the project is too restricted. Set the privacy of the project to 'Visible by following customers' in order to make it accessible by the recipient(s).")
 
     @api.depends('child_ids.planned_hours')
     def _compute_subtask_planned_hours(self):
@@ -609,7 +613,7 @@ class Task(models.Model):
     def _check_subtask_level(self):
         for task in self:
             if task.parent_id and task.child_ids:
-                raise ValidationError(_('Task %s can not have a parent task and subtasks. Only one subtask level is allowed.' % (task.name,)))
+                raise ValidationError(_('Task %s cannot have several subtask levels.' % (task.name,)))
 
     @api.multi
     @api.returns('self', lambda value: value.id)
@@ -620,46 +624,11 @@ class Task(models.Model):
             default['name'] = _("%s (copy)") % self.name
         return super(Task, self).copy(default)
 
-    # Override view according to the company definition
-    @api.model
-    def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
-        # read uom as admin to avoid access rights issues, e.g. for portal/share users,
-        # this should be safe (no context passed to avoid side-effects)
-        obj_tm = self.env.user.company_id.project_time_mode_id
-        tm = obj_tm and obj_tm.name or 'Hours'
-
-        res = super(Task, self).fields_view_get(view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu)
-
-        # read uom as admin to avoid access rights issues, e.g. for portal/share users,
-        # this should be safe (no context passed to avoid side-effects)
-        obj_tm = self.env.user.company_id.project_time_mode_id
-        # using get_object to get translation value
-        uom_hour = self.env.ref('uom.product_uom_hour', False)
-        if not obj_tm or not uom_hour or obj_tm.id == uom_hour.id:
-            return res
-
-        eview = etree.fromstring(res['arch'])
-
-        # if the project_time_mode_id is not in hours (so in days), display it as a float field
-        def _check_rec(eview):
-            if eview.attrib.get('widget', '') == 'float_time':
-                eview.set('widget', 'float')
-            for child in eview:
-                _check_rec(child)
-            return True
-
-        _check_rec(eview)
-
-        res['arch'] = etree.tostring(eview, encoding='unicode')
-
-        # replace reference of 'Hours' to 'Day(s)'
-        for f in res['fields']:
-            # TODO this NOT work in different language than english
-            # the field 'Initially Planned Hours' should be replaced by 'Initially Planned Days'
-            # but string 'Initially Planned Days' is not available in translation
-            if 'Hours' in res['fields'][f]['string']:
-                res['fields'][f]['string'] = res['fields'][f]['string'].replace('Hours', obj_tm.name)
-        return res
+    @api.constrains('parent_id')
+    def _check_parent_id(self):
+        for task in self:
+            if not task._check_recursion():
+                raise ValidationError(_('Error! You cannot create recursive hierarchy of task(s).'))
 
     @api.model
     def get_empty_list_help(self, help):
@@ -759,30 +728,6 @@ class Task(models.Model):
             return {'date_end': fields.Datetime.now()}
         return {'date_end': False}
 
-    @api.multi
-    def get_access_action(self, access_uid=None):
-        """ Instead of the classic form view, redirect to website for portal users
-        that can read the task. """
-        self.ensure_one()
-        user, record = self.env.user, self
-        if access_uid:
-            user = self.env['res.users'].sudo().browse(access_uid)
-            record = self.sudo(user)
-
-        if user.share:
-            try:
-                record.check_access_rule('read')
-            except AccessError:
-                pass
-            else:
-                return {
-                    'type': 'ir.actions.act_url',
-                    'url': '/my/task/%s' % self.id,
-                    'target': 'self',
-                    'res_id': self.id,
-                }
-        return super(Task, self).get_access_action(access_uid)
-
     # ---------------------------------------------------
     # Subtasks
     # ---------------------------------------------------
@@ -821,7 +766,11 @@ class Task(models.Model):
         test_task = self[0]
         changes, tracking_value_ids = tracking[test_task.id]
         if 'stage_id' in changes and test_task.stage_id.mail_template_id:
-            res['stage_id'] = (test_task.stage_id.mail_template_id, {'composition_mode': 'mass_mail'})
+            res['stage_id'] = (test_task.stage_id.mail_template_id, {
+                'auto_delete_message': True,
+                'subtype_id': self.env['ir.model.data'].xmlid_to_res_id('mail.mt_note'),
+                'notif_layout': 'mail.mail_notification_light'
+            })
         return res
 
     @api.multi
@@ -846,17 +795,23 @@ class Task(models.Model):
         groups = super(Task, self)._notify_get_groups(message, groups)
 
         self.ensure_one()
+
+        project_user_group_id = self.env.ref('project.group_project_user').id
+        new_group = (
+            'group_project_user',
+            lambda pdata: pdata['type'] == 'user' and project_user_group_id in pdata['groups'],
+            {},
+        )
+
         if not self.user_id and not self.stage_id.fold:
             take_action = self._notify_get_action_link('assign')
             project_actions = [{'url': take_action, 'title': _('I take it')}]
-            new_group = (
-                'group_project_user', lambda partner: bool(partner.user_ids) and any(user.has_group('project.group_project_user') for user in partner.user_ids), {
-                    'actions': project_actions,
-                })
-            groups = [new_group] + groups
+            new_group[2]['actions'] = project_actions
+
+        groups = [new_group] + groups
 
         for group_name, group_method, group_data in groups:
-            if group_name in ('customer'):
+            if group_name == 'customer':
                 continue
             group_data['has_button_access'] = True
 
@@ -865,7 +820,7 @@ class Task(models.Model):
     @api.multi
     def _notify_get_reply_to(self, default=None, records=None, company=None, doc_names=None):
         """ Override to set alias of tasks to their project if any. """
-        aliases = self.mapped('project_id')._notify_get_reply_to(default=default, records=None, company=company, doc_names=None)
+        aliases = self.sudo().mapped('project_id')._notify_get_reply_to(default=default, records=None, company=company, doc_names=None)
         res = {task.id: aliases.get(task.project_id.id) for task in self}
         leftover = self.filtered(lambda rec: not rec.project_id)
         if leftover:
@@ -919,12 +874,12 @@ class Task(models.Model):
     @api.multi
     def message_get_suggested_recipients(self):
         recipients = super(Task, self).message_get_suggested_recipients()
-        for task in self.filtered('partner_id'):
-            reason = _('Customer Email') if task.partner_id.email else _('Customer')
+        for task in self:
             if task.partner_id:
+                reason = _('Customer Email') if task.partner_id.email else _('Customer')
                 task._message_add_suggested_recipient(recipients, partner=task.partner_id, reason=reason)
             elif task.email_from:
-                task._message_add_suggested_recipient(recipients, partner=task.email_from, reason=reason)
+                task._message_add_suggested_recipient(recipients, email=task.email_from, reason=_('Customer Email'))
         return recipients
 
     @api.multi
@@ -943,7 +898,7 @@ class Task(models.Model):
         res['headers'] = repr(headers)
         return res
 
-    def _message_post_after_hook(self, message, values, notif_layout, notif_values):
+    def _message_post_after_hook(self, message, *args, **kwargs):
         if self.email_from and not self.partner_id:
             # we consider that posting a message with a specified recipient (not a follower, a specific one)
             # on a document without customer means that it was created through the chatter using
@@ -954,7 +909,7 @@ class Task(models.Model):
                     ('partner_id', '=', False),
                     ('email_from', '=', new_partner.email),
                     ('stage_id.fold', '=', False)]).write({'partner_id': new_partner.id})
-        return super(Task, self)._message_post_after_hook(message, values, notif_layout, notif_values)
+        return super(Task, self)._message_post_after_hook(message, *args, **kwargs)
 
     def action_assign_to_me(self):
         self.write({'user_id': self.env.user.id})
@@ -968,6 +923,20 @@ class Task(models.Model):
             'res_id': self.parent_id.id,
             'type': 'ir.actions.act_window'
         }
+
+    def action_subtask(self):
+        action = self.env.ref('project.project_task_action_sub_task').read()[0]
+        ctx = self.env.context.copy()
+        ctx.update({
+            'default_parent_id': self.id,
+            'default_project_id': self.env.context.get('project_id', self.project_id.id),
+            'default_name': self.env.context.get('name', self.name) + ':',
+            'default_partner_id': self.env.context.get('partner_id', self.partner_id.id),
+            'search_default_project_id': self.env.context.get('project_id', self.project_id.id),
+        })
+        action['context'] = ctx
+        action['domain'] = [('id', 'child_of', self.id), ('id', '!=', self.id)]
+        return action
 
     # ---------------------------------------------------
     # Rating business
@@ -996,7 +965,7 @@ class Task(models.Model):
 class ProjectTags(models.Model):
     """ Tags of project's tasks """
     _name = "project.tags"
-    _description = "Tasks Tags"
+    _description = "Project Tags"
 
     name = fields.Char(required=True)
     color = fields.Integer(string='Color Index')

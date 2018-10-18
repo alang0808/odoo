@@ -16,7 +16,7 @@ class LivechatController(http.Controller):
         # _get_asset return the bundle html code (script and link list) but we want to use the attachment content
         xmlid = 'im_livechat.external_lib'
         files, remains = request.env["ir.qweb"]._get_asset_content(xmlid, options=request.context)
-        asset = AssetsBundle(xmlid, files, remains)
+        asset = AssetsBundle(xmlid, files)
 
         mock_attachment = getattr(asset, ext)()
         if isinstance(mock_attachment, list):  # suppose that CSS asset will not required to be split in pages
@@ -115,3 +115,13 @@ class LivechatController(http.Controller):
         if channel:
             channel._send_history_message(pid, page_history)
         return True
+
+    @http.route('/im_livechat/notify_typing', type='json', auth='public')
+    def notify_typing(self, uuid, is_typing):
+        """ Broadcast the typing notification of the website user to other channel members
+            :param uuid: (string) the UUID of the livechat channel
+            :param is_typing: (boolean) tells whether the website user is typing or not.
+        """
+        Channel = request.env['mail.channel']
+        channel = Channel.sudo().search([('uuid', '=', uuid)], limit=1)
+        channel.notify_typing(is_typing=is_typing, is_website_user=True)

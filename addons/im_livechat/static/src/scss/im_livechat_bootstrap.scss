@@ -1,17 +1,17 @@
 
 .text-muted {
-  color: $gray-light;
+  color: gray('600');
 }
 
 .text-center {
   text-align: center;
 }
 
-.o_chat_window {
+.o_thread_window {
   &,* {
-    @include box-sizing(border-box);
+    box-sizing: border-box;
   }
-  .o_chat_header {
+  .o_thread_window_header {
     height: 28px;
     .fa-close {
       text-decoration: none;

@@ -7,6 +7,7 @@ var ReconciliationRenderer = require('account.ReconciliationRenderer');
 var ControlPanelMixin = require('web.ControlPanelMixin');
 var Widget = require('web.Widget');
 var core = require('web.core');
+var _t = core._t;
 
 
 /**
@@ -27,24 +28,22 @@ var StatementAction = AbstractAction.extend(ControlPanelMixin, {
         create_proposition: '_onAction',
         quick_create_proposition: '_onAction',
         toggle_partial_reconcile: '_onAction',
-        auto_reconciliation: '_onValidate',
         validate: '_onValidate',
-        validate_all_balanced: '_onValidate',
         change_name: '_onChangeName',
         close_statement: '_onCloseStatement',
         load_more: '_onLoadMore',
     },
     config: {
-        // used to instanciate the model
+        // used to instantiate the model
         Model: ReconciliationModel.StatementModel,
-        // used to instanciate the action interface
+        // used to instantiate the action interface
         ActionRenderer: ReconciliationRenderer.StatementRenderer,
-        // used to instanciate each widget line
+        // used to instantiate each widget line
         LineRenderer: ReconciliationRenderer.LineRenderer,
         // used context params
         params: ['statement_ids'],
         // number of moves lines displayed in 'match' mode
-        limitMoveLines: 5,
+        limitMoveLines: 15,
     },
 
     /**
@@ -111,7 +110,18 @@ var StatementAction = AbstractAction.extend(ControlPanelMixin, {
 
         this.renderer.prependTo(self.$('.o_form_sheet'));
         this._renderLines();
-        this._openFirstLine();
+
+        // No more lines to reconcile, trigger the rainbowman.
+        var initialState = this.renderer._initialState;
+        if(initialState.valuenow === initialState.valuemax){
+            initialState.context = this.model.getContext();
+            this.renderer.showRainbowMan(initialState);
+        }else{
+            // Create a notification if some lines has been reconciled automatically.
+            if(initialState.valuenow > 0)
+                this.renderer._renderNotifications(this.model.statement.notifications);
+            this._openFirstLine();
+        }
     },
 
     /**
@@ -271,7 +281,7 @@ var StatementAction = AbstractAction.extend(ControlPanelMixin, {
         return this._loadMore(this.model.defaultDisplayQty);
     },
     /**
-     * call 'validate' or 'autoReconciliation' model method then destroy the
+     * call 'validate' model method then destroy the
      * validated lines and update the action renderer with the new status bar 
      * values and notifications then open the first available line
      *
@@ -281,7 +291,7 @@ var StatementAction = AbstractAction.extend(ControlPanelMixin, {
     _onValidate: function (event) {
         var self = this;
         var handle = event.target.handle;
-        var method = event.name.indexOf('auto_reconciliation') === -1 ? 'validate' : 'autoReconciliation';
+        var method = 'validate';
         this.model[method](handle).then(function (result) {
             self.renderer.update({
                 'valuenow': self.model.valuenow,
@@ -319,7 +329,7 @@ var ManualAction = StatementAction.extend({
         ActionRenderer: ReconciliationRenderer.ManualRenderer,
         LineRenderer: ReconciliationRenderer.ManualLineRenderer,
         params: ['company_ids', 'mode', 'partner_ids', 'account_ids'],
-        limitMoveLines: 10,
+        limitMoveLines: 15,
     },
 
     //--------------------------------------------------------------------------
@@ -327,7 +337,7 @@ var ManualAction = StatementAction.extend({
     //--------------------------------------------------------------------------
 
     /**
-     * call 'validate' or 'autoReconciliation' model method then destroy the
+     * call 'validate' model method then destroy the
      * reconcilied lines, update the not reconcilied and update the action
      * renderer with the new status bar  values and notifications then open the
      * first available line
@@ -338,7 +348,7 @@ var ManualAction = StatementAction.extend({
     _onValidate: function (event) {
         var self = this;
         var handle = event.target.handle;
-        var method = event.name.indexOf('auto_reconciliation') === -1 ? 'validate' : 'autoReconciliation';
+        var method = 'validate';
         this.model[method](handle).then(function (result) {
             _.each(result.reconciled, function (handle) {
                 self._getWidget(handle).destroy();

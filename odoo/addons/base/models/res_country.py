@@ -75,11 +75,12 @@ class Country(models.Model):
 
     name_search = location_name_search
 
-    @api.model
-    def create(self, vals):
-        if vals.get('code'):
-            vals['code'] = vals['code'].upper()
-        return super(Country, self).create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('code'):
+                vals['code'] = vals['code'].upper()
+        return super(Country, self).create(vals_list)
 
     @api.multi
     def write(self, vals):
@@ -91,16 +92,6 @@ class Country(models.Model):
     def get_address_fields(self):
         self.ensure_one()
         return re.findall(r'\((.+?)\)', self.address_format)
-
-    @api.model
-    def name_search(self, name='', args=None, operator='ilike', limit=100):
-        if args is None:
-            args = []
-        records = self.search([('code', '=', name)] + args, limit=limit)
-        if not records:
-            search_domain = [('name', operator, name)]
-            records = self.search(search_domain + args, limit=limit)
-        return [(record.id, record.display_name) for record in records]
 
 
 class CountryGroup(models.Model):
@@ -127,15 +118,13 @@ class CountryState(models.Model):
     ]
 
     @api.model
-    def name_search(self, name='', args=None, operator='ilike', limit=100):
+    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
         if args is None:
             args = []
         if self.env.context.get('country_id'):
             args = args + [('country_id', '=', self.env.context.get('country_id'))]
-        records = self.search([('code', '=', name)] + args, limit=limit)
-        if not records:
-            search_domain = [('name', operator, name)]
-            records = self.search(search_domain + args, limit=limit)
-        return [(record.id, record.display_name) for record in records]
-
-
+        first_state_ids = self._search([('code', '=ilike', name)] + args, limit=limit, access_rights_uid=name_get_uid)
+        search_domain = [('name', operator, name)]
+        search_domain.append(('id', 'not in', first_state_ids))
+        state_ids = first_state_ids + self._search(search_domain + args, limit=limit, access_rights_uid=name_get_uid)
+        return [(state.id, state.display_name) for state in self.browse(state_ids)]

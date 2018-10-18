@@ -125,7 +125,7 @@ class ProductProduct(models.Model):
             for product in self.with_context(location=location.id, compute_child=False).filtered(lambda r: r.valuation == 'real_time'):
                 diff = product.standard_price - new_price
                 if float_is_zero(diff, precision_rounding=product.currency_id.rounding):
-                    raise UserError(_("No difference between standard price and new price!"))
+                    raise UserError(_("No difference between the standard price and the new price."))
                 if not product_accounts[product.id].get('stock_valuation', False):
                     raise UserError(_('You don\'t have any stock valuation account defined on your product category. You must define one before processing this operation.'))
                 qty_available = product.qty_available
@@ -143,13 +143,13 @@ class ProductProduct(models.Model):
                         'company_id': location.company_id.id,
                         'ref': product.default_code,
                         'line_ids': [(0, 0, {
-                            'name': _('Standard Price changed  - %s') % (product.display_name),
+                            'name': _('%s changed cost from %s to %s - %s') % (self.env.user.name, product.standard_price, new_price, product.display_name),
                             'account_id': debit_account_id,
                             'debit': abs(diff * qty_available),
                             'credit': 0,
                             'product_id': product.id,
                         }), (0, 0, {
-                            'name': _('Standard Price changed  - %s') % (product.display_name),
+                            'name': _('%s changed cost from %s to %s - %s') % (self.env.user.name, product.standard_price, new_price, product.display_name),
                             'account_id': credit_account_id,
                             'debit': 0,
                             'credit': abs(diff * qty_available),
@@ -202,7 +202,7 @@ class ProductProduct(models.Model):
 
         for product in self:
             if product.cost_method in ['standard', 'average']:
-                qty_available = product.with_context(company_owned=True).qty_available
+                qty_available = product.with_context(company_owned=True, owner_id=False).qty_available
                 price_used = product.standard_price
                 if to_date:
                     price_used = product.get_history_price(
@@ -217,7 +217,7 @@ class ProductProduct(models.Model):
                         domain = [('product_id', '=', product.id), ('date', '<=', to_date)] + StockMove._get_all_base_domain()
                         moves = StockMove.search(domain)
                         product.stock_value = sum(moves.mapped('value'))
-                        product.qty_at_date = product.with_context(company_owned=True).qty_available
+                        product.qty_at_date = product.with_context(company_owned=True, owner_id=False).qty_available
                         product.stock_fifo_manual_move_ids = StockMove.browse(moves.ids)
                     elif product.product_tmpl_id.valuation == 'real_time':
                         valuation_account_id = product.categ_id.property_stock_valuation_account_id.id
@@ -227,7 +227,7 @@ class ProductProduct(models.Model):
                         product.stock_fifo_real_time_aml_ids = self.env['account.move.line'].browse(aml_ids)
                 else:
                     product.stock_value, moves = product._sum_remaining_values()
-                    product.qty_at_date = product.with_context(company_owned=True).qty_available
+                    product.qty_at_date = product.with_context(company_owned=True, owner_id=False).qty_available
                     if product.product_tmpl_id.valuation == 'manual_periodic':
                         product.stock_fifo_manual_move_ids = moves
                     elif product.product_tmpl_id.valuation == 'real_time':
@@ -348,7 +348,8 @@ class ProductProduct(models.Model):
             qty_delivered += qty_to_consider
             # `move.price_unit` is negative if the move is out and positive if the move is
             # dropshipped. Use its absolute value to compute the average price unit.
-            average_price_unit = (average_price_unit * (qty_delivered - qty_to_consider) + abs(move.price_unit) * qty_to_consider) / qty_delivered
+            if qty_delivered:
+                average_price_unit = (average_price_unit * (qty_delivered - qty_to_consider) + abs(move.price_unit) * qty_to_consider) / qty_delivered
             if qty_delivered == quantity:
                 break
         return average_price_unit
@@ -404,4 +405,3 @@ class ProductCategory(models.Model):
                 'message': _("Changing your cost method is an important change that will impact your inventory valuation. Are you sure you want to make that change?"),
             }
         }
-

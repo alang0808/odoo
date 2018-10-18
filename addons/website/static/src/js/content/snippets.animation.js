@@ -426,27 +426,16 @@ var registry = {};
 
 registry.slider = Animation.extend({
     selector: '.carousel',
+    edit_events: {
+        'slid.bs.carousel': '_onEditionSlide',
+    },
 
     /**
      * @override
      */
     start: function () {
         if (!this.editableMode) {
-            var maxHeight = 0;
-            var $items = this.$('.item');
-            _.each($items, function (el) {
-                var $item = $(el);
-                var isActive =  $item.hasClass('active');
-                $item.addClass('active');
-                var height = $item.outerHeight();
-                if (height > maxHeight) {
-                    maxHeight = height;
-                }
-                $item.toggleClass('active', isActive);
-            });
-            _.each($items, function (el) {
-                $(el).css('min-height', maxHeight);
-            });
+            this._computeHeights();
         }
         this.$target.carousel();
         return this._super.apply(this, arguments);
@@ -458,9 +447,45 @@ registry.slider = Animation.extend({
         this._super.apply(this, arguments);
         this.$target.carousel('pause');
         this.$target.removeData('bs.carousel');
-        _.each(this.$('.item'), function (el) {
+        _.each(this.$('.carousel-item'), function (el) {
             $(el).css('min-height', '');
         });
+    },
+
+    //--------------------------------------------------------------------------
+    // Private
+    //--------------------------------------------------------------------------
+
+    /**
+     * @private
+     */
+    _computeHeights: function () {
+        var maxHeight = 0;
+        var $items = this.$('.carousel-item');
+        _.each($items, function (el) {
+            var $item = $(el);
+            var isActive = $item.hasClass('active');
+            $item.addClass('active');
+            var height = $item.outerHeight();
+            if (height > maxHeight) {
+                maxHeight = height;
+            }
+            $item.toggleClass('active', isActive);
+        });
+        _.each($items, function (el) {
+            $(el).css('min-height', maxHeight);
+        });
+    },
+
+    //--------------------------------------------------------------------------
+    // Handlers
+    //--------------------------------------------------------------------------
+
+    /**
+     * @private
+     */
+    _onEditionSlide: function () {
+        this._computeHeights();
     },
 });
 
@@ -573,7 +598,7 @@ registry.parallax = Animation.extend({
 });
 
 registry.share = Animation.extend({
-    selector: '.oe_share',
+    selector: '.s_share, .oe_share', // oe_share for compatibility
 
     /**
      * @override
@@ -699,6 +724,7 @@ registry.gallery = Animation.extend({
      * @param {Event} ev
      */
     _onClickImg: function (ev) {
+        var self = this;
         var $cur = $(ev.currentTarget);
 
         var urls = [];
@@ -743,7 +769,12 @@ registry.gallery = Animation.extend({
         $modal.find('.modal-content, .modal-body.o_slideshow').css('height', '100%');
         $modal.appendTo(document.body);
 
-        this.carousel = new registry.gallery_slider($modal.find('.carousel').carousel());
+        $modal.one('shown.bs.modal', function () {
+            self.trigger_up('animation_start_demand', {
+                editableMode: false,
+                $target: $modal.find('.modal-body.o_slideshow'),
+            });
+        });
     },
 });
 
@@ -758,9 +789,9 @@ registry.gallerySlider = Animation.extend({
         var self = this;
         this.$carousel = this.$target.is('.carousel') ? this.$target : this.$target.find('.carousel');
         this.$indicator = this.$carousel.find('.carousel-indicators');
-        this.$prev = this.$indicator.find('li.fa:first').css('visibility', ''); // force visibility as some databases have it hidden
-        this.$next = this.$indicator.find('li.fa:last').css('visibility', '');
-        var $lis = this.$indicator.find('li:not(.fa)');
+        this.$prev = this.$indicator.find('li.o_indicators_left').css('visibility', ''); // force visibility as some databases have it hidden
+        this.$next = this.$indicator.find('li.o_indicators_right').css('visibility', '');
+        var $lis = this.$indicator.find('li[data-slide-to]');
         var nbPerPage = Math.floor(this.$indicator.width() / $lis.first().outerWidth(true)) - 3; // - navigator - 1 to leave some space
         var realNbPerPage = nbPerPage || 1;
         var nbPages = Math.ceil($lis.length / realNbPerPage);
@@ -771,7 +802,7 @@ registry.gallerySlider = Animation.extend({
 
         function hide() {
             $lis.each(function (i) {
-                $(this).toggleClass('hidden', !(i >= page*nbPerPage && i < (page+1)*nbPerPage));
+                $(this).toggleClass('d-none', !(i >= page*nbPerPage && i < (page+1)*nbPerPage));
             });
             if (self.editableMode) { // do not remove DOM in edit mode
                 return;
@@ -796,14 +827,14 @@ registry.gallerySlider = Animation.extend({
 
         this.$carousel.on('slide.bs.carousel.gallery_slider', function () {
             setTimeout(function () {
-                var $item = self.$carousel.find('.carousel-inner .prev, .carousel-inner .next');
+                var $item = self.$carousel.find('.carousel-inner .carousel-item-prev, .carousel-inner .carousel-item-next');
                 var index = $item.index();
                 $lis.removeClass('active')
                     .filter('[data-slide-to="'+index+'"]')
                     .addClass('active');
             }, 0);
         });
-        this.$indicator.on('click.gallery_slider', '> li.fa', function () {
+        this.$indicator.on('click.gallery_slider', '> li:not([data-slide-to])', function () {
             page += ($(this).hasClass('o_indicators_left') ? -1 : 1);
             page = Math.max(0, Math.min(nbPages - 1, page)); // should not be necessary
             self.$carousel.carousel(page * realNbPerPage);
@@ -863,7 +894,7 @@ registry.socialShare = Animation.extend({
             var self = this;
             setTimeout(function () {
                 if (!$(".popover:hover").length) {
-                    $(self).popover("destroy");
+                    $(self).popover('dispose');
                 }
             }, 200);
         });
