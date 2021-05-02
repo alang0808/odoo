@@ -2,13 +2,14 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models, tools
+from odoo.osv import expression
 from odoo.tools import formatLang
 
 class PurchaseBillUnion(models.Model):
     _name = 'purchase.bill.union'
     _auto = False
     _description = 'Purchases & Bills Union'
-    _order = "purchase_order_id desc, vendor_bill_id desc"
+    _order = "date desc, name desc"
 
     name = fields.Char(string='Reference', readonly=True)
     reference = fields.Char(string='Source', readonly=True)
@@ -30,14 +31,14 @@ class PurchaseBillUnion(models.Model):
                     id as vendor_bill_id, NULL as purchase_order_id
                 FROM account_invoice
                 WHERE
-                    type='in_invoice' and state in ('open','in_payment','paid','cancel')
+                    type='in_invoice' and COALESCE(number, '') != ''
             UNION
                 SELECT
                     -id, name, partner_ref, partner_id, date_order::date as date, amount_untaxed as amount, currency_id, company_id,
                     NULL as vendor_bill_id, id as purchase_order_id
                 FROM purchase_order
                 WHERE
-                    state = 'purchase' AND
+                    state in ('purchase', 'done') AND
                     invoice_status in ('to invoice', 'no')
             )""")
 
@@ -53,3 +54,12 @@ class PurchaseBillUnion(models.Model):
             name += ': ' + formatLang(self.env, amount, monetary=True, currency_obj=doc.currency_id)
             result.append((doc.id, name))
         return result
+
+    @api.model
+    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
+        args = args or []
+        domain = []
+        if name:
+            domain = ['|', ('name', operator, name), ('reference', operator, name)]
+        purchase_bills_union_ids = self._search(expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid)
+        return self.browse(purchase_bills_union_ids).name_get()

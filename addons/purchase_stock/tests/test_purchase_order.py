@@ -121,7 +121,7 @@ class TestPurchaseOrder(AccountingTestCase):
             'type': 'in_invoice',
         })
         self.invoice.purchase_order_change()
-        self.invoice.invoice_validate()
+        self.invoice.action_invoice_open()
         self.assertEqual(self.po.order_line.mapped('qty_invoiced'), [5.0, 5.0], 'Purchase: all products should be invoiced"')
 
         # Check quantity received
@@ -154,5 +154,23 @@ class TestPurchaseOrder(AccountingTestCase):
         self.invoice.purchase_order_change()
         self.invoice.invoice_line_ids[0].quantity = 2.0
         self.invoice.invoice_line_ids[1].quantity = 2.0
-        self.invoice.invoice_validate()
+        self.invoice.action_invoice_open()
         self.assertEqual(self.po.order_line.mapped('qty_invoiced'), [3.0, 3.0], 'Purchase: Billed quantity should be 3.0')
+
+    def test_03_multi_company(self):
+        company_a = self.env.user.company_id
+        company_b = self.env['res.company'].create({
+            "name": "Test Company",
+            "currency_id": self.env['res.currency'].with_context(active_test=False).search([
+                ('id', '!=', company_a.currency_id.id),
+            ], limit=1).id
+        })
+        self.env.user.write({
+            'company_id': company_b.id,
+            'company_ids': [(4, company_b.id), (4, company_a.id)],
+        })
+        po = self.PurchaseOrder.create(dict(company_id=company_a.id, partner_id=self.partner_id.id))
+
+        self.assertEqual(po.company_id, company_a)
+        self.assertEqual(po.picking_type_id.warehouse_id.company_id, company_a)
+        self.assertEqual(po.currency_id, po.company_id.currency_id)

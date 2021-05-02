@@ -35,7 +35,7 @@ class PortalWizard(models.TransientModel):
         contact_ids = set()
         user_changes = []
         for partner in self.env['res.partner'].sudo().browse(partner_ids):
-            contact_partners = partner.child_ids or [partner]
+            contact_partners = partner.child_ids | partner
             for contact in contact_partners:
                 # make sure that each contact appears at most once in the list
                 if contact.id not in contact_ids:
@@ -80,6 +80,7 @@ class PortalWizardUser(models.TransientModel):
         partners_error_empty = self.env['res.partner']
         partners_error_emails = self.env['res.partner']
         partners_error_user = self.env['res.partner']
+        partners_error_internal_user = self.env['res.partner']
 
         for wizard_user in self.with_context(active_test=False).filtered(lambda w: w.in_portal and not w.partner_id.user_ids):
             email = extract_email(wizard_user.email)
@@ -87,10 +88,14 @@ class PortalWizardUser(models.TransientModel):
                 partners_error_empty |= wizard_user.partner_id
             elif email in emails:
                 partners_error_emails |= wizard_user.partner_id
-            user = self.env['res.users'].sudo().with_context(active_test=False).search([('login', '=', email)])
+            user = self.env['res.users'].sudo().with_context(active_test=False).search([('login', '=ilike', email)])
             if user:
                 partners_error_user |= wizard_user.partner_id
             emails.append(email)
+
+        for wizard_user in self.with_context(active_test=False):
+            if any(u.has_group('base.group_user') for u in wizard_user.sudo().partner_id.user_ids):
+                partners_error_internal_user |= wizard_user.partner_id
 
         error_msg = []
         if partners_error_empty:
@@ -102,10 +107,14 @@ class PortalWizardUser(models.TransientModel):
         if partners_error_user:
             error_msg.append("%s\n- %s" % (_("Some contacts have the same email as an existing portal user:"),
                                 '\n- '.join(['%s <%s>' % (p.display_name, p.email) for p in partners_error_user])))
+        if partners_error_internal_user:
+            error_msg.append("%s\n- %s" % (_("Some contacts are already internal users:"),
+                                '\n- '.join(partners_error_internal_user.mapped('email'))))
         if error_msg:
             error_msg.append(_("To resolve this error, you can: \n"
                 "- Correct the emails of the relevant contacts\n"
                 "- Grant access only to contacts with unique emails"))
+            error_msg[-1] += _("\n- Switch the internal users to portal manually")
         return error_msg
 
     @api.multi

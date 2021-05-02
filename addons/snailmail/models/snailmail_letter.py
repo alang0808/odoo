@@ -12,6 +12,7 @@ from odoo.tools.safe_eval import safe_eval
 DEFAULT_ENDPOINT = 'https://iap-snailmail.odoo.com'
 ESTIMATE_ENDPOINT = '/iap/snailmail/1/estimate'
 PRINT_ENDPOINT = '/iap/snailmail/1/print'
+DEFAULT_TIMEOUT = 30
 
 
 class SnailmailLetter(models.Model):
@@ -138,6 +139,7 @@ class SnailmailLetter(models.Model):
                 'letter_id': letter.id,
                 'res_model': letter.model,
                 'res_id': letter.res_id,
+                'contact_address': letter.partner_id.with_context(snailmail_layout=True, show_address=True).name_get()[0][1],
                 'address': {
                     'name': letter.partner_id.name,
                     'street': letter.partner_id.street,
@@ -165,12 +167,12 @@ class SnailmailLetter(models.Model):
             else:
                 # adding the web logo from the company for future possible customization
                 document.update({
-                    'company_logo': letter.company_id.logo_web,
+                    'company_logo': letter.company_id.logo_web and letter.company_id.logo_web.decode('utf-8') or False,
                 })
                 attachment = letter._fetch_attachment()
                 if attachment:
                     document.update({
-                        'pdf_bin': route == 'print' and attachment.datas,
+                        'pdf_bin': route == 'print' and attachment.datas.decode('utf-8'),
                         'pages': route == 'estimate' and self._count_pages_pdf(base64.b64decode(attachment.datas)),
                     })
                 else:
@@ -201,15 +203,17 @@ class SnailmailLetter(models.Model):
     def _get_error_message(self, error):
         if error == 'CREDIT_ERROR':
             link = self.env['iap.account'].get_credits_url(service_name='snailmail')
-            return _('You don\'t have enough credits to perform this operation.<br>Please go to your <a href=%s target="new">iap account</a>.' % link)
+            return _('You don\'t have enough credits to perform this operation.<br>Please go to your <a href=%s target="new">iap account</a>.') % link
         if error == 'TRIAL_ERROR':
             link = self.env['iap.account'].get_credits_url(service_name='snailmail', trial=True)
-            return _('You don\'t have an IAP account registered for this service.<br>Please go to <a href=%s target="new">iap.odoo.com</a> to claim your free credits.' % link)
+            return _('You don\'t have an IAP account registered for this service.<br>Please go to <a href=%s target="new">iap.odoo.com</a> to claim your free credits.') % link
         if error == 'NO_PRICE_AVAILABLE':
             return _('The country of the partner is not covered by Snailmail.')
         if error == 'MISSING_REQUIRED_FIELDS':
             return _('One or more required fields are empty.')
-        if error == 'SOMETHING_IS_WRONG':
+        if error == 'FORMAT_ERROR':
+            return _('The attachment of the letter could not be sent. Please check its content and contact the support if the problem persists.')
+        else:
             return _('An unknown error happened. Please contact the support.')
         return error
 
@@ -230,8 +234,9 @@ class SnailmailLetter(models.Model):
         """
         self.write({'state': 'pending'})
         endpoint = self.env['ir.config_parameter'].sudo().get_param('snailmail.endpoint', DEFAULT_ENDPOINT)
+        timeout = int(self.env['ir.config_parameter'].sudo().get_param('snailmail.timeout', DEFAULT_TIMEOUT))
         params = self._snailmail_create('print')
-        response = jsonrpc(endpoint + PRINT_ENDPOINT, params=params)
+        response = jsonrpc(endpoint + PRINT_ENDPOINT, params=params, timeout=timeout)
         for doc in response['request']['documents']:
             letter = self.browse(doc['letter_id'])
             record = self.env[doc['res_model']].browse(doc['res_id'])
@@ -243,8 +248,8 @@ class SnailmailLetter(models.Model):
             else:
                 # look for existing activities related to snailmail to update or create a new one.
                 # TODO: in following versions, Add a link to a specifc activity on the letter
-                note = _('An error occured when sending the document by post.<br>Error: %s' % \
-                    self._get_error_message(doc['error'] if response['request_code'] == 200 else response['reason']))
+                note = _('An error occured when sending the document by post.<br>Error: %s') % \
+                    self._get_error_message(doc['error'] if response['request_code'] == 200 else response['reason'])
 
                 domain = [
                     ('summary', 'ilike', '[SNAILMAIL]'),
@@ -256,26 +261,30 @@ class SnailmailLetter(models.Model):
                 activity = MailActivity.search(domain, limit=1)
 
                 activity_data = {
-                    'res_id': letter.res_id,
-                    'res_model_id': self.env['ir.model']._get(letter.model).id,
                     'activity_type_id': self.env.ref('mail.mail_activity_data_warning').id,
                     'summary': '[SNAILMAIL] ' + _('Post letter: an error occured.'),
                     'note': note,
-                    'user_id': letter.user_id.id,
                     'date_deadline': fields.Date.today()
                 }
                 if activity:
                     activity.update(activity_data)
                 else:
+                    activity_data.update({
+                        'user_id': letter.user_id.id,
+                        'res_id': letter.res_id,
+                        'res_model_id': self.env['ir.model']._get(letter.model).id,
+                    })
                     MailActivity.create(activity_data)
 
-                letter.write({'info_msg': note})
+                letter.write({'info_msg': note, 'state': 'error'})
 
         self.env.cr.commit()
 
     @api.multi
     def snailmail_print(self):
-        self._snailmail_print()
+        self.write({'state': 'pending'})
+        if len(self) == 1:
+            self._snailmail_print()
 
     @api.multi
     def cancel(self):
@@ -284,42 +293,19 @@ class SnailmailLetter(models.Model):
     @api.multi
     def _snailmail_estimate(self):
         """
-        Send a request to estimate the cost of sending all the documents with
-        the differents options.
-
-        The JSON object sent is the one generated from self._snailmail_create()
-
-        arguments sent:
-        {
-            "documents":[{
-                pages: int,
-                res_id: int (client_side, optional),
-                res_model: int (client_side, optional),
-                address: {
-                    country_code: char (country name)
-                }
-            }],
-            'color': # color on the letter,
-            'duplex': # one/two side printing,
-        }
-
-        The answer of the server is the same JSON object with some additionnal fields:
-        {
-            "total_cost": integer,      //The cost of sending ALL the documents
-            body: JSON object (same as body param except new param 'cost' in each documents)
-        }
+        Return the numbers of stamps needed to send a letter.
+        As 1 letter = 1 stamp, we just need to return the number of letters.
         """
-        endpoint = self.env['ir.config_parameter'].sudo().get_param('snailmail.endpoint', DEFAULT_ENDPOINT)
-        params = self._snailmail_create('estimate')
-        req = jsonrpc(endpoint + '/iap/snailmail/1/estimate', params=params)
-
-        return req['total_cost']
+        return len(self)
 
     @api.model
-    def _snailmail_cron(self):
-        letters_send = self.search([('state', 'in', ['pending', 'error'])])
-        if letters_send:
-            letters_send._snailmail_print()
+    def _snailmail_cron(self, autocommit=True):
+        letters_send = self.search([('state', '=', 'pending')])
+        for letter in letters_send:
+            letter._snailmail_print()
+            # Commit after every letter sent to avoid to send it back in case of a rollback
+            if autocommit:
+                self.env.cr.commit()
         limit_date = datetime.datetime.utcnow() - datetime.timedelta(days=1)
         limit_date_str = datetime.datetime.strftime(limit_date, tools.DEFAULT_SERVER_DATETIME_FORMAT)
         letters_canceled = self.search([

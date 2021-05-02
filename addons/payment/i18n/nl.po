@@ -3,19 +3,20 @@
 # * payment
 # 
 # Translators:
-# Martin Trigaux, 2018
-# Erwin van der Ploeg <erwin@odooexperts.nl>, 2018
-# Yenthe Van Ginneken <yenthespam@gmail.com>, 2018
 # Gunther Clauwaert <gclauwae@hotmail.com>, 2018
 # dpms <pieter.van.de.wygaert@telenet.be>, 2018
 # Cas Vissers <casvissers@brahoo.nl>, 2018
+# Martin Trigaux, 2019
+# Yenthe Van Ginneken <yenthespam@gmail.com>, 2019
+# Erwin van der Ploeg <erwin@odooexperts.nl>, 2020
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~11.5\n"
+"Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-21 13:17+0000\n"
-"PO-Revision-Date: 2018-09-21 13:17+0000\n"
-"Last-Translator: Cas Vissers <casvissers@brahoo.nl>, 2018\n"
+"POT-Creation-Date: 2019-11-14 07:34+0000\n"
+"PO-Revision-Date: 2018-08-24 09:21+0000\n"
+"Last-Translator: Erwin van der Ploeg <erwin@odooexperts.nl>, 2020\n"
 "Language-Team: Dutch (https://www.transifex.com/odoo/teams/41243/nl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -57,6 +58,30 @@ msgstr "<b>Referentie:</b>"
 #: model_terms:ir.ui.view,arch_db:payment.confirm
 msgid "<i class=\"fa fa-arrow-circle-right\"/> Back to My Account"
 msgstr "<i class=\"fa fa-arrow-circle-right\"/> Terug naar mijn account"
+
+#. module: payment
+#: model_terms:ir.ui.view,arch_db:payment.payment_tokens_list
+msgid ""
+"<i class=\"fa fa-check text-success\" title=\"This payment method is "
+"verified by our system.\" role=\"img\" aria-label=\"Ok\"/>"
+msgstr ""
+"<i class=\"fa fa-check text-success\" title=\"Deze betalingsmethodeis door "
+"ons systeem geverifieerd.\" role=\"img\" aria-label=\"Ok\"/>"
+
+#. module: payment
+#: model_terms:ir.ui.view,arch_db:payment.payment_tokens_list
+msgid ""
+"<i class=\"fa fa-close text-danger\" title=\"This payment method has not "
+"been verified by our system.\" role=\"img\" aria-label=\"Not verified\"/>"
+msgstr ""
+"<i class=\"fa fa-close text-danger\" title=\"Deze betalingsmethodeis niet "
+"door ons systeem geverifieerd.\" role=\"img\" aria-label=\"Niet "
+"geverifieerd\"/>"
+
+#. module: payment
+#: model_terms:ir.ui.view,arch_db:payment.pay_methods
+msgid "<i class=\"fa fa-home\" role=\"img\" aria-label=\"Home\" title=\"Home\"/>"
+msgstr "<i class=\"fa fa-home\" role=\"img\" aria-label=\"Home\" title=\"Home\"/>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_tokens_list
@@ -131,7 +156,7 @@ msgstr "<span class=\"fa fa-arrow-right\"> Haal mijn Stripe keys op</span>"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.view_partners_form_payment_defaultcreditcard
 msgid "<span class=\"o_stat_text\">Credit card(s)</span>"
-msgstr "<span class=\"o_stat_text\">Credit Card(en)</span>"
+msgstr "<span class=\"o_stat_text\">Creditcard(s)</span>"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.acquirer_form
@@ -149,7 +174,7 @@ msgid ""
 "                                    <span class=\"o_stat_text\">Environment</span>"
 msgstr ""
 "<span class=\"text-success\">Productie</span>\n"
-"                                    <span class=\"o_stat_text\">Omgeving</span>"
+"                                    <span class=\"o_stat_text\">omgeving</span>"
 
 #. module: payment
 #: model_terms:payment.acquirer,cancel_msg:payment.payment_acquirer_adyen
@@ -218,8 +243,8 @@ msgid ""
 "<span><i>Pending,</i> Your online payment has been successfully processed. "
 "But your order is not validated yet.</span>"
 msgstr ""
-"<span><i>Wachtende,</i> Uw online betaling is succesvol verwerkt. Uw order "
-"is nog niet bevestigd.</span>"
+"<span>In behandeling,</i> Uw online betaling is succesvol verwerkt. Uw order"
+" is nog niet bevestigd.</span>"
 
 #. module: payment
 #: model_terms:payment.acquirer,pending_msg:payment.payment_acquirer_transfer
@@ -257,7 +282,7 @@ msgstr "Een token is vereist om een betaaltransactie uit te voeren."
 #: code:addons/payment/models/payment_acquirer.py:657
 #, python-format
 msgid "A transaction %s with %s initiated using %s credit card."
-msgstr "Een transactie %s met%s gestart door%s credit card."
+msgstr "Een transactie %s met%s gestart door%s creditcard."
 
 #. module: payment
 #: code:addons/payment/models/payment_acquirer.py:663
@@ -515,7 +540,7 @@ msgstr "Controleer hier"
 #: model:ir.actions.act_window,name:payment.action_open_payment_onboarding_payment_acquirer_wizard
 #: model_terms:ir.ui.view,arch_db:payment.payment_acquirer_onboarding_wizard_form
 msgid "Choose a payment method"
-msgstr "Kies een betaalmethode"
+msgstr "Kies een betalinsgmethode"
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_transaction__partner_city
@@ -528,7 +553,7 @@ msgstr "Plaats"
 #: code:addons/payment/static/src/xml/payment_processing.xml:40
 #, python-format
 msgid "Click here to be redirected to the confirmation page."
-msgstr ""
+msgstr "Klik hier om doorverwezen te worden naar de bevestigingspagina."
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_confirmation_status
@@ -549,7 +574,7 @@ msgstr "Bedrijven"
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer__company_id
 msgid "Company"
-msgstr "Bedijf"
+msgstr "Bedrijf"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.acquirer_form
@@ -564,7 +589,7 @@ msgstr "Configureren"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.onboarding_payment_acquirer_step
 msgid "Configure your payment methods."
-msgstr "Configureer uw betaalmethodes."
+msgstr "Configureer uw betalingsmtehodes."
 
 #. module: payment
 #. openerp-web
@@ -618,7 +643,7 @@ msgstr "Maak een betaal icoon aan"
 #. module: payment
 #: model_terms:ir.actions.act_window,help:payment.payment_token_action
 msgid "Create a saved payment data"
-msgstr "Maak een bewaarde betaling data aan"
+msgstr "Maak een bewaarde betaalgegevens aan"
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer__create_uid
@@ -806,6 +831,11 @@ msgid "Group By"
 msgstr "Groepeer op"
 
 #. module: payment
+#: model:ir.model,name:payment.model_ir_http
+msgid "HTTP Routing"
+msgstr "HTTP routing"
+
+#. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_transaction__is_processed
 msgid "Has the payment been post processed"
 msgstr "Is de betaling achteraf verwerkt."
@@ -837,7 +867,7 @@ msgstr ""
 #: code:addons/payment/static/src/xml/payment_processing.xml:132
 #, python-format
 msgid "If, the payment hasn't been confirmed you can contact us."
-msgstr ""
+msgstr "Indien de betaling niet bevestigd is kan u ons contacteren."
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer__image
@@ -962,12 +992,12 @@ msgstr "Maak deze betaalverwerver beschikbaar (Klant facturen, etc.)"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.pay_methods
 msgid "Manage your Payment Methods"
-msgstr "Beheer uw betaalmethodes"
+msgstr "Beheer uw betalingsmtehodes"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.pay_meth_link
 msgid "Manage your payment methods"
-msgstr "Beheer uw betaalmethodes"
+msgstr "Beheer uw betalingsmtehodes"
 
 #. module: payment
 #: selection:res.company,payment_onboarding_payment_method:0
@@ -987,7 +1017,7 @@ msgid ""
 "Batch Deposit: Encase several customer checks at once by generating a batch deposit to submit to your bank. When encoding the bank statement in Odoo,you are suggested to reconcile the transaction with the batch deposit. Enable this option from the settings."
 msgstr ""
 "Handmatig: Krijg betaald met contant geld, cheques of een andere methode buiten Odoo om\n"
-"Elektronisch: Betaal automatisch via een betalingsverwerver door een transactie aan te vragen op een door de klant opgeslagen kaart bij het online kopen of abonneren van (betalingstoken).\n"
+"Elektronisch: Betaal automatisch via een betalingsprovider door een transactie aan te vragen op een door de klant opgeslagen kaart bij het online kopen of abonneren van (betalingstoken).\n"
 "Batch Deposito: Verzamel meerdere klantcheques tegelijk door een batch deposito te genereren om bij uw bank in te dienen. Wanneer u de bankafschriften in Odoo ingeeft, wordt u voorgesteld om de transactie af te letteren met de batchafbetaling. Schakel deze optie in bij instellingen."
 
 #. module: payment
@@ -1004,7 +1034,7 @@ msgid ""
 msgstr ""
 "Middelgrote afbeelding van deze aanbieder. Het wordt automatisch aangepast "
 "naar 128x128px, met behoud van de verhouding. Gebruik dit veld in "
-"formulierweergaves en sommige kanban weergaves."
+"formulierweergaven en sommige kanban weergaven."
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_transaction__state_message
@@ -1094,6 +1124,16 @@ msgid "Never"
 msgstr "Nooit"
 
 #. module: payment
+#: code:addons/payment/wizards/payment_acquirer_onboarding_wizard.py:127
+#, python-format
+msgid ""
+"No manual payment method could be found for this company. Please create one "
+"from the Payment Acquirer menu."
+msgstr ""
+"Er kon geen handmatige betaalwijze worden gevonden voor dit bedrijf. U dient"
+" er een aan te maken via het betaalprovider menu."
+
+#. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.pay
 msgid "No payment acquirer found."
 msgstr "Geen betalingsverwerker gevonden."
@@ -1111,7 +1151,7 @@ msgstr "Geen betaling is verwerkt."
 #: code:addons/payment/static/src/js/payment_form.js:310
 #, python-format
 msgid "No payment method selected"
-msgstr "Geen betalingsmethode geselecteerd"
+msgstr "Geen betaaalmethode geselecteerd"
 
 #. module: payment
 #: selection:res.company,payment_acquirer_onboarding_state:0
@@ -1184,13 +1224,14 @@ msgstr "Alleen concept/geautoriseerde transacties kunnen geboekt worden. "
 #: code:addons/payment/models/payment_acquirer.py:1018
 #, python-format
 msgid "Only transactions having the capture status can be captured."
-msgstr ""
+msgstr "Alleen transacties met de capture-status kunnen worden vastgelegd."
 
 #. module: payment
 #: code:addons/payment/models/payment_acquirer.py:1025
 #, python-format
 msgid "Only transactions having the capture status can be voided."
 msgstr ""
+"Alleen transacties met de capture-status kunnen ongeldig worden verklaard."
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.confirm
@@ -1226,7 +1267,7 @@ msgstr "Betaal met een andere betalingsverwerker"
 #. module: payment
 #: selection:payment.acquirer.onboarding.wizard,payment_method:0
 msgid "Pay with credit card (via Stripe)"
-msgstr "Betaal met credit card (via Stripe)"
+msgstr "Betaal met creditcard (via Stripe)"
 
 #. module: payment
 #: selection:res.company,payment_onboarding_payment_method:0
@@ -1255,14 +1296,14 @@ msgstr "Betaling"
 #: model:ir.model,name:payment.model_payment_acquirer
 #: model_terms:ir.ui.view,arch_db:payment.acquirer_form
 msgid "Payment Acquirer"
-msgstr "Betaling verwerver"
+msgstr "Betalingsprovider"
 
 #. module: payment
 #: model:ir.actions.act_window,name:payment.action_payment_acquirer
 #: model:ir.ui.menu,name:payment.payment_acquirer_menu
 #: model_terms:ir.ui.view,arch_db:payment.acquirer_list
 msgid "Payment Acquirers"
-msgstr "Betaling verwervers"
+msgstr "Betaalproviders"
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer__payment_flow
@@ -1289,13 +1330,13 @@ msgstr "Betalingsinstructies"
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer__journal_id
 msgid "Payment Journal"
-msgstr "Betaal dagboek"
+msgstr "Betaaldagboek"
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer_onboarding_wizard__payment_method
 #: model_terms:ir.ui.view,arch_db:payment.onboarding_payment_acquirer_step
 msgid "Payment Method"
-msgstr "Betaalmethode"
+msgstr "Betalingsmethode"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.pay_methods
@@ -1336,7 +1377,7 @@ msgstr "Betalingstransacties"
 #. module: payment
 #: model:ir.model,name:payment.model_payment_acquirer_onboarding_wizard
 msgid "Payment acquire onboarding wizard"
-msgstr ""
+msgstr "Betalingsprovider onboarding wizard"
 
 #. module: payment
 #: selection:payment.acquirer,payment_flow:0
@@ -1346,13 +1387,7 @@ msgstr "Betaling van Odoo"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.onboarding_payment_acquirer_step
 msgid "Payment method set!"
-msgstr "Betaalmethode ingesteld"
-
-#. module: payment
-#: code:addons/payment/controllers/portal.py:252
-#, python-format
-msgid "Payment transaction failed."
-msgstr "Betalingstransactie mislukt."
+msgstr "Betalingsmethode ingesteld"
 
 #. module: payment
 #: model:ir.model,name:payment.model_account_payment
@@ -1425,7 +1460,7 @@ msgstr "Telefoon"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.pay
 msgid "Please configure a payment acquirer."
-msgstr "Gelieve een betalingsverwerker te configureren."
+msgstr "U dient een betalingsverwerker te configureren."
 
 #. module: payment
 #: code:addons/payment/wizards/payment_acquirer_onboarding_wizard.py:33
@@ -1434,20 +1469,22 @@ msgid ""
 "Please make a payment to <ul><li>Bank: %s</li><li>Account Number: "
 "%s</li><li>Account Holder: %s</li></ul>"
 msgstr ""
+"<h3>Maak een betaling naar: </h3><ul><li>Bank: %s</li><li>Rekeningnummer: "
+"%s</li><li>Rekeninghouder: %s</li></ul>"
 
 #. module: payment
 #. openerp-web
 #: code:addons/payment/static/src/js/payment_form.js:202
 #, python-format
 msgid "Please select a payment method."
-msgstr "Selecteer een betalingsmethode aub."
+msgstr "Selecteer een betaaalmethode aub."
 
 #. module: payment
 #. openerp-web
 #: code:addons/payment/static/src/js/payment_form.js:311
 #, python-format
 msgid "Please select the option to add a new payment method."
-msgstr "Selecteer de optie om een nieuwe betaalmethode toe te voegen."
+msgstr "Selecteer de optie om een nieuwe betalingsmethodetoe te voegen."
 
 #. module: payment
 #: model_terms:payment.acquirer,post_msg:payment.payment_acquirer_custom
@@ -1474,7 +1511,7 @@ msgstr "Even geduld ..."
 #: model:ir.cron,cron_name:payment.cron_post_process_payment_tx
 #: model:ir.cron,name:payment.cron_post_process_payment_tx
 msgid "Post process payment transactions"
-msgstr ""
+msgstr "Nabewerking betaaltransacties"
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.confirm
@@ -1492,6 +1529,20 @@ msgstr "Productie"
 #: model_terms:ir.ui.view,arch_db:payment.acquirer_search
 msgid "Provider"
 msgstr "Provider"
+
+#. module: payment
+#. openerp-web
+#: code:addons/payment/static/src/js/payment_translations.js:10
+#, python-format
+msgid "Publish"
+msgstr "Publiceer"
+
+#. module: payment
+#. openerp-web
+#: code:addons/payment/static/src/js/payment_translations.js:9
+#, python-format
+msgid "Published"
+msgstr "Gepubliceerd"
 
 #. module: payment
 #. openerp-web
@@ -1565,7 +1616,7 @@ msgstr "Opslaan van kaartgegevens ondersteund"
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_res_company__payment_onboarding_payment_method
 msgid "Selected onboarding payment method"
-msgstr ""
+msgstr "Selecteer onboarding betalinsgmethode"
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_acquirer__sequence
@@ -1644,7 +1695,7 @@ msgstr "Specifieke landen"
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_res_company__payment_acquirer_onboarding_state
 msgid "State of the onboarding payment acquirer step"
-msgstr ""
+msgstr "Status van de onboarding betalingsprovider stap"
 
 #. module: payment
 #: model:ir.model.fields,field_description:payment.field_payment_transaction__state
@@ -1704,7 +1755,7 @@ msgstr "De SEPA QR code informatie is niet correct ingevuld."
 #: code:addons/payment/models/payment_acquirer.py:660
 #, python-format
 msgid "The customer has selected %s to pay this document."
-msgstr "De klant heeft %sgeselecteerd om dit document mee te betalen."
+msgstr "De klant heeft %s geselecteerd om dit document mee te betalen."
 
 #. module: payment
 #: code:addons/payment/models/payment_acquirer.py:677
@@ -1713,6 +1764,7 @@ msgid ""
 "The transaction %s with %s for %s has been authorized. Waiting for "
 "capture..."
 msgstr ""
+"De transactie %s met %s voor %s is geautoriseerd. Wachten op capture ..."
 
 #. module: payment
 #: code:addons/payment/models/payment_acquirer.py:682
@@ -1721,6 +1773,7 @@ msgid ""
 "The transaction %s with %s for %s has been cancelled with the following "
 "message: %s"
 msgstr ""
+"De transactie %s met %s voor %s is geannuleerd met het volgende bericht: %s"
 
 #. module: payment
 #: code:addons/payment/models/payment_acquirer.py:685
@@ -1735,6 +1788,8 @@ msgid ""
 "The transaction %s with %s for %s has been confirmed. The related payment is"
 " posted: %s"
 msgstr ""
+"De transactie %s met %s voor %s is bevestigd. De bijbehorende betaling is "
+"geboekt: %s"
 
 #. module: payment
 #: code:addons/payment/models/payment_acquirer.py:675
@@ -1767,10 +1822,10 @@ msgid ""
 " invoicing), you need it to automatically charge the customer when you issue"
 " an invoice."
 msgstr ""
-"Met deze optie kunnen klanten hun creditcard opslaan als een betaalmethode "
-"en deze opnieuw gebruiken voor een latere aankoop. Als u abonnementen "
-"beheert (periodieke facturering), hebt u deze nodig om de klant automatisch "
-"in rekening te brengen bij het bevestigen van een factuur."
+"Met deze optie kunnen klanten hun creditcard opslaan als een "
+"betalingsmethodeen deze opnieuw gebruiken voor een latere aankoop. Als u "
+"abonnementen beheert (periodieke facturering), hebt u deze nodig om de klant"
+" automatisch in rekening te brengen bij het bevestigen van een factuur."
 
 #. module: payment
 #: model:ir.model.fields,help:payment.field_payment_acquirer__country_ids
@@ -1887,14 +1942,14 @@ msgstr "Waarschuwing!"
 #: code:addons/payment/static/src/js/payment_form.js:136
 #, python-format
 msgid "We are not able to add your payment method at the moment."
-msgstr "We konden uw betaalmethode niet toevoegen op dit moment."
+msgstr "We konden uw betalingsmethodeniet toevoegen op dit moment."
 
 #. module: payment
 #. openerp-web
 #: code:addons/payment/static/src/js/payment_form.js:303
 #, python-format
 msgid "We are not able to add your payment method at the moment.</p>"
-msgstr "We konden uw betaalmethode niet toevoegen op dit moment.</p>"
+msgstr "We konden uw betalingsmethodeniet toevoegen op dit moment.</p>"
 
 #. module: payment
 #. openerp-web
@@ -1902,7 +1957,7 @@ msgstr "We konden uw betaalmethode niet toevoegen op dit moment.</p>"
 #: code:addons/payment/static/src/js/payment_form.js:370
 #, python-format
 msgid "We are not able to delete your payment method at the moment."
-msgstr "We konden uw betaalmethode niet verwijderen op dit moment."
+msgstr "We konden uw betalingsmethodeniet verwijderen op dit moment."
 
 #. module: payment
 #. openerp-web
@@ -1930,14 +1985,14 @@ msgstr "We konden u niet omleiden naar het betalingsformulier."
 #: code:addons/payment/static/src/js/payment_processing.js:117
 #, python-format
 msgid "We are processing your payments, please wait ..."
-msgstr ""
+msgstr "We verwerken uw betaling, een moment geduld..."
 
 #. module: payment
 #. openerp-web
 #: code:addons/payment/static/src/xml/payment_processing.xml:99
 #, python-format
 msgid "We are waiting for the payment acquirer to confirm the payment."
-msgstr ""
+msgstr "We wachten op de betalingsverwerker om de betaling te bevestigen."
 
 #. module: payment
 #. openerp-web
@@ -1958,6 +2013,13 @@ msgstr "Overschrijving"
 #, python-format
 msgid "You can click here to be redirected to the confirmation page."
 msgstr ""
+"U kan hier klikken om doorverwezen te worden naar de bevestigingspagina."
+
+#. module: payment
+#: code:addons/payment/wizards/payment_acquirer_onboarding_wizard.py:135
+#, python-format
+msgid "You have to set a journal for your payment acquirer %s."
+msgstr "U dient een dagboek te definiëren voor uw betaalprovider %s."
 
 #. module: payment
 #. openerp-web
@@ -1965,13 +2027,15 @@ msgstr ""
 #, python-format
 msgid "You should receive an email confirming your payment in a few minutes."
 msgstr ""
+"U zou binnen een paar minuten een e-mail moeten ontvangen die uw betaling "
+"bevestigd."
 
 #. module: payment
 #. openerp-web
 #: code:addons/payment/static/src/xml/payment_processing.xml:77
 #, python-format
 msgid "You will be notified when the payment is confirmed."
-msgstr ""
+msgstr "U wordt verwittigd wanneer de betaling bevestigd is."
 
 #. module: payment
 #. openerp-web
@@ -2069,7 +2133,7 @@ msgstr "Uw betaling is geauthoriseerd."
 #: code:addons/payment/static/src/xml/payment_processing.xml:76
 #, python-format
 msgid "Your payment has been received but need to be confirmed manually."
-msgstr ""
+msgstr "Uw betaling is ontvangen maar moet handmatig bevestigd worden."
 
 #. module: payment
 #. openerp-web
@@ -2143,7 +2207,7 @@ msgstr "Referentie: het referentienummer van de transactie"
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.payment_acquirer_onboarding_wizard_form
 msgid "to choose another payment method."
-msgstr "om een andere betaalmethode te kiezen."
+msgstr "om een andere betalingsmethodes kiezen."
 
 #. module: payment
 #: model_terms:ir.ui.view,arch_db:payment.acquirer_form

@@ -10,6 +10,7 @@ from werkzeug.exceptions import NotFound
 from odoo import fields, http
 from odoo.http import request
 from odoo.tools import html_escape as escape, html2plaintext
+from odoo.tools.misc import babel_locale_parse
 
 
 class WebsiteEventTrackController(http.Controller):
@@ -29,7 +30,7 @@ class WebsiteEventTrackController(http.Controller):
             :param dt_time: datetime object
             :param lang_code: language code (eg. en_US)
         """
-        locale = babel.Locale.parse(lang_code)
+        locale = babel_locale_parse(lang_code)
         return babel.dates.format_time(dt_time, format='short', locale=locale)
 
     def _prepare_calendar(self, event, event_track_ids):
@@ -64,6 +65,7 @@ class WebsiteEventTrackController(http.Controller):
                 locations[location][-1][3] -= 1
             locations[location].append([track, start_date, end_date, 1])
             dates[-1][1][location] = locations[location][-1]
+            locations = collections.OrderedDict(sorted(locations.items(), key=lambda t: t[0].id if t[0] else 0))
         return {
             'locations': locations,
             'dates': dates
@@ -77,7 +79,7 @@ class WebsiteEventTrackController(http.Controller):
         event = event.with_context(tz=event.date_tz or 'UTC')
         local_tz = pytz.timezone(event.date_tz or 'UTC')
         days_tracks = collections.defaultdict(lambda: [])
-        for track in event.track_ids.sorted(lambda track: (track.date or '', bool(track.location_id))):
+        for track in event.track_ids.sorted(lambda track: (bool(track.date), track.date, bool(track.location_id))):
             if not track.date:
                 continue
             date = fields.Datetime.from_string(track.date).replace(tzinfo=pytz.utc).astimezone(local_tz)

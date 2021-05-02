@@ -311,7 +311,7 @@ var DataExport = Dialog.extend({
             });
 
             self.$export_format_inputs = $fmts.find('input');
-            self.$export_format_inputs.first().prop('checked', true);
+            self.$export_format_inputs.filter(':enabled').first().prop('checked', true);
         }
     },
     show_exports_list: function() {
@@ -418,6 +418,7 @@ var DataExport = Dialog.extend({
                 $("<div/>").addClass('o_field_tree_structure')
                            .append(QWeb.render('Export.TreeItems', {'fields': records, 'debug': this.getSession().debug}))
             );
+            this.records = {};
         }
 
         _.extend(this.records, _.object(_.pluck(records, 'id'), records));

@@ -47,8 +47,8 @@ class SaleOrder(models.Model):
                 amount_untaxed += line.price_subtotal
                 amount_tax += line.price_tax
             order.update({
-                'amount_untaxed': order.pricelist_id.currency_id.round(amount_untaxed),
-                'amount_tax': order.pricelist_id.currency_id.round(amount_tax),
+                'amount_untaxed': amount_untaxed,
+                'amount_tax': amount_tax,
                 'amount_total': amount_untaxed + amount_tax,
             })
 
@@ -66,30 +66,39 @@ class SaleOrder(models.Model):
         for possible refunds created directly from existing invoices. This is necessary since such a
         refund is not directly linked to the SO.
         """
+        # Ignore the status of the deposit product
+        deposit_product_id = self.env['sale.advance.payment.inv']._default_product_id()
+        line_invoice_status_all = [(d['order_id'][0], d['invoice_status']) for d in self.env['sale.order.line'].read_group([('order_id', 'in', self.ids), ('product_id', '!=', deposit_product_id.id)], ['order_id', 'invoice_status'], ['order_id', 'invoice_status'], lazy=False)]
         for order in self:
             invoice_ids = order.order_line.mapped('invoice_lines').mapped('invoice_id').filtered(lambda r: r.type in ['out_invoice', 'out_refund'])
             # Search for invoices which have been 'cancelled' (filter_refund = 'modify' in
             # 'account.invoice.refund')
             # use like as origin may contains multiple references (e.g. 'SO01, SO02')
-            refunds = invoice_ids.search([('origin', 'like', order.name), ('company_id', '=', order.company_id.id)]).filtered(lambda r: r.type in ['out_invoice', 'out_refund'])
+            refunds = invoice_ids.search([('origin', 'like', order.name), ('company_id', '=', order.company_id.id), ('type', 'in', ('out_invoice', 'out_refund'))])
             invoice_ids |= refunds.filtered(lambda r: order.name in [origin.strip() for origin in r.origin.split(',')])
-            # Search for refunds as well
-            refund_ids = self.env['account.invoice'].browse()
-            if invoice_ids:
-                for inv in invoice_ids:
-                    refund_ids += refund_ids.search([('type', '=', 'out_refund'), ('origin', '=', inv.number), ('origin', '!=', False), ('journal_id', '=', inv.journal_id.id)])
 
-            # Ignore the status of the deposit product
-            deposit_product_id = self.env['sale.advance.payment.inv']._default_product_id()
-            line_invoice_status = [line.invoice_status for line in order.order_line if line.product_id != deposit_product_id]
+            # Search for refunds as well
+            domain_inv = expression.OR([
+                ['&', ('origin', '=', inv.number), ('journal_id', '=', inv.journal_id.id)]
+                for inv in invoice_ids if inv.number
+            ])
+            if domain_inv:
+                refund_ids = self.env['account.invoice'].search(expression.AND([
+                    ['&', ('type', '=', 'out_refund'), ('origin', '!=', False)], 
+                    domain_inv
+                ]))
+            else:
+                refund_ids = self.env['account.invoice'].browse()
+
+            line_invoice_status = [d[1] for d in line_invoice_status_all if d[0] == order.id]
 
             if order.state not in ('sale', 'done'):
                 invoice_status = 'no'
             elif any(invoice_status == 'to invoice' for invoice_status in line_invoice_status):
                 invoice_status = 'to invoice'
-            elif all(invoice_status == 'invoiced' for invoice_status in line_invoice_status):
+            elif line_invoice_status and all(invoice_status == 'invoiced' for invoice_status in line_invoice_status):
                 invoice_status = 'invoiced'
-            elif all(invoice_status in ['invoiced', 'upselling'] for invoice_status in line_invoice_status):
+            elif line_invoice_status and all(invoice_status in ['invoiced', 'upselling'] for invoice_status in line_invoice_status):
                 invoice_status = 'upselling'
             else:
                 invoice_status = 'no'
@@ -128,6 +137,23 @@ class SaleOrder(models.Model):
         self.ensure_one()
         return 'form'
 
+    def _search_invoice_ids(self, operator, value):
+        if operator == 'in' and value:
+            self.env.cr.execute("""
+                SELECT array_agg(so.id)
+                    FROM sale_order so
+                    JOIN sale_order_line sol ON sol.order_id = so.id
+                    JOIN sale_order_line_invoice_rel soli_rel ON soli_rel.order_line_id = sol.id
+                    JOIN account_invoice_line ail ON ail.id = soli_rel.invoice_line_id
+                    JOIN account_invoice ai ON ai.id = ail.invoice_id
+                WHERE
+                    ai.type in ('out_invoice', 'out_refund') AND
+                    ai.id = ANY(%s)
+            """, (list(value),))
+            so_ids = self.env.cr.fetchone()[0] or []
+            return [('id', 'in', so_ids)]
+        return ['&', ('order_line.invoice_lines.invoice_id.type', 'in', ('out_invoice', 'out_refund')), ('order_line.invoice_lines.invoice_id', operator, value)]
+
     name = fields.Char(string='Order Reference', required=True, copy=False, readonly=True, states={'draft': [('readonly', False)]}, index=True, default=lambda self: _('New'))
     origin = fields.Char(string='Source Document', help="Reference of the document that generated this sales order request.")
     client_order_ref = fields.Char(string='Customer Reference', copy=False)
@@ -165,7 +191,7 @@ class SaleOrder(models.Model):
     order_line = fields.One2many('sale.order.line', 'order_id', string='Order Lines', states={'cancel': [('readonly', True)], 'done': [('readonly', True)]}, copy=True, auto_join=True)
 
     invoice_count = fields.Integer(string='Invoice Count', compute='_get_invoiced', readonly=True)
-    invoice_ids = fields.Many2many("account.invoice", string='Invoices', compute="_get_invoiced", readonly=True, copy=False)
+    invoice_ids = fields.Many2many("account.invoice", string='Invoices', compute="_get_invoiced", readonly=True, copy=False, search="_search_invoice_ids")
     invoice_status = fields.Selection([
         ('upselling', 'Upselling Opportunity'),
         ('invoiced', 'Fully Invoiced'),
@@ -179,7 +205,7 @@ class SaleOrder(models.Model):
     amount_by_group = fields.Binary(string="Tax amount by group", compute='_amount_by_group', help="type: [(name, amount, base, formated amount, formated base)]")
     amount_tax = fields.Monetary(string='Taxes', store=True, readonly=True, compute='_amount_all')
     amount_total = fields.Monetary(string='Total', store=True, readonly=True, compute='_amount_all', track_visibility='always', track_sequence=6)
-    currency_rate = fields.Float("Currency Rate", compute='_compute_currency_rate', store=True, digits=(12, 6), readonly=True, help='The rate of the currency to the currency of rate 1 applicable at the date of the order')
+    currency_rate = fields.Float("Currency Rate", compute='_compute_currency_rate', compute_sudo=True, store=True, digits=(12, 6), readonly=True, help='The rate of the currency to the currency of rate 1 applicable at the date of the order')
 
     payment_term_id = fields.Many2one('account.payment.term', string='Payment Terms', oldname='payment_term')
     fiscal_position_id = fields.Many2one('account.fiscal.position', oldname='fiscal_position', string='Fiscal Position')
@@ -208,7 +234,13 @@ class SaleOrder(models.Model):
     @api.depends('pricelist_id', 'date_order', 'company_id')
     def _compute_currency_rate(self):
         for order in self:
-            order.currency_rate = self.env['res.currency']._get_conversion_rate(order.company_id.currency_id, order.currency_id, order.company_id, order.date_order)
+            if not order.company_id:
+                order.currency_rate = order.currency_id.with_context(date=order.date_order).rate or 1.0
+                continue
+            elif order.company_id.currency_id and order.currency_id:  # the following crashes if any one is undefined
+                order.currency_rate = self.env['res.currency']._get_conversion_rate(order.company_id.currency_id, order.currency_id, order.company_id, order.date_order)
+            else:
+                order.currency_rate = 1.0
 
     def _compute_access_url(self):
         super(SaleOrder, self)._compute_access_url()
@@ -228,7 +260,7 @@ class SaleOrder(models.Model):
         """
         for order in self:
             dates_list = []
-            confirm_date = fields.Datetime.from_string(order.confirmation_date if order.state == 'sale' else fields.Datetime.now())
+            confirm_date = fields.Datetime.from_string((order.confirmation_date or order.write_date) if order.state == 'sale' else fields.Datetime.now())
             for line in order.order_line.filtered(lambda x: x.state != 'cancel' and not x._is_delivery()):
                 dt = confirm_date + timedelta(days=line.customer_lead or 0.0)
                 dates_list.append(dt)
@@ -239,7 +271,7 @@ class SaleOrder(models.Model):
     def _compute_remaining_validity_days(self):
         for record in self:
             if record.validity_date:
-                record.remaining_validity_days = (record.validity_date - fields.Date.today()).days + 1
+                record.remaining_validity_days = (record.validity_date - fields.Date.context_today(record)).days + 1
             else:
                 record.remaining_validity_days = 0
 
@@ -259,7 +291,7 @@ class SaleOrder(models.Model):
     @api.depends('state')
     def _compute_type_name(self):
         for record in self:
-            record.type_name = _('Quotation') if self.state in ('draft', 'sent', 'cancel') else _('Sales Order')
+            record.type_name = _('Quotation') if record.state in ('draft', 'sent', 'cancel') else _('Sales Order')
 
     @api.multi
     def unlink(self):
@@ -278,12 +310,12 @@ class SaleOrder(models.Model):
         return super(SaleOrder, self)._track_subtype(init_values)
 
     @api.multi
-    @api.onchange('partner_shipping_id', 'partner_id')
+    @api.onchange('partner_shipping_id', 'partner_id', 'company_id')
     def onchange_partner_shipping_id(self):
         """
         Trigger the change of fiscal position when the shipping address is modified.
         """
-        self.fiscal_position_id = self.env['account.fiscal.position'].get_fiscal_position(self.partner_id.id, self.partner_shipping_id.id)
+        self.fiscal_position_id = self.env['account.fiscal.position'].with_context(force_company=self.company_id.id).get_fiscal_position(self.partner_id.id, self.partner_shipping_id.id)
         return {}
 
     @api.multi
@@ -311,13 +343,16 @@ class SaleOrder(models.Model):
             'payment_term_id': self.partner_id.property_payment_term_id and self.partner_id.property_payment_term_id.id or False,
             'partner_invoice_id': addr['invoice'],
             'partner_shipping_id': addr['delivery'],
-            'user_id': self.partner_id.user_id.id or self.env.uid
+            'user_id': self.partner_id.user_id.id or self.partner_id.commercial_partner_id.user_id.id or self.env.uid
         }
         if self.env['ir.config_parameter'].sudo().get_param('sale.use_sale_note') and self.env.user.company_id.sale_note:
             values['note'] = self.with_context(lang=self.partner_id.lang).env.user.company_id.sale_note
 
         if self.partner_id.team_id:
             values['team_id'] = self.partner_id.team_id.id
+
+        if self.user_id.id == values.get('user_id'):
+            del values['user_id']
         self.update(values)
 
     @api.onchange('partner_id')
@@ -391,11 +426,13 @@ class SaleOrder(models.Model):
         if self.env.context.get('mail_activity_automation_skip'):
             return super(SaleOrder, self)._write(values)
 
-        res = super(SaleOrder, self)._write(values)
         if 'invoice_status' in values:
-            self.activity_unlink(['sale.mail_act_sale_upsell'])
             if values['invoice_status'] == 'upselling':
-                for order in self:
+                filtered_self = self.search([('id', 'in', self.ids),
+                                             ('user_id', '!=', False),
+                                             ('invoice_status', '!=', 'upselling')])
+                filtered_self.activity_unlink(['sale.mail_act_sale_upsell'])
+                for order in filtered_self:
                     order.activity_schedule(
                         'sale.mail_act_sale_upsell',
                         user_id=order.user_id.id,
@@ -403,7 +440,7 @@ class SaleOrder(models.Model):
                             order._name, order.id, order.name,
                             order.partner_id._name, order.partner_id.id, order.partner_id.display_name))
 
-        return res
+        return super(SaleOrder, self)._write(values)
 
     @api.multi
     def copy_data(self, default=None):
@@ -428,7 +465,9 @@ class SaleOrder(models.Model):
     @api.model
     def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
         if self._context.get('sale_show_partner_name'):
-            if operator in ('ilike', 'like', '=', '=like', '=ilike'):
+            if operator == 'ilike' and not (name or '').strip():
+                domain = []
+            elif operator in ('ilike', 'like', '=', '=like', '=ilike'):
                 domain = expression.AND([
                     args or [],
                     ['|', ('name', operator, name), ('partner_id.name', operator, name)]
@@ -445,34 +484,35 @@ class SaleOrder(models.Model):
         a clean extension chain).
         """
         self.ensure_one()
-        journal_id = self.env['account.invoice'].default_get(['journal_id'])['journal_id']
+        company_id = self.company_id.id
+        journal_id = (self.env['account.invoice'].with_context(company_id=company_id or self.env.user.company_id.id)
+            .default_get(['journal_id'])['journal_id'])
         if not journal_id:
             raise UserError(_('Please define an accounting sales journal for this company.'))
-        invoice_vals = {
-            'name': self.client_order_ref or '',
+        return {
+            'name': (self.client_order_ref or '')[:2000],
             'origin': self.name,
             'type': 'out_invoice',
             'account_id': self.partner_invoice_id.property_account_receivable_id.id,
-            'partner_id': self.partner_invoice_id.id,
             'partner_shipping_id': self.partner_shipping_id.id,
             'journal_id': journal_id,
             'currency_id': self.pricelist_id.currency_id.id,
             'comment': self.note,
+            'partner_id': self.partner_invoice_id.id,
             'payment_term_id': self.payment_term_id.id,
             'fiscal_position_id': self.fiscal_position_id.id or self.partner_invoice_id.property_account_position_id.id,
-            'company_id': self.company_id.id,
+            'company_id': company_id,
             'user_id': self.user_id and self.user_id.id,
             'team_id': self.team_id.id,
             'transaction_ids': [(6, 0, self.transaction_ids.ids)],
         }
-        return invoice_vals
 
     @api.multi
     def print_quotation(self):
         self.filtered(lambda s: s.state == 'draft').write({'state': 'sent'})
 
         return self.env.ref('sale.action_report_saleorder')\
-            .with_context({'discard_logo_check': True}).report_action(self)
+            .with_context(discard_logo_check=True).report_action(self)
 
     @api.multi
     def action_view_invoice(self):
@@ -481,11 +521,42 @@ class SaleOrder(models.Model):
         if len(invoices) > 1:
             action['domain'] = [('id', 'in', invoices.ids)]
         elif len(invoices) == 1:
-            action['views'] = [(self.env.ref('account.invoice_form').id, 'form')]
+            form_view = [(self.env.ref('account.invoice_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
             action['res_id'] = invoices.ids[0]
         else:
             action = {'type': 'ir.actions.act_window_close'}
         return action
+
+    def _finalize_invoices(self, invoices, references):
+        """
+        Invoked after creating invoices at the end of action_invoice_create.
+        :param invoices: {group_key: invoice}
+        :param references: {invoice: order}
+        """
+        for invoice in invoices.values():
+            invoice.compute_taxes()
+            if not invoice.invoice_line_ids:
+                raise UserError(_(
+                    'There is no invoiceable line. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.'))
+            # If invoice is negative, do a refund invoice instead
+            if invoice.amount_total < 0:
+                invoice.type = 'out_refund'
+                for line in invoice.invoice_line_ids:
+                    line.quantity = -line.quantity
+            # Use additional field helper function (for account extensions)
+            for line in invoice.invoice_line_ids:
+                line._set_additional_fields(invoice)
+            # Necessary to force computation of taxes and cash rounding. In account_invoice, they are triggered
+            # by onchanges, which are not triggered when doing a create.
+            invoice.compute_taxes()
+            invoice._onchange_cash_rounding()
+            invoice.message_post_with_view('mail.message_origin_link',
+                values={'self': invoice, 'origin': references[invoice]},
+                subtype_id=self.env.ref('mail.mt_note').id)
 
     @api.multi
     def action_invoice_create(self, grouped=False, final=False):
@@ -503,17 +574,23 @@ class SaleOrder(models.Model):
         invoices_origin = {}
         invoices_name = {}
 
+        # Keep track of the sequences of the lines
+        # To keep lines under their section
+        inv_line_sequence = 0
         for order in self:
             group_key = order.id if grouped else (order.partner_invoice_id.id, order.currency_id.id)
 
             # We only want to create sections that have at least one invoiceable line
             pending_section = None
 
+            # Create lines in batch to avoid performance problems
+            line_vals_list = []
+            # sequence is the natural order of order_lines
             for line in order.order_line:
                 if line.display_type == 'line_section':
                     pending_section = line
                     continue
-                if float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                if line.display_type != 'line_note' and float_is_zero(line.qty_to_invoice, precision_digits=precision):
                     continue
                 if group_key not in invoices:
                     inv_data = order._prepare_invoice()
@@ -528,18 +605,32 @@ class SaleOrder(models.Model):
                     if order.client_order_ref and order.client_order_ref not in invoices_name[group_key]:
                         invoices_name[group_key].append(order.client_order_ref)
 
-                if line.qty_to_invoice > 0 or (line.qty_to_invoice < 0 and final):
+                if line.qty_to_invoice > 0 or (line.qty_to_invoice < 0 and final) or line.display_type == 'line_note':
                     if pending_section:
-                        pending_section.invoice_line_create(invoices[group_key].id, pending_section.qty_to_invoice)
+                        section_invoice = pending_section.invoice_line_create_vals(
+                            invoices[group_key].id,
+                            pending_section.qty_to_invoice
+                        )
+                        inv_line_sequence += 1
+                        section_invoice[0]['sequence'] = inv_line_sequence
+                        line_vals_list.extend(section_invoice)
                         pending_section = None
-                    line.invoice_line_create(invoices[group_key].id, line.qty_to_invoice)
+
+                    inv_line_sequence += 1
+                    inv_line = line.invoice_line_create_vals(
+                        invoices[group_key].id, line.qty_to_invoice
+                    )
+                    inv_line[0]['sequence'] = inv_line_sequence
+                    line_vals_list.extend(inv_line)
 
             if references.get(invoices.get(group_key)):
                 if order not in references[invoices[group_key]]:
                     references[invoices[group_key]] |= order
 
+            self.env['account.invoice.line'].create(line_vals_list)
+
         for group_key in invoices:
-            invoices[group_key].write({'name': ', '.join(invoices_name[group_key]),
+            invoices[group_key].write({'name': ', '.join(invoices_name[group_key])[:2000],
                                        'origin': ', '.join(invoices_origin[group_key])})
             sale_orders = references[invoices[group_key]]
             if len(sale_orders) == 1:
@@ -548,25 +639,7 @@ class SaleOrder(models.Model):
         if not invoices:
             raise UserError(_('There is no invoiceable line. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.'))
 
-        for invoice in invoices.values():
-            if not invoice.invoice_line_ids:
-                raise UserError(_('There is no invoiceable line. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.'))
-            # If invoice is negative, do a refund invoice instead
-            if invoice.amount_untaxed < 0:
-                invoice.type = 'out_refund'
-                for line in invoice.invoice_line_ids:
-                    line.quantity = -line.quantity
-            # Use additional field helper function (for account extensions)
-            for line in invoice.invoice_line_ids:
-                line._set_additional_fields(invoice)
-            # Necessary to force computation of taxes. In account_invoice, they are triggered
-            # by onchanges, which are not triggered when doing a create.
-            invoice.compute_taxes()
-            # Idem for partner
-            invoice._onchange_partner_id()
-            invoice.message_post_with_view('mail.message_origin_link',
-                values={'self': invoice, 'origin': references[invoice]},
-                subtype_id=self.env.ref('mail.mt_note').id)
+        self._finalize_invoices(invoices, references)
         return [inv.id for inv in invoices.values()]
 
     @api.multi
@@ -597,6 +670,10 @@ class SaleOrder(models.Model):
             compose_form_id = ir_model_data.get_object_reference('mail', 'email_compose_message_wizard_form')[1]
         except ValueError:
             compose_form_id = False
+        lang = self.env.context.get('lang')
+        template = template_id and self.env['mail.template'].browse(template_id)
+        if template and template.lang:
+            lang = template._render_template(template.lang, 'sale.order', self.ids[0])
         ctx = {
             'default_model': 'sale.order',
             'default_res_id': self.ids[0],
@@ -604,6 +681,7 @@ class SaleOrder(models.Model):
             'default_template_id': template_id,
             'default_composition_mode': 'comment',
             'mark_so_as_sent': True,
+            'model_description': self.with_context(lang=lang).type_name,
             'custom_layout': "mail.mail_notification_paynow",
             'proforma': self.env.context.get('proforma', False),
             'force_email': True
@@ -634,11 +712,16 @@ class SaleOrder(models.Model):
             if email_act and email_act.get('context'):
                 email_ctx = email_act['context']
                 email_ctx.update(default_email_from=order.company_id.email)
-                order.with_context(email_ctx).message_post_with_template(email_ctx.get('default_template_id'))
+                order.with_context(**email_ctx).message_post_with_template(email_ctx.get('default_template_id'))
         return True
 
     @api.multi
     def action_done(self):
+        for order in self:
+            tx = order.sudo().transaction_ids.get_last_transaction()
+            if tx and tx.state == 'pending' and tx.acquirer_id.provider == 'transfer':
+                tx._set_transaction_done()
+                tx.write({'is_processed': True})
         return self.write({'state': 'done'})
 
     @api.multi
@@ -655,9 +738,10 @@ class SaleOrder(models.Model):
             self.force_quotation_send()
 
         # create an analytic account if at least an expense product
-        if any([expense_policy != 'no' for expense_policy in self.order_line.mapped('product_id.expense_policy')]):
-            if not self.analytic_account_id:
-                self._create_analytic_account()
+        for order in self:
+            if any([expense_policy not in [False, 'no'] for expense_policy in order.order_line.mapped('product_id.expense_policy')]):
+                if not order.analytic_account_id:
+                    order._create_analytic_account()
 
         return True
 
@@ -674,7 +758,13 @@ class SaleOrder(models.Model):
             'state': 'sale',
             'confirmation_date': fields.Datetime.now()
         })
-        self._action_confirm()
+
+        # Context key 'default_name' is sometimes propagated up to here.
+        # We don't need it and it creates issues in the creation of linked records.
+        context = self._context.copy()
+        context.pop('default_name', None)
+
+        self.with_context(context)._action_confirm()
         if self.env['ir.config_parameter'].sudo().get_param('sale.auto_done_setting'):
             self.action_done()
         return True
@@ -717,27 +807,6 @@ class SaleOrder(models.Model):
                 fmt(l[1]['amount']), fmt(l[1]['base']),
                 len(res),
             ) for l in res]
-
-    def order_lines_layouted(self):
-        """
-        Returns this order lines classified by sale_layout_category and separated in
-        pages according to the category pagebreaks. Used to render the report.
-        """
-        self.ensure_one()
-        report_pages = [[]]
-        for category, lines in groupby(self.order_line, lambda l: l.layout_category_id):
-            # If last added category induced a pagebreak, this one will be on a new page
-            if report_pages[-1] and report_pages[-1][-1]['pagebreak']:
-                report_pages.append([])
-            # Append category to current report page
-            report_pages[-1].append({
-                'name': category and category.name or _('Uncategorized'),
-                'subtotal': category and category.subtotal,
-                'pagebreak': category and category.pagebreak,
-                'lines': list(lines)
-            })
-
-        return report_pages
 
     def has_to_be_signed(self, also_in_draft=False):
         return (self.state == 'sent' or (self.state == 'draft' and also_in_draft)) and not self.is_expired and self.require_signature and not self.signature and self.team_id.team_type != 'website'
@@ -867,21 +936,13 @@ class SaleOrder(models.Model):
         return '%s %s' % (self.type_name, self.name)
 
     @api.multi
-    def get_access_action(self, access_uid=None):
-        """ Instead of the classic form view, redirect to the online quote if it exists. """
-        self.ensure_one()
-        user = access_uid and self.env['res.users'].sudo().browse(access_uid) or self.env.user
-
-        if not self.sale_order_template_id or (not user.share and not self.env.context.get('force_website')):
-            return super(SaleOrder, self).get_access_action(access_uid)
-        return {
-            'type': 'ir.actions.act_url',
-            'url': self.get_portal_url(),
-            'target': 'self',
-            'res_id': self.id,
-        }
-
     def _get_share_url(self, redirect=False, signup_partner=False, pid=None):
+        """Override for sales order.
+
+        If the SO is in a state where an action is required from the partner,
+        return the URL with a login token. Otherwise, return the URL with a
+        generic access token (no login).
+        """
         self.ensure_one()
         if self.state not in ['sale', 'done']:
             auth_param = url_encode(self.partner_id.signup_get_auth_param()[self.partner_id.id])
@@ -892,6 +953,9 @@ class SaleOrder(models.Model):
     def _get_payment_type(self):
         self.ensure_one()
         return 'form_save' if self.require_payment else 'form'
+
+    def add_option_to_order_with_taxcloud(self):
+        self.ensure_one()
 
 
 class SaleOrderLine(models.Model):
@@ -950,6 +1014,7 @@ class SaleOrderLine(models.Model):
             else:
                 line.product_updatable = True
 
+    # no trigger product_id.invoice_policy to avoid retroactively changing SO
     @api.depends('qty_invoiced', 'qty_delivered', 'product_uom_qty', 'order_id.state')
     def _get_to_invoice_qty(self):
         """
@@ -1016,27 +1081,31 @@ class SaleOrderLine(models.Model):
         res = {}
         onchange_fields = ['name', 'price_unit', 'product_uom', 'tax_id']
         if values.get('order_id') and values.get('product_id') and any(f not in values for f in onchange_fields):
-            line = self.new(values)
-            line.product_id_change()
-            for field in onchange_fields:
-                if field not in values:
-                    res[field] = line._fields[field].convert_to_write(line[field], line)
+            with self.env.do_in_onchange():
+                line = self.new(values)
+                line.product_id_change()
+                for field in onchange_fields:
+                    if field not in values:
+                        res[field] = line._fields[field].convert_to_write(line[field], line)
         return res
 
-    @api.model
-    def create(self, values):
-        if values.get('display_type', self.default_get(['display_type'])['display_type']):
-            values.update(product_id=False, price_unit=0, product_uom_qty=0, product_uom=False, customer_lead=0)
+    @api.model_create_multi
+    def create(self, vals_list):
+        for values in vals_list:
+            if values.get('display_type', self.default_get(['display_type'])['display_type']):
+                values.update(product_id=False, price_unit=0, product_uom_qty=0, product_uom=False, customer_lead=0)
 
-        values.update(self._prepare_add_missing_fields(values))
-        line = super(SaleOrderLine, self).create(values)
-        if line.product_id and line.order_id.state == 'sale':
-            msg = _("Extra line with %s ") % (line.product_id.display_name,)
-            line.order_id.message_post(body=msg)
-            # create an analytic account if at least an expense product
-            if line.product_id.expense_policy != 'no' and not self.order_id.analytic_account_id:
-                self.order_id._create_analytic_account()
-        return line
+            values.update(self._prepare_add_missing_fields(values))
+
+        lines = super().create(vals_list)
+        for line in lines:
+            if line.product_id and line.order_id.state == 'sale':
+                msg = _("Extra line with %s ") % (line.product_id.display_name,)
+                line.order_id.message_post(body=msg)
+                # create an analytic account if at least an expense product
+                if line.product_id.expense_policy not in [False, 'no'] and not line.order_id.analytic_account_id:
+                    line.order_id._create_analytic_account()
+        return lines
 
     _sql_constraints = [
         ('accountable_required_fields',
@@ -1065,7 +1134,7 @@ class SaleOrderLine(models.Model):
     @api.multi
     def write(self, values):
         if 'display_type' in values and self.filtered(lambda line: line.display_type != values.get('display_type')):
-            raise UserError("You cannot change the type of a sale order line. Instead you should delete the current line and create a new line of the proper type.")
+            raise UserError(_("You cannot change the type of a sale order line. Instead you should delete the current line and create a new line of the proper type."))
 
         if 'product_uom_qty' in values:
             precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -1087,7 +1156,7 @@ class SaleOrderLine(models.Model):
         result = super(SaleOrderLine, self).write(values)
         return result
 
-    order_id = fields.Many2one('sale.order', string='Order Reference', required=True, ondelete='cascade', index=True, copy=False, readonly=True)
+    order_id = fields.Many2one('sale.order', string='Order Reference', required=True, ondelete='cascade', index=True, copy=False)
     name = fields.Text(string='Description', required=True)
     sequence = fields.Integer(string='Sequence', default=10)
 
@@ -1115,10 +1184,17 @@ class SaleOrderLine(models.Model):
     product_updatable = fields.Boolean(compute='_compute_product_updatable', string='Can Edit Product', readonly=True, default=True)
     product_uom_qty = fields.Float(string='Ordered Quantity', digits=dp.get_precision('Product Unit of Measure'), required=True, default=1.0)
     product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
-    product_custom_attribute_value_ids = fields.One2many('product.attribute.custom.value', 'sale_order_line_id', string='User entered custom product attribute values')
+    product_custom_attribute_value_ids = fields.One2many('product.attribute.custom.value', 'sale_order_line_id', string='User entered custom product attribute values', copy=True)
+
     # M2M holding the values of product.attribute with create_variant field set to 'no_variant'
     # It allows keeping track of the extra_price associated to those attribute values and add them to the SO line description
+    # Note: If the attributes are changed on the template, some or all records
+    # in `product_no_variant_attribute_value_ids` will be removed here, even
+    # from existing or locked sales order lines. Thus this field can only be
+    # relied on initially, but it cannot be used to recompute anything later
+    # because the result might be different then.
     product_no_variant_attribute_value_ids = fields.Many2many('product.template.attribute.value', string='Product attribute values that do not create variants')
+
     # Non-stored related field to allow portal user to see the image of the product he has ordered
     product_image = fields.Binary('Product Image', related="product_id.image", store=False, readonly=False)
 
@@ -1138,13 +1214,14 @@ class SaleOrderLine(models.Model):
         digits=dp.get_precision('Product Unit of Measure'))
     qty_invoiced = fields.Float(
         compute='_get_invoice_qty', string='Invoiced Quantity', store=True, readonly=True,
+        compute_sudo=True,
         digits=dp.get_precision('Product Unit of Measure'))
 
     untaxed_amount_invoiced = fields.Monetary("Untaxed Invoiced Amount", compute='_compute_untaxed_amount_invoiced', compute_sudo=True, store=True)
     untaxed_amount_to_invoice = fields.Monetary("Untaxed Amount To Invoice", compute='_compute_untaxed_amount_to_invoice', compute_sudo=True, store=True)
 
     salesman_id = fields.Many2one(related='order_id.user_id', store=True, string='Salesperson', readonly=True)
-    currency_id = fields.Many2one(related='order_id.currency_id', depends=['order_id'], store=True, string='Currency', readonly=True)
+    currency_id = fields.Many2one(related='order_id.currency_id', depends=['order_id.currency_id'], store=True, string='Currency', readonly=True)
     company_id = fields.Many2one(related='order_id.company_id', string='Company', store=True, readonly=True)
     order_partner_id = fields.Many2one(related='order_id.partner_id', store=True, string='Customer', readonly=False)
     analytic_tag_ids = fields.Many2many('account.analytic.tag', string='Analytic Tags')
@@ -1213,6 +1290,7 @@ class SaleOrderLine(models.Model):
             :param additional_domain: domain to restrict AAL to include in computation (required since timesheet is an AAL with a project ...)
         """
         result = {}
+
         # avoid recomputation if no SO lines concerned
         if not self:
             return result
@@ -1237,7 +1315,7 @@ class SaleOrderLine(models.Model):
             result.setdefault(so_line_id, 0.0)
             uom = product_uom_map.get(item['product_uom_id'][0])
             if so_line.product_uom.category_id == uom.category_id:
-                qty = uom._compute_quantity(item['unit_amount'], so_line.product_uom)
+                qty = uom._compute_quantity(item['unit_amount'], so_line.product_uom, rounding_method='HALF-UP')
             else:
                 qty = item['unit_amount']
             result[so_line_id] += qty
@@ -1299,6 +1377,16 @@ class SaleOrderLine(models.Model):
                     price_subtotal = line.price_reduce * line.qty_delivered
                 else:
                     price_subtotal = line.price_reduce * line.product_uom_qty
+                if len(line.tax_id.filtered(lambda tax: tax.price_include)) > 0:
+                    # As included taxes are not excluded from the computed subtotal, `compute_all()` method
+                    # has to be called to retrieve the subtotal without them.
+                    # `price_reduce_taxexcl` cannot be used as it is computed from `price_subtotal` field. (see upper Note)
+                    price_subtotal = line.tax_id.compute_all(
+                        line.price_reduce,
+                        currency=line.order_id.currency_id,
+                        quantity=line.product_uom_qty,
+                        product=line.product_id,
+                        partner=line.order_id.partner_shipping_id)['total_excluded']
 
                 amount_to_invoice = price_subtotal - line.untaxed_amount_invoiced
             line.untaxed_amount_to_invoice = amount_to_invoice
@@ -1312,7 +1400,8 @@ class SaleOrderLine(models.Model):
         """
         self.ensure_one()
         res = {}
-        account = self.product_id.property_account_income_id or self.product_id.categ_id.property_account_income_categ_id
+        product = self.product_id.with_context(force_company=self.company_id.id)
+        account = product.property_account_income_id or product.categ_id.property_account_income_categ_id
 
         if not account and self.product_id:
             raise UserError(_('Please define income account for this product: "%s" (id:%d) - or for its category: "%s".') %
@@ -1342,18 +1431,34 @@ class SaleOrderLine(models.Model):
     @api.multi
     def invoice_line_create(self, invoice_id, qty):
         """ Create an invoice line. The quantity to invoice can be positive (invoice) or negative (refund).
+
+            .. deprecated:: 12.0
+                Replaced by :func:`invoice_line_create_vals` which can be used for creating
+                `account.invoice.line` records in batch
+
             :param invoice_id: integer
             :param qty: float quantity to invoice
             :returns recordset of account.invoice.line created
         """
-        invoice_lines = self.env['account.invoice.line']
+        return self.env['account.invoice.line'].create(
+            self.invoice_line_create_vals(invoice_id, qty))
+
+    def invoice_line_create_vals(self, invoice_id, qty):
+        """ Create an invoice line. The quantity to invoice can be positive (invoice) or negative
+            (refund).
+
+            :param invoice_id: integer
+            :param qty: float quantity to invoice
+            :returns list of dict containing creation values for account.invoice.line records
+        """
+        vals_list = []
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for line in self:
             if not float_is_zero(qty, precision_digits=precision) or not line.product_id:
                 vals = line._prepare_invoice_line(qty=qty)
                 vals.update({'invoice_id': invoice_id, 'sale_line_ids': [(6, 0, [line.id])]})
-                invoice_lines |= self.env['account.invoice.line'].create(vals)
-        return invoice_lines
+                vals_list.append(vals)
+        return vals_list
 
     @api.multi
     def _prepare_procurement_values(self, group_id=False):
@@ -1368,22 +1473,31 @@ class SaleOrderLine(models.Model):
         # TO DO: move me in master/saas-16 on sale.order
         # awa: don't know if it's still the case since we need the "product_no_variant_attribute_value_ids" field now
         # to be able to compute the full price
-        if self.product_no_variant_attribute_value_ids:
-            product = product.with_context(no_variant_attributes_price_extra=[
-                no_variant_attribute_value.price_extra or 0
-                for no_variant_attribute_value in self.product_no_variant_attribute_value_ids
-            ])
+
+        # it is possible that a no_variant attribute is still in a variant if
+        # the type of the attribute has been changed after creation.
+        no_variant_attributes_price_extra = [
+            ptav.price_extra for ptav in self.product_no_variant_attribute_value_ids.filtered(
+                lambda ptav:
+                    ptav.price_extra and
+                    ptav not in product.product_template_attribute_value_ids
+            )
+        ]
+        if no_variant_attributes_price_extra:
+            product = product.with_context(
+                no_variant_attributes_price_extra=no_variant_attributes_price_extra
+            )
 
         if self.order_id.pricelist_id.discount_policy == 'with_discount':
-            return product.with_context(pricelist=self.order_id.pricelist_id.id).price
+            return product.with_context(pricelist=self.order_id.pricelist_id.id, uom=self.product_uom.id).price
         product_context = dict(self.env.context, partner_id=self.order_id.partner_id.id, date=self.order_id.date_order, uom=self.product_uom.id)
 
-        final_price, rule_id = self.order_id.pricelist_id.with_context(product_context).get_product_price_rule(self.product_id, self.product_uom_qty or 1.0, self.order_id.partner_id)
+        final_price, rule_id = self.order_id.pricelist_id.with_context(product_context).get_product_price_rule(product or self.product_id, self.product_uom_qty or 1.0, self.order_id.partner_id)
         base_price, currency = self.with_context(product_context)._get_real_price_currency(product, rule_id, self.product_uom_qty, self.product_uom, self.order_id.pricelist_id.id)
         if currency != self.order_id.pricelist_id.currency_id:
             base_price = currency._convert(
                 base_price, self.order_id.pricelist_id.currency_id,
-                self.order_id.company_id, self.order_id.date_order or fields.Date.today())
+                self.order_id.company_id or self.env.user.company_id, self.order_id.date_order or fields.Date.today())
         # negative discounts (= surcharge) are included in the display price
         return max(base_price, final_price)
 
@@ -1393,6 +1507,16 @@ class SaleOrderLine(models.Model):
         if not self.product_id:
             return {'domain': {'product_uom': []}}
 
+        # remove the is_custom values that don't belong to this template
+        for pacv in self.product_custom_attribute_value_ids:
+            if pacv.attribute_value_id not in self.product_id.product_tmpl_id._get_valid_product_attribute_values():
+                self.product_custom_attribute_value_ids -= pacv
+
+        # remove the no_variant attributes that don't belong to this template
+        for ptav in self.product_no_variant_attribute_value_ids:
+            if ptav.product_attribute_value_id not in self.product_id.product_tmpl_id._get_valid_product_attribute_values():
+                self.product_no_variant_attribute_value_ids -= ptav
+
         vals = {}
         domain = {'product_uom': [('category_id', '=', self.product_id.uom_id.category_id.id)]}
         if not self.product_uom or (self.product_id.uom_id.id != self.product_uom.id):
@@ -1401,7 +1525,7 @@ class SaleOrderLine(models.Model):
 
         product = self.product_id.with_context(
             lang=self.order_id.partner_id.lang,
-            partner=self.order_id.partner_id.id,
+            partner=self.order_id.partner_id,
             quantity=vals.get('product_uom_qty') or self.product_uom_qty,
             date=self.order_id.date_order,
             pricelist=self.order_id.pricelist_id.id,
@@ -1409,6 +1533,16 @@ class SaleOrderLine(models.Model):
         )
 
         result = {'domain': domain}
+
+        name = self.get_sale_order_line_multiline_description_sale(product)
+
+        vals.update(name=name)
+
+        self._compute_tax_id()
+
+        if self.order_id.pricelist_id and self.order_id.partner_id:
+            vals['price_unit'] = self.env['account.tax']._fix_tax_included_price_company(self._get_display_price(product), product.taxes_id, self.tax_id, self.company_id)
+        self.update(vals)
 
         title = False
         message = False
@@ -1421,31 +1555,6 @@ class SaleOrderLine(models.Model):
             result = {'warning': warning}
             if product.sale_line_warn == 'block':
                 self.product_id = False
-                return result
-
-        name = self.get_sale_order_line_multiline_description_sale(product)
-
-        if self.product_custom_attribute_value_ids or self.product_no_variant_attribute_value_ids:
-            name += '\n'
-
-        if self.product_custom_attribute_value_ids:
-            for product_custom_attribute_value in self.product_custom_attribute_value_ids:
-                if product_custom_attribute_value.custom_value and product_custom_attribute_value.custom_value.strip():
-                    name += '\n' + product_custom_attribute_value.attribute_value_id.name + ': ' + product_custom_attribute_value.custom_value.strip()
-
-        if self.product_no_variant_attribute_value_ids:
-            for no_variant_attribute_value in self.product_no_variant_attribute_value_ids.filtered(
-                lambda product_attribute_value: not product_attribute_value.is_custom
-            ):
-                name += '\n' + no_variant_attribute_value.attribute_id.name + ': ' + no_variant_attribute_value.name
-
-        vals.update(name=name)
-
-        self._compute_tax_id()
-
-        if self.order_id.pricelist_id and self.order_id.partner_id:
-            vals['price_unit'] = self.env['account.tax']._fix_tax_included_price_company(self._get_display_price(product), product.taxes_id, self.tax_id, self.company_id)
-        self.update(vals)
 
         return result
 
@@ -1457,7 +1566,7 @@ class SaleOrderLine(models.Model):
         if self.order_id.pricelist_id and self.order_id.partner_id:
             product = self.product_id.with_context(
                 lang=self.order_id.partner_id.lang,
-                partner=self.order_id.partner_id.id,
+                partner=self.order_id.partner_id,
                 quantity=self.product_uom_qty,
                 date=self.order_id.date_order,
                 pricelist=self.order_id.pricelist_id.id,
@@ -1470,7 +1579,7 @@ class SaleOrderLine(models.Model):
     def name_get(self):
         result = []
         for so_line in self.sudo():
-            name = '%s - %s' % (so_line.order_id.name, so_line.name.split('\n')[0] or so_line.product_id.name)
+            name = '%s - %s' % (so_line.order_id.name, (so_line.name and so_line.name.split('\n')[0]) or so_line.product_id.name)
             if so_line.order_partner_id.ref:
                 name = '%s (%s)' % (name, so_line.order_partner_id.ref)
             result.append((so_line.id, name))
@@ -1501,7 +1610,7 @@ class SaleOrderLine(models.Model):
         PricelistItem = self.env['product.pricelist.item']
         field_name = 'lst_price'
         currency_id = None
-        product_currency = None
+        product_currency = product.currency_id
         if rule_id:
             pricelist_item = PricelistItem.browse(rule_id)
             if pricelist_item.pricelist_id.discount_policy == 'without_discount':
@@ -1511,13 +1620,13 @@ class SaleOrderLine(models.Model):
 
             if pricelist_item.base == 'standard_price':
                 field_name = 'standard_price'
-            if pricelist_item.base == 'pricelist' and pricelist_item.base_pricelist_id:
+                product_currency = product.cost_currency_id
+            elif pricelist_item.base == 'pricelist' and pricelist_item.base_pricelist_id:
                 field_name = 'price'
                 product = product.with_context(pricelist=pricelist_item.base_pricelist_id.id)
                 product_currency = pricelist_item.base_pricelist_id.currency_id
             currency_id = pricelist_item.pricelist_id.currency_id
 
-        product_currency = product_currency or(product.company_id and product.company_id.currency_id) or self.env.user.company_id.currency_id
         if not currency_id:
             currency_id = product_currency
             cur_factor = 1.0
@@ -1525,7 +1634,7 @@ class SaleOrderLine(models.Model):
             if currency_id.id == product_currency.id:
                 cur_factor = 1.0
             else:
-                cur_factor = currency_id._get_conversion_rate(product_currency, currency_id, self.company_id, self.order_id.date_order)
+                cur_factor = currency_id._get_conversion_rate(product_currency, currency_id, self.company_id or self.env.user.company_id, self.order_id.date_order or fields.Date.today())
 
         product_uom = self.env.context.get('uom') or product.uom_id.id
         if uom and uom.id != product_uom:
@@ -1553,7 +1662,7 @@ class SaleOrderLine(models.Model):
         self.discount = 0.0
         product = self.product_id.with_context(
             lang=self.order_id.partner_id.lang,
-            partner=self.order_id.partner_id.id,
+            partner=self.order_id.partner_id,
             quantity=self.product_uom_qty,
             date=self.order_id.date_order,
             pricelist=self.order_id.pricelist_id.id,
@@ -1571,9 +1680,9 @@ class SaleOrderLine(models.Model):
                 # we need new_list_price in the same currency as price, which is in the SO's pricelist's currency
                 new_list_price = currency._convert(
                     new_list_price, self.order_id.pricelist_id.currency_id,
-                    self.order_id.company_id, self.order_id.date_order or fields.Date.today())
+                    self.order_id.company_id or self.env.user.company_id, self.order_id.date_order or fields.Date.today())
             discount = (new_list_price - price) / new_list_price * 100
-            if discount > 0:
+            if (discount > 0 and new_list_price > 0) or (discount < 0 and new_list_price < 0):
                 self.discount = discount
 
     def _is_delivery(self):
@@ -1587,4 +1696,38 @@ class SaleOrderLine(models.Model):
         BUT in event_sale we need to know specifically the sales order line as well as the product to generate the name:
             the product is not sufficient because we also need to know the event_id and the event_ticket_id (both which belong to the sale order line).
         """
-        return product.get_product_multiline_description_sale()
+        return product.get_product_multiline_description_sale() + self._get_sale_order_line_multiline_description_variants()
+
+    def _get_sale_order_line_multiline_description_variants(self):
+        """When using no_variant attributes or is_custom values, the product
+        itself is not sufficient to create the description: we need to add
+        information about those special attributes and values.
+
+        See note about `product_no_variant_attribute_value_ids` above the field
+        definition: this method is not reliable to recompute the description at
+        a later time, it should only be used initially.
+
+        :return: the description related to special variant attributes/values
+        :rtype: string
+        """
+        if not self.product_custom_attribute_value_ids and not self.product_no_variant_attribute_value_ids:
+            return ""
+
+        name = "\n"
+
+        product_attribute_with_is_custom = self.product_custom_attribute_value_ids.mapped('attribute_value_id.attribute_id')
+
+        # display the no_variant attributes, except those that are also
+        # displayed by a custom (avoid duplicate)
+        for no_variant_attribute_value in self.product_no_variant_attribute_value_ids.filtered(
+            lambda ptav: ptav.attribute_id not in product_attribute_with_is_custom
+        ):
+            name += "\n" + no_variant_attribute_value.attribute_id.name + ': ' + no_variant_attribute_value.name
+
+        # display the is_custom values
+        for pacv in self.product_custom_attribute_value_ids:
+            name += "\n" + pacv.attribute_value_id.attribute_id.name + \
+                ': ' + pacv.attribute_value_id.name + \
+                ': ' + (pacv.custom_value or '').strip()
+
+        return name

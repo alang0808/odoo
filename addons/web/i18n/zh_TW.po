@@ -3,16 +3,18 @@
 # * web
 # 
 # Translators:
-# Martin Trigaux, 2018
-# 敬雲 林 <chingyun@yuanchih-consult.com>, 2018
 # sejun huang <sejun.huang@gmail.com>, 2018
+# Martin Trigaux, 2019
+# Ying <acc.tou@gmail.com>, 2019
+# 敬雲 林 <chingyun@yuanchih-consult.com>, 2019
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:49+0000\n"
-"PO-Revision-Date: 2018-10-08 06:49+0000\n"
-"Last-Translator: sejun huang <sejun.huang@gmail.com>, 2018\n"
+"POT-Creation-Date: 2019-02-13 07:03+0000\n"
+"PO-Revision-Date: 2018-08-24 09:33+0000\n"
+"Last-Translator: 敬雲 林 <chingyun@yuanchih-consult.com>, 2019\n"
 "Language-Team: Chinese (Taiwan) (https://www.transifex.com/odoo/teams/41243/zh_TW/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -176,13 +178,6 @@ msgstr "'%s' 無法轉換為日期、日期時間或時間"
 
 #. module: web
 #. openerp-web
-#: code:addons/web/static/src/xml/menu.xml:101
-#, python-format
-msgid "(Enterprise Edition)"
-msgstr "（企業版）"
-
-#. module: web
-#. openerp-web
 #: code:addons/web/static/src/xml/base.xml:298
 #, python-format
 msgid "(change)"
@@ -218,8 +213,28 @@ msgid "1 record"
 msgstr "1條記錄"
 
 #. module: web
+#: model_terms:ir.ui.view,arch_db:web.external_layout_background
+msgid "<i class=\"fa fa-at\" role=\"img\" aria-label=\"Email\" title=\"Email\"/>"
+msgstr "<i class=\"fa fa-at\" role=\"img\" aria-label=\"Email\" title=\"Email\"/>"
+
+#. module: web
+#: model_terms:ir.ui.view,arch_db:web.external_layout_background
+msgid "<i class=\"fa fa-building-o\" role=\"img\" aria-label=\"Fiscal number\"/>"
+msgstr "<i class=\"fa fa-building-o\" role=\"img\" aria-label=\"Fiscal number\"/>"
+
+#. module: web
+#: model_terms:ir.ui.view,arch_db:web.external_layout_background
+msgid "<i class=\"fa fa-globe\" role=\"img\" aria-label=\"Website\" title=\"Website\"/>"
+msgstr "<i class=\"fa fa-globe\" role=\"img\" aria-label=\"Website\" title=\"Website\"/>"
+
+#. module: web
+#: model_terms:ir.ui.view,arch_db:web.external_layout_background
+msgid "<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Phone\" title=\"Phone\"/>"
+msgstr "<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Phone\" title=\"Phone\"/>"
+
+#. module: web
 #. openerp-web
-#: code:addons/web/static/src/js/chrome/action_manager.js:577
+#: code:addons/web/static/src/js/chrome/action_manager.js:574
 #, python-format
 msgid ""
 "A popup window has been blocked. You may need to change your browser "
@@ -479,7 +494,7 @@ msgstr "所有使用者"
 #: code:addons/web/static/src/xml/menu.xml:200
 #, python-format
 msgid "Alt"
-msgstr "在"
+msgstr "Alt"
 
 #. module: web
 #. openerp-web
@@ -869,7 +884,7 @@ msgstr "上下文:"
 #: code:addons/web/static/src/xml/menu.xml:200
 #, python-format
 msgid "Control"
-msgstr "管理"
+msgstr "Ctrl"
 
 #. module: web
 #. openerp-web
@@ -1066,13 +1081,7 @@ msgstr "資料庫"
 
 #. module: web
 #. openerp-web
-#: code:addons/web/static/src/xml/menu.xml:107
-#, python-format
-msgid "Database expiration:"
-msgstr "資料庫有效期限:"
-
-#. module: web
-#. openerp-web
+#: code:addons/web/static/src/js/views/search/groupby_menu.js:52
 #: code:addons/web/static/src/xml/base.xml:558
 #: code:addons/web/static/src/xml/web_calendar.xml:80
 #, python-format
@@ -1626,6 +1635,13 @@ msgid "Group by: %s"
 msgstr "分組按：%s"
 
 #. module: web
+#. openerp-web
+#: code:addons/web/static/src/js/views/graph/graph_renderer.js:214
+#, python-format
+msgid "Grouped"
+msgstr "已分群組"
+
+#. module: web
 #: model:ir.model,name:web.model_ir_http
 msgid "HTTP Routing"
 msgstr "HTTP 路由"
@@ -2096,6 +2112,7 @@ msgstr "修飾器："
 
 #. module: web
 #. openerp-web
+#: code:addons/web/static/src/js/views/search/groupby_menu.js:54
 #: code:addons/web/static/src/xml/base.xml:560
 #: code:addons/web/static/src/xml/web_calendar.xml:82
 #, python-format
@@ -2261,12 +2278,11 @@ msgstr "處於非活躍狀態，點選以更改它"
 #: code:addons/web/static/src/xml/base.xml:86
 #, python-format
 msgid "Object:"
-msgstr "對像:"
+msgstr "模型:"
 
 #. module: web
 #. openerp-web
 #: code:addons/web/static/src/js/core/dialog.js:59
-#: code:addons/web/static/src/xml/menu.xml:100
 #, python-format
 msgid "Odoo"
 msgstr "Odoo"
@@ -2362,6 +2378,12 @@ msgstr "變更時："
 #, python-format
 msgid "Only Integer Value should be valid."
 msgstr "僅整數值是有效的。"
+
+#. module: web
+#: code:addons/web/static/src/js/fields/basic_fields.js:1982
+#, python-format
+msgid "Only Integer or Float Value should be valid."
+msgstr "只有整數值或浮點值應有效。"
 
 #. module: web
 #: code:addons/web/controllers/main.py:502
@@ -2598,6 +2620,7 @@ msgstr "預覽pdf src"
 #. module: web
 #. openerp-web
 #: code:addons/web/static/src/xml/base.xml:741
+#: code:addons/web/static/src/xml/base.xml:1505
 #: code:addons/web/static/src/xml/web_calendar.xml:75
 #, python-format
 msgid "Previous"
@@ -2636,6 +2659,7 @@ msgstr "紫色"
 
 #. module: web
 #. openerp-web
+#: code:addons/web/static/src/js/views/search/groupby_menu.js:55
 #: code:addons/web/static/src/xml/base.xml:561
 #, python-format
 msgid "Quarter"
@@ -3012,7 +3036,7 @@ msgstr "與所有使用者共享"
 #: code:addons/web/static/src/xml/menu.xml:114
 #, python-format
 msgid "Shortcuts"
-msgstr ""
+msgstr "快捷鍵"
 
 #. module: web
 #. openerp-web
@@ -3040,6 +3064,13 @@ msgstr "發生了一些問題，但先別緊張..."
 #, python-format
 msgid "Special:"
 msgstr "特殊："
+
+#. module: web
+#. openerp-web
+#: code:addons/web/static/src/js/views/graph/graph_renderer.js:215
+#, python-format
+msgid "Stacked"
+msgstr "堆疊"
 
 #. module: web
 #. openerp-web
@@ -3199,7 +3230,15 @@ msgid ""
 msgstr "字段類型  '%s' 必須是一個關聯到 'ir.attachment'模型的 many2many字段。"
 
 #. module: web
-#: code:addons/web/controllers/main.py:1513
+#: code:addons/web/controllers/main.py:1452
+#, python-format
+msgid ""
+"There are too many records (%s records, limit: %s) to export as this format."
+" Consider splitting the export."
+msgstr ""
+
+#. module: web
+#: code:addons/web/controllers/main.py:1522
 #, python-format
 msgid ""
 "There are too many rows (%s rows, limit: 65535) to export as Excel 97-2003 "
@@ -3531,6 +3570,14 @@ msgstr "驗證錯誤"
 
 #. module: web
 #. openerp-web
+#: code:addons/web/static/src/js/views/pivot/pivot_model.js:240
+#: code:addons/web/static/src/js/views/pivot/pivot_renderer.js:174
+#, python-format
+msgid "Variation"
+msgstr "變異"
+
+#. module: web
+#. openerp-web
 #: code:addons/web/static/src/js/tools/debug_manager.js:287
 #: code:addons/web/static/src/xml/base.xml:258
 #, python-format
@@ -3587,6 +3634,7 @@ msgstr "網:"
 
 #. module: web
 #. openerp-web
+#: code:addons/web/static/src/js/views/search/groupby_menu.js:53
 #: code:addons/web/static/src/xml/base.xml:559
 #: code:addons/web/static/src/xml/web_calendar.xml:81
 #, python-format
@@ -3643,6 +3691,7 @@ msgstr "XML ID："
 
 #. module: web
 #. openerp-web
+#: code:addons/web/static/src/js/views/search/groupby_menu.js:56
 #: code:addons/web/static/src/xml/base.xml:562
 #, python-format
 msgid "Year"
@@ -3862,10 +3911,24 @@ msgstr "在之後"
 
 #. module: web
 #. openerp-web
+#: code:addons/web/static/src/js/views/search/search_filters.js:190
+#, python-format
+msgid "is after or equal to"
+msgstr "在此之後"
+
+#. module: web
+#. openerp-web
 #: code:addons/web/static/src/js/views/search/search_filters.js:189
 #, python-format
 msgid "is before"
 msgstr "在之前"
+
+#. module: web
+#. openerp-web
+#: code:addons/web/static/src/js/views/search/search_filters.js:191
+#, python-format
+msgid "is before or equal to"
+msgstr "在此之前"
 
 #. module: web
 #. openerp-web

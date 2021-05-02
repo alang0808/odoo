@@ -4,14 +4,17 @@
 # 
 # Translators:
 # Martin Trigaux, 2018
-# Dorin Hongu <dhongu@gmail.com>, 2018
+# Dorin Hongu <dhongu@gmail.com>, 2019
+# Foldi Robert <foldirobert@nexterp.ro>, 2020
+# Hongu Cosmin <cosmin513@gmail.com>, 2020
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~11.5\n"
+"Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-02 10:07+0000\n"
-"PO-Revision-Date: 2018-10-02 10:07+0000\n"
-"Last-Translator: Dorin Hongu <dhongu@gmail.com>, 2018\n"
+"POT-Creation-Date: 2019-11-14 07:35+0000\n"
+"PO-Revision-Date: 2018-08-24 09:34+0000\n"
+"Last-Translator: Hongu Cosmin <cosmin513@gmail.com>, 2020\n"
 "Language-Team: Romanian (https://www.transifex.com/odoo/teams/41243/ro/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -73,9 +76,37 @@ msgid ""
 msgstr ""
 
 #. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.event_details
+#: model_terms:ir.ui.view,arch_db:website_event.index
+#: model_terms:ir.ui.view,arch_db:website_event.registration_complete
+msgid ""
+"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Start date\" "
+"title=\"Start date\"/>"
+msgstr ""
+
+#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_description_full
 msgid "<i class=\"fa fa-clock-o\"/> From"
 msgstr "<i class=\"fa fa-clock-o\"/>Din"
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.country_events_list
+msgid ""
+"<i class=\"fa fa-cloud\" title=\"It is an online event\" role=\"img\" aria-"
+"label=\"It is an online event\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.registration_complete
+msgid "<i class=\"fa fa-envelope\" role=\"img\" aria-label=\"Email\" title=\"Email\"/>"
+msgstr "<i class=\"fa fa-envelope\" role=\"img\" aria-label=\"Email\" title=\"Email\"/>"
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.country_events
+msgid ""
+"<i class=\"fa fa-flag fa-5x text-muted\" title=\"Local Events\" role=\"img\""
+" aria-label=\"Local Events\"/>"
+msgstr ""
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_right_country_event
@@ -87,11 +118,33 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_complete
 msgid "<i class=\"fa fa-fw fa-arrow-right\"/>Add to Google Calendar"
-msgstr ""
+msgstr "<i class=\"fa fa-fw fa-arrow-right\"/> Adăugare la Calendar Google"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_complete
 msgid "<i class=\"fa fa-fw fa-arrow-right\"/>Add to iCal/Outlook"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.country_events_list
+msgid ""
+"<i class=\"fa fa-map-marker\" title=\"It is a physical event\" role=\"img\" "
+"aria-label=\"It is a physical event\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.registration_complete
+msgid "<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Phone\" title=\"Phone\"/>"
+msgstr "<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Phone\" title=\"Phone\"/>"
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.index
+msgid "<i class=\"fa fa-tag\" role=\"img\" aria-label=\"Event type\" title=\"Event type\"/>"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.registration_complete
+msgid "<i class=\"fa fa-user\" role=\"img\" aria-label=\"Name\" title=\"Name\"/>"
 msgstr ""
 
 #. module: website_event
@@ -106,6 +159,13 @@ msgid "<small>Author</small>"
 msgstr "<small>Autor</small>"
 
 #. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.country_events_list
+msgid ""
+"<span class=\"badge badge-danger\" role=\"img\" aria-label=\"Attention: not "
+"published\" title=\"Not published\"><i class=\"fa fa-ban\"/></span>"
+msgstr ""
+
+#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.country_events
 msgid "<span class=\"oe_snippet_thumbnail_title\">Local Events</span>"
 msgstr ""
@@ -117,6 +177,8 @@ msgid ""
 "                        Sold Out\n"
 "                    </span>"
 msgstr ""
+"<span itemprop=\"availability\" "
+"content=\"http://schema.org/SoldOut\">Epuizat</span>"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_template
@@ -134,12 +196,18 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_location
 msgid "<span>Online Events</span>"
-msgstr ""
+msgstr "<span>Evenimente Online</span>"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_template
 msgid "<span>Unlimited</span>"
 msgstr "<span>Nelimitat</span>"
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.registration_attendee_details
+msgid "<strong> You ordered more tickets than available seats</strong>"
+msgstr ""
+"<strong> Ai comandat mai multe bilete decât locuri disponibile</strong>"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_attendee_details
@@ -196,11 +264,16 @@ msgstr "Toate evenimentele"
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.res_config_settings_view_form
 msgid "Ask questions to attendees when registering online"
-msgstr ""
+msgstr "Puneți întrebări participanților la înregistrarea online"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_attendee_details
 msgid "Attendee #%s"
+msgstr ""
+
+#. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.registration_template
+msgid "Available seats: "
 msgstr ""
 
 #. module: website_event
@@ -214,6 +287,8 @@ msgid ""
 "Check this option to have menus for your event on the\n"
 "                                website: registrations, schedule, map, ..."
 msgstr ""
+"Verificați această opțiune pentru a avea meniuri pentru evenimentul dvs. pe\n"
+"                                site-ul web: înregistrări, program, hartă, ..."
 
 #. module: website_event
 #. openerp-web
@@ -234,7 +309,7 @@ msgstr "Clic aici pentru a crea un nou eveniment."
 #: code:addons/website_event/static/src/js/website.tour.event.js:43
 #, python-format
 msgid "Click here to customize your event further."
-msgstr ""
+msgstr "Click Aici pentru a vă personaliza evenimentul în continuare."
 
 #. module: website_event
 #. openerp-web
@@ -244,6 +319,7 @@ msgid "Click to publish your event."
 msgstr "Clic pentru a publica evenimentul."
 
 #. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.layout
 #: model_terms:ir.ui.view,arch_db:website_event.registration_attendee_details
 msgid "Close"
 msgstr "Închide"
@@ -261,6 +337,8 @@ msgid ""
 "Create a name for your new event and click <em>\"Continue\"</em>. e.g: "
 "Technical Training"
 msgstr ""
+"Creați un nume pentru noul dvs. eveniment și faceți clic pe "
+"<em>\"Continuare\"</em>. de ex: Pregătire tehnică"
 
 #. module: website_event
 #: model:ir.model.fields,help:website_event.field_event_event__website_menu
@@ -277,14 +355,14 @@ msgstr "Mediu dedicat"
 #. module: website_event
 #: model:ir.model.fields,field_description:website_event.field_event_type__website_menu
 msgid "Display a dedicated menu on Website"
-msgstr ""
+msgstr "Afișați un meniu dedicat pe site-ul web"
 
 #. module: website_event
 #. openerp-web
 #: code:addons/website_event/static/src/js/website.tour.event.js:28
 #, python-format
 msgid "Drag this block and drop it in your page."
-msgstr ""
+msgstr "Trageți acest bloc și plasați-l în pagina dvs."
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_complete
@@ -336,13 +414,13 @@ msgstr "Nume eveniment"
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.404
 msgid "Event not found!"
-msgstr ""
+msgstr "Evenimentul nu a fost găsit!"
 
 #. module: website_event
 #: model:mail.message.subtype,description:website_event.mt_event_published
 #: model:mail.message.subtype,name:website_event.mt_event_published
 msgid "Event published"
-msgstr ""
+msgstr "Eveniment publicat"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_template
@@ -383,6 +461,11 @@ msgid ""
 msgstr ""
 
 #. module: website_event
+#: model_terms:ir.ui.view,arch_db:website_event.layout
+msgid "Following content will appear on all events"
+msgstr ""
+
+#. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_description_full
 msgid "Google Maps"
 msgstr "Google Maps"
@@ -396,12 +479,12 @@ msgstr "Introducere"
 #. module: website_event
 #: model:ir.model.fields,field_description:website_event.field_event_event__is_participating
 msgid "Is Participating"
-msgstr ""
+msgstr "Este Participant"
 
 #. module: website_event
 #: model:ir.model.fields,field_description:website_event.field_event_event__is_published
 msgid "Is published"
-msgstr ""
+msgstr "Este publicat"
 
 #. module: website_event
 #: code:addons/website_event/models/event.py:71
@@ -466,7 +549,7 @@ msgstr "Odoo"
 #: code:addons/website_event/static/src/js/website.tour.event.js:33
 #, python-format
 msgid "Once you click on save, your event is updated."
-msgstr ""
+msgstr "După ce faceți clic pe salvare, evenimentul dvs. este actualizat."
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.index
@@ -491,7 +574,7 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_right_photos
 msgid "Our Trainings"
-msgstr ""
+msgstr "Instructajele Noastre"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_details
@@ -503,7 +586,7 @@ msgstr "participanți"
 #: code:addons/website_event/controllers/main.py:60
 #, python-format
 msgid "Past Events"
-msgstr ""
+msgstr "Evenimente din trecut"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.registration_complete
@@ -520,7 +603,7 @@ msgstr ""
 #: code:addons/website_event/static/src/js/website_event.js:55
 #, python-format
 msgid "Please select at least one ticket."
-msgstr ""
+msgstr "Vă rugăm să selectați cel puțin un bilet."
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.brand_promotion
@@ -530,7 +613,7 @@ msgstr "Oferit de "
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_event_view_form_inherit_website
 msgid "Preview Badges"
-msgstr ""
+msgstr "Previzualizare Ecusoane"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.ticket
@@ -571,12 +654,12 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.404
 msgid "Return to the event list."
-msgstr ""
+msgstr "Revenire la lista de evenimente."
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.country_events_list
 msgid "See all events from"
-msgstr ""
+msgstr "Vedeți toate evenimentele de la"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.country_events_list
@@ -586,12 +669,12 @@ msgstr ""
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.event_description_full
 msgid "Social Stream"
-msgstr ""
+msgstr "Stream social"
 
 #. module: website_event
 #: model_terms:ir.ui.view,arch_db:website_event.404
 msgid "Sorry, the requested event is not available anymore."
-msgstr ""
+msgstr "Ne pare rău, evenimentul solicitat nu mai este disponibil."
 
 #. module: website_event
 #: code:addons/website_event/controllers/main.py:44

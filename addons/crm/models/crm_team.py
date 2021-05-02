@@ -51,13 +51,18 @@ class Team(models.Model):
             team.unassigned_leads_count = counts.get(team.id, 0)
 
     def _compute_opportunities(self):
-        opportunity_data = self.env['crm.lead'].read_group([
+        opportunity_data = self.env['crm.lead'].search([
             ('team_id', 'in', self.ids),
             ('probability', '<', 100),
             ('type', '=', 'opportunity'),
-        ], ['planned_revenue', 'probability', 'team_id'], ['team_id'])
-        counts = {datum['team_id'][0]: datum['team_id_count'] for datum in opportunity_data}
-        amounts = {datum['team_id'][0]: (datum['planned_revenue'] * datum['probability'] / 100) for datum in opportunity_data}
+        ]).read(['planned_revenue', 'probability', 'team_id'])
+        counts = {}
+        amounts = {}
+        for datum in opportunity_data:
+            counts.setdefault(datum['team_id'][0], 0)
+            amounts.setdefault(datum['team_id'][0], 0)
+            counts[datum['team_id'][0]] += 1
+            amounts[datum['team_id'][0]] += (datum.get('planned_revenue', 0) * datum.get('probability', 0) / 100.0)
         for team in self:
             team.opportunities_count = counts.get(team.id, 0)
             team.opportunities_amount = amounts.get(team.id, 0)
@@ -134,7 +139,10 @@ class Team(models.Model):
     def action_your_pipeline(self):
         action = self.env.ref('crm.crm_lead_opportunities_tree_view').read()[0]
         user_team_id = self.env.user.sale_team_id.id
-        if not user_team_id:
+        if user_team_id:
+            # To ensure that the team is readable in multi company
+            user_team_id = self.search([('id', '=', user_team_id)], limit=1).id
+        else:
             user_team_id = self.search([], limit=1).id
             action['help'] = _("""<p class='o_view_nocontent_smiling_face'>Add new opportunities</p><p>
     Looks like you are not a member of a Sales Team. You should add yourself

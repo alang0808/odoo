@@ -25,18 +25,18 @@ class AccountInvoice(models.Model):
         states={'draft': [('readonly', False)]},
         help="Delivery address for current invoice.")
 
-    @api.onchange('partner_shipping_id')
+    @api.onchange('partner_shipping_id', 'company_id')
     def _onchange_partner_shipping_id(self):
         """
         Trigger the change of fiscal position when the shipping address is modified.
         """
-        fiscal_position = self.env['account.fiscal.position'].get_fiscal_position(self.partner_id.id, self.partner_shipping_id.id)
+        fiscal_position = self.env['account.fiscal.position'].with_context(force_company=self.company_id.id).get_fiscal_position(self.partner_id.id, self.partner_shipping_id.id)
         if fiscal_position:
             self.fiscal_position_id = fiscal_position
 
     @api.multi
     def unlink(self):
-        downpayment_lines = self.mapped('invoice_line_ids.sale_line_ids').filtered(lambda line: line.is_downpayment)
+        downpayment_lines = self.mapped('invoice_line_ids.sale_line_ids').filtered(lambda line: line.is_downpayment and line.invoice_lines <= self.mapped('invoice_line_ids'))
         res = super(AccountInvoice, self).unlink()
         if downpayment_lines:
             downpayment_lines.unlink()
@@ -46,9 +46,27 @@ class AccountInvoice(models.Model):
     def _onchange_delivery_address(self):
         addr = self.partner_id.address_get(['delivery'])
         self.partner_shipping_id = addr and addr.get('delivery')
-        if self.env.context.get('type', 'out_invoice') == 'out_invoice':
+        inv_type = self.type or self.env.context.get('type', 'out_invoice')
+        if inv_type == 'out_invoice':
             company = self.company_id or self.env.user.company_id
-            self.comment = company.with_context(lang=self.partner_id.lang).sale_note
+            self.comment = company.with_context(lang=self.partner_id.lang or self.env.lang).sale_note or (self._origin.company_id == company and self.comment)
+
+    @api.multi
+    def action_invoice_open(self):
+        # OVERRIDE
+        # Auto-reconcile the invoice with payments coming from transactions.
+        # It's useful when you have a "paid" sale order (using a payment transaction) and you invoice it later.
+        res = super(AccountInvoice, self).action_invoice_open()
+
+        if not self:
+            return res
+
+        for invoice in self:
+            payments = invoice.mapped('transaction_ids.payment_id')
+            move_lines = payments.mapped('move_line_ids').filtered(lambda line: not line.reconciled and line.credit > 0.0)
+            for line in move_lines:
+                invoice.assign_outstanding_credit(line.id)
+        return res
 
     @api.multi
     def action_invoice_paid(self):

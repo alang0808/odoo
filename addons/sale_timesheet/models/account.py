@@ -57,19 +57,25 @@ class AccountAnalyticLine(models.Model):
     @api.multi
     def write(self, values):
         # prevent to update invoiced timesheets if one line is of type delivery
+        self._check_can_write(values)
+        result = super(AccountAnalyticLine, self).write(values)
+        return result
+
+    @api.multi
+    def _check_can_write(self, values):
         if self.sudo().filtered(lambda aal: aal.so_line.product_id.invoice_policy == "delivery") and self.filtered(lambda timesheet: timesheet.timesheet_invoice_id):
             if any([field_name in values for field_name in ['unit_amount', 'employee_id', 'project_id', 'task_id', 'so_line', 'amount', 'date']]):
                 raise UserError(_('You can not modify already invoiced timesheets (linked to a Sales order items invoiced on Time and material).'))
-        result = super(AccountAnalyticLine, self).write(values)
-        return result
 
     @api.model
     def _timesheet_preprocess(self, values):
         values = super(AccountAnalyticLine, self)._timesheet_preprocess(values)
         # task implies so line (at create)
-        if 'task_id' in values and not values.get('so_line') and values.get('employee_id'):
+        if 'task_id' in values and not values.get('so_line') and (values.get('employee_id') or self.mapped('employee_id')):
+            if not values.get('employee_id') and len(self.mapped('employee_id')) > 1:
+                raise UserError(_('You can not modify timesheets from different employees'))
             task = self.env['project.task'].sudo().browse(values['task_id'])
-            employee = self.env['hr.employee'].sudo().browse(values['employee_id'])
+            employee = self.env['hr.employee'].sudo().browse(values['employee_id']) if values.get('employee_id') else self.mapped('employee_id')
             values['so_line'] = self._timesheet_determine_sale_line(task, employee).id
         return values
 

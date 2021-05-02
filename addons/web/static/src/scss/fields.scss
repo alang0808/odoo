@@ -55,6 +55,10 @@
             height: 100%;
             padding-right: 15px;
             cursor: pointer;
+
+            &::-ms-clear {
+                display: none;
+            }
         }
 
         .o_dropdown_button {
@@ -158,6 +162,9 @@
         .o_colorpicker > ul {
             @include o-tag-colorpicker;
             white-space: normal;
+            li > .o_hide_in_kanban label {
+                line-height: $o-line-height-base;
+            }
         }
 
         @for $size from 1 through length($o-colors) {
@@ -178,7 +185,7 @@
                     }
                 }
             }
-        }        
+        }
         .o_tag_error {
             box-shadow: inset 0 0 0 2px #FF0000;
 
@@ -352,6 +359,7 @@
             background-color: $o-brand-primary;
             opacity: 0;
             transition: opacity ease 400ms;
+            min-width: 35px;
 
             > button.fa {
                 border: none;
@@ -443,7 +451,10 @@
             }
         }
     }
+}
 
+span.o_field_copy:empty {
+    border: none;
 }
 
 button.o_field_float_toggle {

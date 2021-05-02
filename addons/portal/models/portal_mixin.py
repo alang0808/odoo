@@ -31,8 +31,19 @@ class PortalMixin(models.AbstractModel):
     def _portal_ensure_token(self):
         """ Get the current record access token """
         if not self.access_token:
-            self.sudo().access_token = str(uuid.uuid4())
+            # we use a `write` to force the cache clearing otherwise `return self.access_token` will return False
+            self.sudo().write({'access_token': str(uuid.uuid4())})
         return self.access_token
+
+    @api.multi
+    def get_base_url(self):
+        """Get the base URL for the current model.
+
+        Defined here to be overriden by website specific models.
+        The method has to be public because it is called from mail templates.
+        """
+        self.ensure_one()
+        return self.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
     def _get_share_url(self, redirect=False, signup_partner=False, pid=None):
         """
@@ -65,9 +76,9 @@ class PortalMixin(models.AbstractModel):
     @api.multi
     def _notify_get_groups(self, message, groups):
         access_token = self._portal_ensure_token()
-        customer = self['partner_id']
 
-        if access_token and customer:
+        if access_token and 'partner_id' in self._fields and self['partner_id']:
+            customer = self['partner_id']
             additional_params = {
                 'access_token': self.access_token,
             }
@@ -79,7 +90,7 @@ class PortalMixin(models.AbstractModel):
                     'has_button_access': False,
                     'button_access': {
                         'url': access_link,
-                        'title': ('View %s') % self.env['ir.model']._get(message.model).display_name,
+                        'title': _('View %s') % self.env['ir.model']._get(message.model).display_name,
                     },
                 })
             ]

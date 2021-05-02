@@ -3,14 +3,14 @@
 
 import base64
 
-from email.utils import formataddr
 from unittest.mock import patch
 
 from odoo.addons.test_mail.tests.common import BaseFunctionalTest, MockEmails, TestRecipients
+from odoo.addons.test_mail.tests.common import mail_new_test_user
 from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE_PLAINTEXT
 from odoo.addons.test_mail.models.test_mail_models import MailTestSimple
 from odoo.exceptions import AccessError
-from odoo.tools import mute_logger
+from odoo.tools import mute_logger, formataddr
 
 
 class TestMessagePost(BaseFunctionalTest, MockEmails, TestRecipients):
@@ -152,12 +152,7 @@ class TestMessagePost(BaseFunctionalTest, MockEmails, TestRecipients):
 
     @mute_logger('odoo.addons.mail.models.mail_mail')
     def test_post_portal_ok(self):
-        portal_user = self.env['res.users'].with_context(self._quick_create_user_ctx).create({
-            'name': 'Chell Gladys',
-            'login': 'chell',
-            'email': 'chell@gladys.portal',
-            'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])],
-        })
+        portal_user = mail_new_test_user(self.env, login='chell', groups='base.group_portal', name='Chell Gladys')
 
         with patch.object(MailTestSimple, 'check_access_rights', return_value=True):
             self.test_record.message_subscribe((self.partner_1 | self.user_employee.partner_id).ids)
@@ -169,12 +164,7 @@ class TestMessagePost(BaseFunctionalTest, MockEmails, TestRecipients):
         self.assertEmails(portal_user.partner_id, [[self.partner_1], [self.user_employee.partner_id]])
 
     def test_post_portal_crash(self):
-        portal_user = self.env['res.users'].with_context(self._quick_create_user_ctx).create({
-            'name': 'Chell Gladys',
-            'login': 'chell',
-            'email': 'chell@gladys.portal',
-            'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])],
-        })
+        portal_user = mail_new_test_user(self.env, login='chell', groups='base.group_portal', name='Chell Gladys')
 
         with self.assertRaises(AccessError):
             self.test_record.sudo(portal_user).message_post(
@@ -278,7 +268,7 @@ class TestComposer(BaseFunctionalTest, MockEmails, TestRecipients):
 
     @mute_logger('odoo.addons.mail.models.mail_mail')
     def test_composer_mass_mail(self):
-        test_record_2 = self.env['mail.test.simple'].with_context(self._quick_create_ctx).create({'name': 'Test2'})
+        test_record_2 = self.env['mail.test.simple'].with_context(BaseFunctionalTest._test_context).create({'name': 'Test2'})
 
         composer = self.env['mail.compose.message'].with_context({
             'default_composition_mode': 'mass_mail',
@@ -313,7 +303,7 @@ class TestComposer(BaseFunctionalTest, MockEmails, TestRecipients):
 
     @mute_logger('odoo.addons.mail.models.mail_mail')
     def test_composer_mass_mail_active_domain(self):
-        test_record_2 = self.env['mail.test.simple'].with_context(self._quick_create_ctx).create({'name': 'Test2'})
+        test_record_2 = self.env['mail.test.simple'].with_context(BaseFunctionalTest._test_context).create({'name': 'Test2'})
 
         self.env['mail.compose.message'].with_context({
             'default_composition_mode': 'mass_mail',
@@ -331,7 +321,7 @@ class TestComposer(BaseFunctionalTest, MockEmails, TestRecipients):
 
     @mute_logger('odoo.addons.mail.models.mail_mail')
     def test_message_compose_mass_mail_no_active_domain(self):
-        test_record_2 = self.env['mail.test.simple'].with_context(self._quick_create_ctx).create({'name': 'Test2'})
+        test_record_2 = self.env['mail.test.simple'].with_context(BaseFunctionalTest._test_context).create({'name': 'Test2'})
 
         self.env['mail.compose.message'].with_context({
             'default_composition_mode': 'mass_mail',
@@ -349,12 +339,7 @@ class TestComposer(BaseFunctionalTest, MockEmails, TestRecipients):
 
     @mute_logger('odoo.addons.mail.models.mail_mail')
     def test_message_compose_portal_ok(self):
-        portal_user = self.env['res.users'].with_context(self._quick_create_ctx).create({
-            'name': 'Chell Gladys',
-            'login': 'chell',
-            'email': 'chell@gladys.portal',
-            'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])],
-        })
+        portal_user = mail_new_test_user(self.env, login='chell', groups='base.group_portal', name='Chell Gladys')
 
         with patch.object(MailTestSimple, 'check_access_rights', return_value=True):
             ComposerPortal = self.env['mail.compose.message'].sudo(portal_user)
@@ -380,3 +365,58 @@ class TestComposer(BaseFunctionalTest, MockEmails, TestRecipients):
 
             self.assertEqual(self.test_record.message_ids[0].body, '<p>Body text 2</p>')
             self.assertEqual(self.test_record.message_ids[0].author_id, portal_user.partner_id)
+
+    @mute_logger('odoo.addons.mail.models.mail_mail')
+    def test_message_compose_notification_delete(self):
+        Mail = self.env['mail.mail']
+
+        # Mail notification should be deleted after being sent if
+        # no mail template is not set on composer
+        self.env['mail.compose.message'].with_context({
+            'default_model': self.test_record._name,
+            'default_res_id': self.test_record.id,
+        }).sudo(self.user_employee).create({
+            'body': '<p>Body Text</p>',
+            'partner_ids': [(4, self.partner_1.id)  ]
+        }).send_mail()
+        message = self.test_record.message_ids[0]
+
+        self.assertFalse(Mail.search([('mail_message_id', '=', message.id)]),
+                         'message_post: mail.mail notifications should have been auto-deleted')
+
+        # Mail notification should be deleted after being sent auto_delete
+        # is set to 'True'(which is default value) in mail template
+        mail_template = self.env['mail.template'].create({
+            'name': 'MAIL NOTIFICATION TEST',
+            'subject': 'Test mail notification',
+            'model_id': self.env.ref('test_mail.model_mail_test').id,
+            'body_html': '<p>Body Text 2</p>',
+        })
+
+        self.env['mail.compose.message'].with_context({
+            'default_model': self.test_record._name,
+            'default_res_id': self.test_record.id,
+            'default_template_id': mail_template.id,
+        }).sudo(self.user_employee).create({
+            'partner_ids': [(4, self.partner_1.id)  ]
+        }).send_mail()
+        message = self.test_record.message_ids[0]
+
+        self.assertFalse(Mail.search([('mail_message_id', '=', message.id)]),
+                         'message_post: mail.mail notifications should have been auto-deleted')
+
+        # Mail notification should not be deleted after being sent
+        # if auto_delete is set to 'False' in mail template
+        mail_template.auto_delete = False
+
+        self.env['mail.compose.message'].with_context({
+            'default_model': self.test_record._name,
+            'default_res_id': self.test_record.id,
+            'default_template_id': mail_template.id,
+        }).sudo(self.user_employee).create({
+            'partner_ids': [(4, self.partner_1.id)  ]
+        }).send_mail()
+        message = self.test_record.message_ids[0]
+
+        self.assertEqual(len(Mail.search([('mail_message_id', '=', message.id)])), 1,
+                         'message_post: mail.mail notifications should be have been kept')

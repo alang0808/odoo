@@ -159,7 +159,7 @@ class Attendee(models.Model):
         raise UserError(_('You cannot duplicate a calendar attendee.'))
 
     @api.multi
-    def _send_mail_to_attendees(self, template_xmlid, force_send=False):
+    def _send_mail_to_attendees(self, template_xmlid, force_send=False, force_event_id=None):
         """ Send mail for event invitation to event attendees.
             :param template_xmlid: xml id of the email template to use to send the invitation
             :param force_send: if set to True, the mail(s) will be sent immediately (instead of the next queue processing)
@@ -173,7 +173,7 @@ class Attendee(models.Model):
         invitation_template = self.env.ref(template_xmlid)
 
         # get ics file for all meetings
-        ics_files = self.mapped('event_id')._get_ics_file()
+        ics_files = force_event_id._get_ics_file() if force_event_id else self.mapped('event_id')._get_ics_file()
 
         # prepare rendering context for mail template
         colors = {
@@ -187,7 +187,8 @@ class Attendee(models.Model):
             'color': colors,
             'action_id': self.env['ir.actions.act_window'].search([('view_id', '=', calendar_view.id)], limit=1).id,
             'dbname': self._cr.dbname,
-            'base_url': self.env['ir.config_parameter'].sudo().get_param('web.base.url', default='http://localhost:8069')
+            'base_url': self.env['ir.config_parameter'].sudo().get_param('web.base.url', default='http://localhost:8069'),
+            'force_event_id': force_event_id,
         })
         invitation_template = invitation_template.with_context(rendering_context)
 
@@ -196,7 +197,8 @@ class Attendee(models.Model):
         for attendee in self:
             if attendee.email or attendee.partner_id.email:
                 # FIXME: is ics_file text or bytes?
-                ics_file = ics_files.get(attendee.event_id.id)
+                event_id = force_event_id.id if force_event_id else attendee.event_id.id
+                ics_file = ics_files.get(event_id)
                 mail_id = invitation_template.send_mail(attendee.id, notif_layout='mail.mail_notification_light')
 
                 vals = {}
@@ -323,6 +325,12 @@ class AlarmManager(models.AbstractModel):
                 'rrule': rule
             }
 
+        # determine accessible events
+        events = self.env['calendar.event'].browse(result)
+        result = {
+            key: result[key]
+            for key in set(events._filter_access_rules('read').ids)
+        }
         return result
 
     def do_check_alarm_for_one_date(self, one_date, event, event_maxdelta, in_the_next_X_seconds, alarm_type, after=False, missing=False):
@@ -439,7 +447,7 @@ class AlarmManager(models.AbstractModel):
 
         result = False
         if alarm.type == 'email':
-            result = meeting.attendee_ids.filtered(lambda r: r.state != 'declined')._send_mail_to_attendees('calendar.calendar_template_meeting_reminder', force_send=True)
+            result = meeting.attendee_ids.filtered(lambda r: r.state != 'declined')._send_mail_to_attendees('calendar.calendar_template_meeting_reminder', force_send=True, force_event_id=meeting)
         return result
 
     def do_notif_reminder(self, alert):
@@ -453,6 +461,7 @@ class AlarmManager(models.AbstractModel):
             delta = delta.seconds + delta.days * 3600 * 24
 
             return {
+                'alarm_id': alarm.id,
                 'event_id': meeting.id,
                 'title': meeting.name,
                 'message': message,
@@ -607,14 +616,21 @@ class Meeting(models.Model):
             event_date = datetime.datetime.now()
 
         use_naive_datetime = self.allday and self.rrule and 'UNTIL' in self.rrule and 'Z' not in self.rrule
-        if use_naive_datetime:
-            rset1 = rrule.rrulestr(str(self.rrule), dtstart=event_date.replace(tzinfo=None), forceset=True, ignoretz=True)
-        else:
+        if not use_naive_datetime:
             # Convert the event date to saved timezone (or context tz) as it'll
             # define the correct hour/day asked by the user to repeat for recurrence.
-            event_date = event_date.astimezone(timezone)  # transform "+hh:mm" timezone
-            rset1 = rrule.rrulestr(str(self.rrule), dtstart=event_date, forceset=True, tzinfos={})
-        recurring_meetings = self.search([('recurrent_id', '=', self.id), '|', ('active', '=', False), ('active', '=', True)])
+            event_date = event_date.astimezone(timezone)
+
+        # The start date is naive
+        # the timezone will be applied, if necessary, at the very end of the process
+        # to allow for DST timezone reevaluation
+        rset1 = rrule.rrulestr(str(self.rrule), dtstart=event_date.replace(tzinfo=None), forceset=True, ignoretz=True)
+
+        recurring_meetings_ids = self.env.context.get('recurrent_siblings_cache', {}).get(self.id)
+        if recurring_meetings_ids is not None:
+            recurring_meetings = self.browse(recurring_meetings_ids)
+        else:
+            recurring_meetings = self.with_context(active_test=False).search([('recurrent_id', '=', self.id)])
 
         # We handle a maximum of 50,000 meetings at a time, and clear the cache at each step to
         # control the memory usage.
@@ -629,12 +645,15 @@ class Meeting(models.Model):
                 else:
                     if not recurring_date.tzinfo:
                         recurring_date = pytz.UTC.localize(recurring_date)
-                    recurring_date = recurring_date.astimezone(timezone)
+                    recurring_date = recurring_date.astimezone(timezone).replace(tzinfo=None)
                 if date_field == "stop":
                     recurring_date += timedelta(hours=self.duration)
                 rset1.exdate(recurring_date)
             invalidate = True
-        return [d.astimezone(pytz.UTC) if d.tzinfo else d for d in rset1 if d.year < MAXYEAR]
+
+        def naive_tz_to_utc(d):
+            return timezone.localize(d).astimezone(pytz.UTC)
+        return [naive_tz_to_utc(d) if not use_naive_datetime else d for d in rset1 if d.year < MAXYEAR]
 
     @api.multi
     def _get_recurrency_end_date(self):
@@ -685,15 +704,15 @@ class Meeting(models.Model):
         lang = self._context.get("lang")
         lang_params = {}
         if lang:
-            record_lang = self.env['res.lang'].search([("code", "=", lang)], limit=1)
+            record_lang = self.env['res.lang'].with_context(active_test=False).search([("code", "=", lang)], limit=1)
             lang_params = {
                 'date_format': record_lang.date_format,
                 'time_format': record_lang.time_format
             }
 
         # formats will be used for str{f,p}time() which do not support unicode in Python 2, coerce to str
-        format_date = pycompat.to_native(lang_params.get("date_format", '%B-%d-%Y'))
-        format_time = pycompat.to_native(lang_params.get("time_format", '%I-%M %p'))
+        format_date = pycompat.to_native(lang_params.get("date_format") or '%B-%d-%Y')
+        format_time = pycompat.to_native(lang_params.get("time_format") or '%I-%M %p')
         return (format_date, format_time)
 
     @api.model
@@ -727,7 +746,7 @@ class Meeting(models.Model):
         if zallday:
             display_time = _("AllDay , %s") % (date_str)
         elif zduration < 24:
-            duration = date + timedelta(hours=zduration)
+            duration = date + timedelta(minutes=round(zduration*60))
             duration_time = to_text(duration.strftime(format_time))
             display_time = _(u"%s at (%s To %s) (%s)") % (
                 date_str,
@@ -893,17 +912,17 @@ class Meeting(models.Model):
     def _inverse_dates(self):
         for meeting in self:
             if meeting.allday:
-                tz = pytz.timezone(self.env.user.tz) if self.env.user.tz else pytz.utc
 
+                # Convention break:
+                # stop and start are NOT in UTC in allday event
+                # in this case, they actually represent a date
+                # i.e. Christmas is on 25/12 for everyone
+                # even if people don't celebrate it simultaneously
                 enddate = fields.Datetime.from_string(meeting.stop_date)
-                enddate = tz.localize(enddate)
                 enddate = enddate.replace(hour=18)
-                enddate = enddate.astimezone(pytz.utc)
 
                 startdate = fields.Datetime.from_string(meeting.start_date)
-                startdate = tz.localize(startdate)  # Add "+hh:mm" timezone
-                startdate = startdate.replace(hour=8)  # Set 8 AM in localtime
-                startdate = startdate.astimezone(pytz.utc)  # Convert to UTC
+                startdate = startdate.replace(hour=8)  # Set 8 AM
 
                 meeting.write({
                     'start': startdate.replace(tzinfo=None),
@@ -952,7 +971,11 @@ class Meeting(models.Model):
         if self.start_datetime:
             start = self.start_datetime
             self.start = self.start_datetime
-            self.stop = start + timedelta(hours=self.duration) - timedelta(seconds=1)
+            # Round the duration (in hours) to the minute to avoid weird situations where the event
+            # stops at 4:19:59, later displayed as 4:19.
+            self.stop = start + timedelta(minutes=round((self.duration or 1.0) * 60))
+            if self.allday:
+                self.stop -= timedelta(seconds=1)
 
     @api.onchange('start_date')
     def _onchange_start_date(self):
@@ -1044,6 +1067,9 @@ class Meeting(models.Model):
                     'event_id': meeting.id,
                 }
 
+                if self._context.get('google_internal_event_id', False):
+                    values['google_internal_event_id'] = self._context.get('google_internal_event_id')
+
                 # current user don't have to accept his own meeting
                 if partner == self.env.user.partner_id:
                     values['state'] = 'accepted'
@@ -1053,11 +1079,13 @@ class Meeting(models.Model):
                 meeting_attendees |= attendee
                 meeting_partners |= partner
 
-            if meeting_attendees:
+            if meeting_attendees and not self._context.get('detaching'):
                 to_notify = meeting_attendees.filtered(lambda a: a.email != current_user.email)
                 to_notify._send_mail_to_attendees('calendar.calendar_template_meeting_invitation')
 
+            if meeting_attendees:
                 meeting.write({'attendee_ids': [(4, meeting_attendee.id) for meeting_attendee in meeting_attendees]})
+
             if meeting_partners:
                 meeting.message_subscribe(partner_ids=meeting_partners.ids)
 
@@ -1123,6 +1151,9 @@ class Meeting(models.Model):
             select_fields = ["id"]
             where_params_list = []
             for pos, arg in enumerate(domain):
+                # hack: if we received recurrent ids, we need to clean them
+                if arg[0] == 'id' and arg[1] in ('in', 'not in'):
+                    arg = (arg[0], arg[1], [calendar_id2real_id(id) for id in arg[2]])
                 if not arg[0] in ('start', 'stop', 'final_date', '&', '|'):
                     e = expression.expression([arg], self)
                     where_clause, where_params = e.to_sql()  # CAUTION, wont work if field is autojoin, not supported
@@ -1135,12 +1166,19 @@ class Meeting(models.Model):
                 leaf_evaluations = dict([(row['id'], row) for row in self._cr.dictfetchall()])
         result_data = []
         result = []
+
+        recurrent_siblings_cache = {i: [] for i in recurrent_ids} # create empty entries to avoid additional queries for missing entries
+        children_ids = super(Meeting, self.with_context(active_test=False))._search([('recurrent_id', 'in', recurrent_ids)])
+        for item in self.browse(children_ids).read(['recurrent_id']):
+            recurrent_siblings_cache[item['recurrent_id']].append(item['id'])
+
+        recurrent_env = self.with_context(recurrent_siblings_cache=recurrent_siblings_cache).env
         for meeting in self:
             if not meeting.recurrency or not meeting.rrule:
                 result.append(meeting.id)
                 result_data.append(meeting.get_search_fields(order_fields))
                 continue
-            rdates = meeting._get_recurrent_dates_by_event()
+            rdates = meeting.with_env(recurrent_env)._get_recurrent_dates_by_event()
 
             for r_start_date, r_stop_date in rdates:
                 # fix domain evaluation
@@ -1229,7 +1267,7 @@ class Meeting(models.Model):
         """
         if self.interval and self.interval < 0:
             raise UserError(_('interval cannot be negative.'))
-        if self.count and self.count <= 0:
+        if self.count < 0:
             raise UserError(_('Event recurrence interval cannot be negative.'))
 
         def get_week_string(freq):
@@ -1254,7 +1292,7 @@ class Meeting(models.Model):
         def get_end_date():
             final_date = fields.Date.to_string(self.final_date)
             end_date_new = ''.join((re.compile('\d')).findall(final_date)) + 'T235959Z' if final_date else False
-            return (self.end_type == 'count' and (';COUNT=' + str(self.count)) or '') +\
+            return (self.end_type == 'count' and (';COUNT=' + str(max(1, self.count))) or '') +\
                 ((end_date_new and self.end_type == 'end_date' and (';UNTIL=' + end_date_new)) or '')
 
         freq = self.rrule_type  # day/week/month/year
@@ -1387,7 +1425,6 @@ class Meeting(models.Model):
         meeting_origin = self.browse(real_id)
 
         data = self.read(['allday', 'start', 'stop', 'rrule', 'duration'])[0]
-        d_class = fields.Date if data['allday'] else fields.Datetime
         if data.get('rrule'):
             data.update(
                 values,
@@ -1396,14 +1433,14 @@ class Meeting(models.Model):
                 rrule_type=False,
                 rrule='',
                 recurrency=False,
-                final_date=d_class.from_string(data.get('start')) \
-                    + timedelta(hours=values.get('duration', False) or data.get('duration'))
+                final_date=False,
+                end_type=False
             )
 
             # do not copy the id
             if data.get('id'):
                 del data['id']
-            return meeting_origin.copy(default=data)
+            return meeting_origin.with_context(detaching=True).copy(default=data)
 
     @api.multi
     def action_detach_recurring_event(self):
@@ -1673,6 +1710,8 @@ class Meeting(models.Model):
             res['id'] = calendar_id
             result.append(res)
 
+        recurrent_fields = self._get_recurrent_fields()
+        public_fields = set(recurrent_fields + ['id', 'allday', 'start', 'stop', 'display_start', 'display_stop', 'duration', 'user_id', 'state', 'interval', 'count', 'recurrent_id', 'recurrent_id_date', 'rrule'])
         for r in result:
             if r['user_id']:
                 user_id = type(r['user_id']) in (tuple, list) and r['user_id'][0] or r['user_id']
@@ -1681,8 +1720,6 @@ class Meeting(models.Model):
                     continue
             if r['privacy'] == 'private':
                 for f in r:
-                    recurrent_fields = self._get_recurrent_fields()
-                    public_fields = list(set(recurrent_fields + ['id', 'allday', 'start', 'stop', 'display_start', 'display_stop', 'duration', 'user_id', 'state', 'interval', 'count', 'recurrent_id_date', 'rrule']))
                     if f not in public_fields:
                         if isinstance(r[f], list):
                             r[f] = []
@@ -1742,7 +1779,9 @@ class Meeting(models.Model):
                 new_arg = (arg[0], arg[1], get_real_ids(arg[2]))
             new_args.append(new_arg)
 
-        if not self._context.get('virtual_id', True):
+        # update_custom_fields: context used by the ORM to check if custom fields (studio) should be updated
+        virtual_id_fallback = not self._context.get('update_custom_fields')
+        if not self._context.get('virtual_id', virtual_id_fallback):
             return super(Meeting, self)._search(new_args, offset=offset, limit=limit, order=order, count=count, access_rights_uid=access_rights_uid)
 
         if any(arg[0] == 'start' for arg in args) and \
@@ -1781,9 +1820,17 @@ class Meeting(models.Model):
             if values.get('name'):
                 activity_values['summary'] = values['name']
             if values.get('description'):
-                activity_values['note'] = values['description']
+                activity_values['note'] = tools.plaintext2html(values['description'])
             if values.get('start'):
-                activity_values['date_deadline'] = fields.Datetime.from_string(values['start']).date()
+                # self.start is a datetime UTC *only when the event is not allday*
+                # activty.date_deadline is a date (No TZ, but should represent the day in which the user's TZ is)
+                # See 72254129dbaeae58d0a2055cba4e4a82cde495b7 for the same issue, but elsewhere
+                deadline = fields.Datetime.from_string(values['start'])
+                user_tz = self.env.context.get('tz')
+                if user_tz and not self.allday:
+                    deadline = pytz.UTC.localize(deadline)
+                    deadline = deadline.astimezone(pytz.timezone(user_tz))
+                activity_values['date_deadline'] = deadline.date()
             if values.get('user_id'):
                 activity_values['user_id'] = values['user_id']
             if activity_values.keys():

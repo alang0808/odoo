@@ -11,6 +11,8 @@ from odoo.tools import pycompat
 
 _logger = logging.getLogger(__name__)
 
+EDITING_ATTRIBUTES = ['data-oe-model', 'data-oe-id', 'data-oe-field', 'data-oe-xpath', 'data-note-id']
+
 
 class IrUiView(models.Model):
     _inherit = 'ir.ui.view'
@@ -69,7 +71,9 @@ class IrUiView(models.Model):
         arch = etree.Element('data')
         xpath = etree.Element('xpath', expr="//*[hasclass('oe_structure')][@id='{}']".format(el.get('id')), position="replace")
         arch.append(xpath)
-        structure = etree.Element(el.tag, attrib=el.attrib)
+        attributes = {k: v for k, v in el.attrib.items() if k not in EDITING_ATTRIBUTES}
+        structure = etree.Element(el.tag, attrib=attributes)
+        structure.text = el.text
         xpath.append(structure)
         for child in el.iterchildren(tag=etree.Element):
             structure.append(copy.deepcopy(child))
@@ -80,9 +84,10 @@ class IrUiView(models.Model):
             'arch': self._pretty_arch(arch),
             'key': '%s_%s' % (self.key, el.get('id')),
             'type': 'qweb',
+            'mode': 'extension',
         }
         vals.update(self._save_oe_structure_hook())
-        self.create(vals)
+        self.env['ir.ui.view'].create(vals)
 
         return True
 
@@ -160,9 +165,15 @@ class IrUiView(models.Model):
         out.tail = el.tail
         return out
 
+    @api.model
+    def _set_noupdate(self):
+        self.sudo().mapped('model_data_id').write({'noupdate': True})
+
     @api.multi
     def save(self, value, xpath=None):
         """ Update a view section. The view section may embed fields to write
+
+        Note that `self` record might not exist when saving an embed field
 
         :param str xpath: valid xpath to the tag to replace
         """
@@ -194,23 +205,28 @@ class IrUiView(models.Model):
         new_arch = self.replace_arch_section(xpath, arch_section)
         old_arch = etree.fromstring(self.arch.encode('utf-8'))
         if not self._are_archs_equal(old_arch, new_arch):
-            self.sudo().model_data_id.write({'noupdate': True}) # TODO check if we remove this
+            self._set_noupdate()
             self.write({'arch': self._pretty_arch(new_arch)})
+
+    @api.model
+    def _view_get_inherited_children(self, view, options):
+        return view.inherit_children_ids
 
     @api.model
     def _view_obj(self, view_id):
         if isinstance(view_id, pycompat.string_types):
-            return self.search([('key', '=', view_id)]) or self.env.ref(view_id)
+            return self.search([('key', '=', view_id)], limit=1) or self.env.ref(view_id)
         elif isinstance(view_id, pycompat.integer_types):
             return self.browse(view_id)
-        # assume it's already a view object (WTF?)
+        # It can already be a view object when called by '_views_get()' that is calling '_view_obj'
+        # for it's inherit_children_ids, passing them directly as object record.
         return view_id
 
     # Returns all views (called and inherited) related to a view
     # Used by translation mechanism, SEO and optional templates
 
     @api.model
-    def _views_get(self, view_id, options=True, bundles=False, root=True):
+    def _views_get(self, view_id, options=True, bundles=False, root=True, visited=None):
         """ For a given view ``view_id``, should return:
                 * the view itself
                 * all views inheriting from it, enabled or not
@@ -222,8 +238,10 @@ class IrUiView(models.Model):
             view = self._view_obj(view_id)
         except ValueError:
             _logger.warning("Could not find view object with view_id '%s'", view_id)
-            return []
+            return self.env['ir.ui.view']
 
+        if visited is None:
+            visited = []
         while root and view.inherit_id:
             view = view.inherit_id
 
@@ -238,20 +256,21 @@ class IrUiView(models.Model):
                 called_view = self._view_obj(child.get('t-call', child.get('t-call-assets')))
             except ValueError:
                 continue
-            if called_view not in views_to_return:
-                views_to_return += self._views_get(called_view, options=options, bundles=bundles)
+            if called_view and called_view not in views_to_return and called_view.id not in visited:
+                views_to_return += self._views_get(called_view, options=options, bundles=bundles, visited=visited + views_to_return.ids)
 
-        extensions = view.inherit_children_ids
         if not options:
-            # only active children
-            extensions = view.inherit_children_ids.filtered(lambda view: view.active)
+            return views_to_return
+
+        extensions = self._view_get_inherited_children(view, options)
 
         # Keep options in a deterministic order regardless of their applicability
         for extension in extensions.sorted(key=lambda v: v.id):
             # only return optional grandchildren if this child is enabled
-            for ext_view in self._views_get(extension, options=extension.active, root=False):
-                if ext_view not in views_to_return:
-                    views_to_return += ext_view
+            if extension.id not in visited:
+                for ext_view in self._views_get(extension, options=extension.active, root=False, visited=visited + views_to_return.ids):
+                    if ext_view not in views_to_return:
+                        views_to_return += ext_view
         return views_to_return
 
     @api.model
@@ -261,5 +280,6 @@ class IrUiView(models.Model):
             ``bundles=True`` returns also the asset bundles
         """
         user_groups = set(self.env.user.groups_id)
-        views = self.with_context(active_test=False)._views_get(key, bundles=bundles)
+        View = self.with_context(active_test=False, lang=None)
+        views = View._views_get(key, bundles=bundles)
         return views.filtered(lambda v: not v.groups_id or len(user_groups.intersection(v.groups_id)))

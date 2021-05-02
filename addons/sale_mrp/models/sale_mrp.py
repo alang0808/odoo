@@ -16,12 +16,19 @@ class SaleOrderLine(models.Model):
             if line.qty_delivered_method == 'stock_move':
                 # In the case of a kit, we need to check if all components are shipped. Since the BOM might
                 # have changed, we don't compute the quantities but verify the move state.
-                bom = self.env['mrp.bom']._bom_find(product=line.product_id)
+                bom = self.env['mrp.bom']._bom_find(product=line.product_id, company_id=line.company_id.id)
                 if bom and bom.type == 'phantom':
-                    moves = line.move_ids.filtered(lambda m: m.picking_id and m.picking_id.state != 'cancel')
-                    bom_delivered = all([move.state == 'done' for move in moves])
-                    if bom_delivered:
-                        line.qty_delivered = line.product_uom_qty
+                    # bom_delivered
+                    moves = line.move_ids.filtered(lambda m: m.picking_id and m.picking_id.state != 'cancel' and m.state == 'done')
+                    outgoing_moves = moves.filtered(lambda m: m.location_dest_id.usage == "customer" and (not m.origin_returned_move_id or (m.origin_returned_move_id and m.to_refund)))
+                    bom_returned = all(
+                        [
+                            moves.filtered(lambda m: m.location_dest_id.usage != "customer" and m.to_refund and m.origin_returned_move_id.id == move.id)
+                            for move in outgoing_moves
+                        ]
+                    )
+                    if moves and not bom_returned:
+                        line.qty_delivered = line.qty_delivered_manual or line.product_uom_qty
                     else:
                         line.qty_delivered = 0.0
 
@@ -60,6 +67,24 @@ class SaleOrderLine(models.Model):
             return self.env.context['previous_product_uom_qty'].get(self.id, 0.0)
         return super(SaleOrderLine, self)._get_qty_procurement()
 
+    @api.multi
+    @api.depends('product_id', 'move_ids.state')
+    def _compute_qty_delivered_method(self):
+        lines = self.env['sale.order.line']
+        for line in self:
+            bom = self.env['mrp.bom']._bom_find(product=line.product_id, company_id=line.company_id.id)
+            if bom and bom.type == 'phantom' and line.order_id.state == 'sale':
+                bom_delivered = all(
+                    [
+                        move.state == "done"
+                        for move in line.move_ids.filtered(lambda m: m.picking_id and m.picking_id.state != "cancel")
+                    ]
+                )
+                if not bom_delivered:
+                    line.qty_delivered_method = 'manual'
+                    lines |= line
+        super(SaleOrderLine, self - lines)._compute_qty_delivered_method()
+
 
 class AccountInvoiceLine(models.Model):
     # TDE FIXME: what is this code ??
@@ -79,7 +104,7 @@ class AccountInvoiceLine(models.Model):
                 # Go through all the moves and do nothing until you get to qty_done
                 # Beyond qty_done we need to calculate the average of the price_unit
                 # on the moves we encounter.
-                bom = s_line.product_id.product_tmpl_id.bom_ids and s_line.product_id.product_tmpl_id.bom_ids[0]
+                bom = self.env['mrp.bom'].sudo()._bom_find(product=s_line.product_id, company_id=s_line.company_id.id)
                 if bom.type == 'phantom':
                     average_price_unit = 0
                     components = s_line._get_bom_component_qty(bom)

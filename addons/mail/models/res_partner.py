@@ -46,14 +46,22 @@ class Partner(models.Model):
             if message.add_sign:
                 signature = "<p>-- <br/>%s</p>" % message.author_id.name
 
-        company = record.company_id if record and 'company_id' in record else user.company_id
+        company = record.company_id.sudo() if record and 'company_id' in record else user.company_id
         if company.website:
             website_url = 'http://%s' % company.website if not company.website.lower().startswith(('http:', 'https:')) else company.website
         else:
             website_url = False
 
+        # Retrieve the language in which the template was rendered, in order to render the custom
+        # layout in the same language.
+        lang = self.env.context.get('lang')
+        if {'default_template_id', 'default_model', 'default_res_id'} <= self.env.context.keys():
+            template = self.env['mail.template'].browse(self.env.context['default_template_id'])
+            if template and template.lang:
+                lang = template._render_template(template.lang, self.env.context['default_model'], self.env.context['default_res_id'])
+
         if not model_description and message.model:
-            model_description = self.env['ir.model']._get(message.model).display_name
+            model_description = self.env['ir.model'].with_context(lang=lang)._get(message.model).display_name
 
         tracking = []
         for tracking_value in self.env['mail.tracking.value'].sudo().search([('mail_message_id', '=', message.id)]):
@@ -74,6 +82,7 @@ class Partner(models.Model):
             'tracking_values': tracking,
             'is_discussion': is_discussion,
             'subtype': message.subtype_id,
+            'lang': lang,
         }
 
     @api.model
@@ -95,21 +104,21 @@ class Partner(models.Model):
         if not rdata:
             return True
 
+        base_template_ctx = self._notify_prepare_template_context(message, record, model_description=model_description)
         template_xmlid = message.layout if message.layout else 'mail.message_notification_email'
         try:
-            base_template = self.env.ref(template_xmlid, raise_if_not_found=True)
+            base_template = self.env.ref(template_xmlid, raise_if_not_found=True).with_context(lang=base_template_ctx['lang'])
         except ValueError:
             _logger.warning('QWeb template %s not found when sending notification emails. Sending without layouting.' % (template_xmlid))
             base_template = False
-
-        base_template_ctx = self._notify_prepare_template_context(message, record, model_description=model_description)
 
         # prepare notification mail values
         base_mail_values = {
             'mail_message_id': message.id,
             'mail_server_id': message.mail_server_id.id,
             'auto_delete': mail_auto_delete,
-            'references': message.parent_id.message_id if message.parent_id else False
+            # due to ir.rule, user have no right to access parent message if message is not published
+            'references': message.parent_id.sudo().message_id if message.parent_id else False,
         }
         if record:
             base_mail_values.update(self.env['mail.thread']._notify_specific_email_values_on_records(message, records=record))
@@ -124,7 +133,7 @@ class Partner(models.Model):
         for group_tpl_values in [group for group in recipients.values() if group['recipients']]:
             # generate notification email content
             template_ctx = {**base_template_ctx, **group_tpl_values}
-            mail_body = base_template.render(template_ctx, engine='ir.qweb', minimal_qcontext=True)
+            mail_body = base_template.render(template_ctx, engine='ir.qweb', minimal_qcontext=True) if base_template else message.body
             mail_body = self.env['mail.thread']._replace_local_links(mail_body)
             mail_subject = message.subject or (message.record_name and 'Re: %s' % message.record_name)
 
@@ -228,10 +237,11 @@ class Partner(models.Model):
         """ Return 'limit'-first partners' id, name and email such that the name or email matches a
             'search' string. Prioritize users, and then extend the research to all partners. """
         search_dom = expression.OR([[('name', 'ilike', search)], [('email', 'ilike', search)]])
+        search_dom = expression.AND([[('active', '=', True)], search_dom])
         fields = ['id', 'name', 'email']
 
         # Search users
-        domain = expression.AND([[('user_ids.id', '!=', False)], search_dom])
+        domain = expression.AND([[('user_ids.id', '!=', False), ('user_ids.active', '=', True)], search_dom])
         users = self.search_read(domain, fields, limit=limit)
 
         # Search partners if less than 'limit' users found

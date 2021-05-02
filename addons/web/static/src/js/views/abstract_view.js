@@ -110,10 +110,15 @@ var AbstractView = Class.extend({
         // 'Group By' button beside the 'Measures' button when the graph view is embedded.
         var isEmbedded = params.isEmbedded || false;
 
+        // The noContentHelper's message can be empty, i.e. either a real empty string
+        // or an empty html tag. In both cases, we consider the helper empty.
+        var help = params.action && params.action.help || "";
+        var htmlHelp = document.createElement("div");
+        htmlHelp.innerHTML = help;
         this.rendererParams = {
             arch: this.arch,
             isEmbedded: isEmbedded,
-            noContentHelp: params.action && params.action.help,
+            noContentHelp: htmlHelp.innerText.trim() ? help : "",
         };
 
         var timeRangeMenuData = params.context.timeRangeMenuData;
@@ -162,6 +167,15 @@ var AbstractView = Class.extend({
             this.controllerParams.withControlPanel = params.withControlPanel;
         }
 
+        // set groupBy only if view is groupable
+        var groupBy = [];
+        if (this.groupable) {
+            groupBy = params.groupBy;
+            if (typeof groupBy === 'string') {
+                groupBy = [groupBy];
+            }
+        }
+
         this.loadParams = {
             context: params.context,
             count: params.count || ((this.controllerParams.ids !== undefined) &&
@@ -172,10 +186,11 @@ var AbstractView = Class.extend({
             comparisonTimeRange: comparisonTimeRange,
             comparisonTimeRangeDescription: comparisonTimeRangeDescription,
             compare: compare,
-            groupedBy: params.groupBy,
+            groupedBy: groupBy,
             modelName: params.modelName,
             res_id: params.currentId,
             res_ids: params.ids,
+            orderedBy: params.context ? params.context.orderedBy : [],
         };
         if (params.modelName) {
             this.loadParams.modelName = params.modelName;
@@ -306,5 +321,57 @@ var AbstractView = Class.extend({
 });
 
 return AbstractView;
+
+});
+
+odoo.define('web.viewUtils', function () {
+"use strict";
+
+/**
+ * FIXME: move this module to its own file in master
+ */
+
+var utils = {
+    /**
+     * Returns the value of a group dataPoint, i.e. the value of the groupBy
+     * field for the records in that group.
+     *
+     * @param {Object} group dataPoint of type list, corresponding to a group
+     * @param {string} groupByField the name of the groupBy field
+     * @returns {string | integer | false}
+     */
+    getGroupValue: function (group, groupByField) {
+        var groupedByField = group.fields[groupByField];
+        switch (groupedByField.type) {
+            case 'many2one':
+                return group.res_id || false;
+            case 'selection':
+                var descriptor = _.findWhere(groupedByField.selection, group.value);
+                return descriptor && descriptor[0];
+            default:
+                return group.value;
+        }
+    },
+    /**
+     * States whether or not the quick create feature is available for the given
+     * datapoint, depending on its groupBy field.
+     *
+     * @param {Object} list dataPoint of type list
+     * @returns {Boolean} true iff the kanban quick create feature is available
+     */
+    isQuickCreateEnabled: function (list) {
+        var groupByField = list.groupedBy[0] && list.groupedBy[0].split(':')[0];
+        if (!groupByField) {
+            return false;
+        }
+        var availableTypes = ['char', 'boolean', 'many2one', 'selection'];
+        if (!_.contains(availableTypes, list.fields[groupByField].type)) {
+            return false;
+        }
+        return true;
+    },
+};
+
+return utils;
 
 });

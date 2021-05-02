@@ -4,7 +4,7 @@
 from odoo import api, fields, models, _
 from odoo.addons import decimal_precision as dp
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import float_round
+from odoo.tools import float_round, pycompat
 
 from itertools import groupby
 
@@ -46,6 +46,7 @@ class MrpBom(models.Model):
     sequence = fields.Integer('Sequence', help="Gives the sequence order when displaying a list of bills of material.")
     routing_id = fields.Many2one(
         'mrp.routing', 'Routing',
+        track_visibility='onchange',
         help="The operations for producing this BoM.  When a routing is specified, the production orders will "
              " be executed through work orders, otherwise everything is processed in the production order itself. ")
     ready_to_produce = fields.Selection([
@@ -68,22 +69,15 @@ class MrpBom(models.Model):
             for line in self.bom_line_ids:
                 line.attribute_value_ids = False
 
-    @api.multi
-    def write(self, values):
-        mos = self.env['mrp.production'].search_count([
-            ('bom_id', 'in', self.ids),
-            ('state', 'not in', ['done', 'cancel'])
-        ])
-        if mos and any(k not in ['code', 'sequence', 'pick_type_id', 'ready_to_produce'] for k in values.keys()):
-            raise ValidationError(_('This BoM is used in some Manufacturing Orders that are still open. You should rather archive this BoM and create a new one.'))
-        return super(MrpBom, self).write(values)
-
-
     @api.constrains('product_id', 'product_tmpl_id', 'bom_line_ids')
     def _check_product_recursion(self):
         for bom in self:
-            if bom.bom_line_ids.filtered(lambda x: x.product_id.product_tmpl_id == bom.product_tmpl_id):
-                raise ValidationError(_('BoM line product %s should not be same as BoM product.') % bom.display_name)
+            if bom.product_id:
+                if bom.bom_line_ids.filtered(lambda x: x.product_id == bom.product_id):
+                    raise ValidationError(_('BoM line product %s should not be same as BoM product.') % bom.display_name)
+            else:
+                if bom.bom_line_ids.filtered(lambda x: x.product_id.product_tmpl_id == bom.product_tmpl_id):
+                    raise ValidationError(_('BoM line product %s should not be same as BoM product.') % bom.display_name)
 
     @api.onchange('product_uom_id')
     def onchange_product_uom_id(self):
@@ -101,15 +95,31 @@ class MrpBom(models.Model):
             self.product_uom_id = self.product_tmpl_id.uom_id.id
             if self.product_id.product_tmpl_id != self.product_tmpl_id:
                 self.product_id = False
+            for line in self.bom_line_ids:
+                line.attribute_value_ids = False
 
     @api.onchange('routing_id')
     def onchange_routing_id(self):
         for line in self.bom_line_ids:
             line.operation_id = False
 
+    @api.model
+    def name_create(self, name):
+        # prevent to use string as product_tmpl_id
+        if isinstance(name, pycompat.string_types):
+            raise UserError(_("You cannot create a new Bill of Material from here."))
+        return super(MrpBom, self).name_create(name)
+
     @api.multi
     def name_get(self):
         return [(bom.id, '%s%s' % (bom.code and '%s: ' % bom.code or '', bom.product_tmpl_id.display_name)) for bom in self]
+
+    @api.constrains('product_tmpl_id', 'product_id', 'type')
+    def check_kit_has_not_orderpoint(self):
+        product_ids = [pid for bom in self.filtered(lambda bom: bom.type == "phantom")
+                           for pid in (bom.product_id.ids or bom.product_tmpl_id.product_variant_ids.ids)]
+        if self.env['stock.warehouse.orderpoint'].search([('product_id', 'in', product_ids)], count=True):
+            raise ValidationError(_("You can not create a kit-type bill of materials for products that have at least one reordering rule."))
 
     @api.multi
     def unlink(self):
@@ -213,7 +223,7 @@ class MrpBomLine(models.Model):
 
     product_id = fields.Many2one(
         'product.product', 'Component', required=True)
-    product_tmpl_id = fields.Many2one('product.template', 'Product Template', related='product_id.product_tmpl_id', readonly=False)
+    product_tmpl_id = fields.Many2one('product.template', 'Product Template', related='product_id.product_tmpl_id')
     product_qty = fields.Float(
         'Quantity', default=1.0,
         digits=dp.get_precision('Product Unit of Measure'), required=True)
@@ -235,6 +245,8 @@ class MrpBomLine(models.Model):
         'mrp.bom', 'Parent BoM',
         index=True, ondelete='cascade', required=True)
     parent_product_tmpl_id = fields.Many2one('product.template', 'Parent Product Template', related='bom_id.product_tmpl_id')
+    valid_product_attribute_value_ids = fields.Many2many('product.attribute.value', related='bom_id.product_tmpl_id.valid_product_attribute_value_ids')
+    valid_product_attribute_value_wnva_ids = fields.Many2many('product.attribute.value', related='bom_id.product_tmpl_id.valid_product_attribute_value_wnva_ids')
     attribute_value_ids = fields.Many2many(
         'product.attribute.value', string='Apply on Variants',
         help="BOM Product Variants needed form apply this line.")
@@ -262,13 +274,12 @@ class MrpBomLine(models.Model):
         else:
             self.child_bom_id = self.env['mrp.bom']._bom_find(
                 product_tmpl=self.product_id.product_tmpl_id,
-                product=self.product_id,
-                picking_type=self.bom_id.picking_type_id)
+                product=self.product_id)
 
     @api.one
     @api.depends('product_id')
     def _compute_has_attachments(self):
-        nbr_attach = self.env['ir.attachment'].search_count([
+        nbr_attach = self.env['mrp.document'].search_count([
             '|',
             '&', ('res_model', '=', 'product.product'), ('res_id', '=', self.product_id.id),
             '&', ('res_model', '=', 'product.template'), ('res_id', '=', self.product_id.product_tmpl_id.id)])
@@ -297,8 +308,10 @@ class MrpBomLine(models.Model):
 
     @api.onchange('parent_product_tmpl_id')
     def onchange_parent_product(self):
+        if not self.parent_product_tmpl_id:
+            return {}
         return {'domain': {'attribute_value_ids': [
-            ('id', 'in', self.parent_product_tmpl_id.mapped('attribute_line_ids.value_ids.id')),
+            ('id', 'in', self.parent_product_tmpl_id._get_valid_product_attribute_values().ids),
             ('attribute_id.create_variant', '!=', 'no_variant')
         ]}}
 

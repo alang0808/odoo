@@ -4,6 +4,7 @@
 import datetime
 from odoo import api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.misc import clean_context
 
 
 class ProductReplenish(models.TransientModel):
@@ -51,7 +52,7 @@ class ProductReplenish(models.TransientModel):
         uom_reference = self.product_id.uom_id
         self.quantity = self.product_uom_id._compute_quantity(self.quantity, uom_reference)
         try:
-            self.env['procurement.group'].run(
+            self.env['procurement.group'].with_context(clean_context(self.env.context)).run(
                 self.product_id,
                 self.quantity,
                 uom_reference,
@@ -65,13 +66,13 @@ class ProductReplenish(models.TransientModel):
 
     def _prepare_run_values(self):
         replenishment = self.env['procurement.group'].create({
-            'partner_id': self.product_id.responsible_id.partner_id.id,
+            'partner_id': self.product_id.responsible_id.sudo().partner_id.id,
         })
 
         values = {
             'warehouse_id': self.warehouse_id,
             'route_ids': self.route_ids,
-            'date_planned': self.date_planned,
+            'date_planned': self.date_planned or fields.Datetime.now(),
             'group_id': replenishment,
         }
         return values

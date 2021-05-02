@@ -21,10 +21,13 @@ from docutils.core import publish_string
 from docutils.transforms import Transform, writer_aux
 from docutils.writers.html4css1 import Writer
 import lxml.html
+import psycopg2
 
 import odoo
 from odoo import api, fields, models, modules, tools, _
+from odoo.addons.base.models.ir_model import MODULE_UNINSTALL_FLAG
 from odoo.exceptions import AccessDenied, UserError
+from odoo.osv import expression
 from odoo.tools.parse_version import parse_version
 from odoo.tools.misc import topological_sort
 from odoo.http import request
@@ -364,9 +367,9 @@ class Module(models.Model):
             module_demo = module.demo or update_demo or any(mod.demo for mod in ready_mods)
             demo = demo or module_demo
 
-            # check dependencies and update module itself
-            self.check_external_dependencies(module.name, newstate)
             if module.state in states_to_update:
+                # check dependencies and update module itself
+                self.check_external_dependencies(module.name, newstate)
                 module.write({'state': newstate, 'demo': module_demo})
 
         return demo
@@ -456,8 +459,23 @@ class Module(models.Model):
         """
         modules_to_remove = self.mapped('name')
         self.env['ir.model.data']._module_data_uninstall(modules_to_remove)
-        self.write({'state': 'uninstalled', 'latest_version': False})
+        # we deactivate prefetching to not try to read a column that has been deleted
+        self.with_context(prefetch_fields=False).write({'state': 'uninstalled', 'latest_version': False})
         return True
+
+    @api.multi
+    def _remove_copied_views(self):
+        """ Remove the copies of the views installed by the modules in `self`.
+
+        Those copies do not have an external id so they will not be cleaned by
+        `_module_data_uninstall`. This is why we rely on `key` instead.
+
+        It is important to remove these copies because using them will crash if
+        they rely on data that don't exist anymore if the module is removed.
+        """
+        domain = expression.OR([[('key', '=like', m.name + '.%')] for m in self])
+        orphans = self.env['ir.ui.view'].with_context(**{'active_test': False, MODULE_UNINSTALL_FLAG: True}).search(domain)
+        orphans.unlink()
 
     @api.multi
     @api.returns('self')
@@ -528,6 +546,14 @@ class Module(models.Model):
 
     @api.multi
     def _button_immediate_function(self, function):
+        try:
+            # This is done because the installation/uninstallation/upgrade can modify a currently
+            # running cron job and prevent it from finishing, and since the ir_cron table is locked
+            # during execution, the lock won't be released until timeout.
+            self._cr.execute("SELECT * FROM ir_cron FOR UPDATE NOWAIT")
+        except psycopg2.OperationalError:
+            raise UserError(_("The server is busy right now, module operations are not possible at"
+                              " this time, please try again later."))
         function(self)
 
         self._cr.commit()
@@ -564,6 +590,11 @@ class Module(models.Model):
     def button_uninstall(self):
         if 'base' in self.mapped('name'):
             raise UserError(_("The `base` module cannot be uninstalled"))
+        if not all(state in ('installed', 'to upgrade') for state in self.mapped('state')):
+            raise UserError(_(
+                "One or more of the selected modules have already been uninstalled, if you "
+                "believe this to be an error, you may try again later or contact support."
+            ))
         deps = self.downstream_dependencies()
         (self + deps).write({'state': 'to remove'})
         return dict(ACTION_DICT, name=_('Uninstall'))
@@ -695,11 +726,10 @@ class Module(models.Model):
                     mod.write(updated_values)
             else:
                 mod_path = modules.get_module_path(mod_name)
-                if not mod_path:
+                if not mod_path or not terp:
                     continue
-                if not terp or not terp.get('installable', True):
-                    continue
-                mod = self.create(dict(name=mod_name, state='uninstalled', **values))
+                state = "uninstalled" if terp.get('installable', True) else "uninstallable"
+                mod = self.create(dict(name=mod_name, state=state, **values))
                 res[1] += 1
 
             mod._update_dependencies(terp.get('depends', []))

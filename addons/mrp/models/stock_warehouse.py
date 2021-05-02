@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import ValidationError, UserError
 
 
 class StockWarehouse(models.Model):
@@ -52,7 +52,7 @@ class StockWarehouse(models.Model):
                 'pbm_sam': [
                     self.Routing(warehouse.lot_stock_id, warehouse.pbm_loc_id, warehouse.pbm_type_id, 'pull'),
                     self.Routing(warehouse.pbm_loc_id, production_location_id, warehouse.manu_type_id, 'pull'),
-                    self.Routing(production_location_id, warehouse.sam_loc_id, warehouse.sam_type_id, 'push'),
+                    self.Routing(warehouse.sam_loc_id, warehouse.lot_stock_id, warehouse.sam_type_id, 'push'),
                 ],
             })
         return result
@@ -110,8 +110,9 @@ class StockWarehouse(models.Model):
                 'create_values': {
                     'action': 'manufacture',
                     'procure_method': 'make_to_order',
+                    'company_id': self.company_id.id,
                     'picking_type_id': self.manu_type_id.id,
-                    'route_id': self._find_global_route('mrp.route_warehouse0_manufacture', 'Manufacture').id
+                    'route_id': self._find_global_route('mrp.route_warehouse0_manufacture', _('Manufacture')).id
                 },
                 'update_values': {
                     'active': self.manufacture_to_resupply,
@@ -127,7 +128,7 @@ class StockWarehouse(models.Model):
                     'action': 'pull',
                     'auto': 'manual',
                     'propagate': True,
-                    'route_id': self._find_global_route('stock.route_warehouse0_mto', 'Make To Order').id,
+                    'route_id': self._find_global_route('stock.route_warehouse0_mto', _('Make To Order')).id,
                     'name': self._format_rulename(self.lot_stock_id, self.pbm_loc_id, 'MTO'),
                     'location_id': self.pbm_loc_id.id,
                     'location_src_id': self.lot_stock_id.id,
@@ -151,7 +152,7 @@ class StockWarehouse(models.Model):
                     'action': 'pull',
                     'auto': 'manual',
                     'propagate': True,
-                    'route_id': self._find_global_route('mrp.route_warehouse0_manufacture', 'Manufacture').id,
+                    'route_id': self._find_global_route('mrp.route_warehouse0_manufacture', _('Manufacture')).id,
                     'name': self._format_rulename(self.sam_loc_id, self.lot_stock_id, False),
                     'location_id': self.lot_stock_id.id,
                     'location_src_id': self.sam_loc_id.id,
@@ -169,9 +170,22 @@ class StockWarehouse(models.Model):
         values = super(StockWarehouse, self)._get_locations_values(vals)
         def_values = self.default_get(['manufacture_steps'])
         manufacture_steps = vals.get('manufacture_steps', def_values['manufacture_steps'])
+        code = vals.get('code') or self.code or ''
+        code = code.replace(' ', '').upper()
+        company_id = vals.get('company_id', self.company_id.id)
         values.update({
-            'pbm_loc_id': {'name': _('Pre-Production'), 'active': manufacture_steps in ('pbm', 'pbm_sam'), 'usage': 'internal'},
-            'sam_loc_id': {'name': _('Post-Production'), 'active': manufacture_steps == 'pbm_sam', 'usage': 'internal'},
+            'pbm_loc_id': {
+                'name': _('Pre-Production'),
+                'active': manufacture_steps in ('pbm', 'pbm_sam'),
+                'usage': 'internal',
+                'barcode': self._valid_barcode(code + '-PREPRODUCTION', company_id)
+            },
+            'sam_loc_id': {
+                'name': _('Post-Production'),
+                'active': manufacture_steps == 'pbm_sam',
+                'usage': 'internal',
+                'barcode': self._valid_barcode(code + '-POSTPRODUCTION', company_id)
+            },
         })
         return values
 
@@ -237,7 +251,7 @@ class StockWarehouse(models.Model):
 
     @api.multi
     def _get_all_routes(self):
-        routes = super(StockWarehouse, self).get_all_routes_for_wh()
+        routes = super(StockWarehouse, self)._get_all_routes()
         routes |= self.filtered(lambda self: self.manufacture_to_resupply and self.manufacture_pull_id and self.manufacture_pull_id.route_id).mapped('manufacture_pull_id').mapped('route_id')
         return routes
 
@@ -262,3 +276,13 @@ class StockWarehouse(models.Model):
             if warehouse.manufacture_pull_id and name:
                 warehouse.manufacture_pull_id.write({'name': warehouse.manufacture_pull_id.name.replace(warehouse.name, name, 1)})
         return res
+
+class Orderpoint(models.Model):
+    _inherit = "stock.warehouse.orderpoint"
+
+    @api.constrains('product_id')
+    def check_product_is_not_kit(self):
+        if self.env['mrp.bom'].search(['|', ('product_id', 'in', self.product_id.ids),
+                                            '&', ('product_id', '=', False), ('product_tmpl_id', 'in', self.product_id.product_tmpl_id.ids),
+                                       ('type', '=', 'phantom')], count=True):
+            raise ValidationError(_("A product with a kit-type bill of materials can not have a reordering rule."))

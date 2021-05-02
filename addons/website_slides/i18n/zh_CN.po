@@ -3,36 +3,38 @@
 # * website_slides
 # 
 # Translators:
-# e2f <projects@e2f.com>, 2018
-# Martin Trigaux, 2018
-# Jeffery CHEN Fan <jeffery9@gmail.com>, 2018
-# liAnGjiA <liangjia@qq.com>, 2018
 # 苏州远鼎 <tiexinliu@126.com>, 2018
-# Siyuan Gu <siyuancn@hotmail.com>, 2018
 # liulixia <liu.lixia@elico-corp.com>, 2018
-# fausthuang, 2018
-# 菜小蛇 <lttlsnk@gmail.com>, 2018
+# lttlsnk <lttlsnk@gmail.com>, 2018
 # 山西清水欧度(QQ:54773801) <54773801@qq.com>, 2018
-# e2f_cn c7 <e2f_cn_c7@outlook.com>, 2018
 # waveyeung <waveyeung@qq.com>, 2018
+# fausthuang, 2018
 # Joray <13637815@qq.com>, 2018
-# e2f_cn c5 <jarvisn@ecinnovations.com>, 2018
 # ChinaMaker <liuct@chinamaker.net>, 2018
 # Fisher <fisher@kdomi.com>, 2018
-# Jackie Zhang <jzh@odoo.com>, 2018
+# JZH-Odoo <jzh@odoo.com>, 2018
 # Lisa Zhang <lzh@odoo.com>, 2018
 # bower Guo <124358678@qq.com>, 2018
 # roye w <159820@qq.com>, 2018
 # Youfu Sheng <wdmsyf@sina.com>, 2018
+# e2f <projects@e2f.com>, 2018
+# Martin Trigaux, 2018
+# Siyuan Gu <siyuancn@hotmail.com>, 2018
+# e2f_cn c5 <jarvisn@ecinnovations.com>, 2018
 # 老窦 北京 <2662059195@qq.com>, 2018
+# bf2549c5415a9287249cba2b8a5823c7, 2018
 # 李赋 <fu792659@163.com>, 2018
+# inspur qiuguodong <qiuguodong@inspur.com>, 2018
+# liAnGjiA <liangjia@qq.com>, 2019
+# Jeffery CHEN Fan <jeffery9@gmail.com>, 2019
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:49+0000\n"
-"PO-Revision-Date: 2018-10-08 06:49+0000\n"
-"Last-Translator: 李赋 <fu792659@163.com>, 2018\n"
+"POT-Creation-Date: 2019-01-09 10:32+0000\n"
+"PO-Revision-Date: 2018-08-24 09:35+0000\n"
+"Last-Translator: Jeffery CHEN Fan <jeffery9@gmail.com>, 2019\n"
 "Language-Team: Chinese (China) (https://www.transifex.com/odoo/teams/41243/zh_CN/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -177,7 +179,7 @@ msgstr ""
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_detail_view
 msgid "<i class=\"fa fa-align-justify\"/> Transcript"
-msgstr "<i class=\"fa fa-align-justify\"/> 文本"
+msgstr "<i class=\"fa fa-align-justify\"/> 台本"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.home
@@ -209,6 +211,11 @@ msgstr "<i class=\"fa fa-code\"/> 内嵌视图"
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_detail_view
 msgid "<i class=\"fa fa-comments-o\"/> Comments"
 msgstr "<i class=\"fa fa-comments-o\"/> 评论"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
+msgid "<i class=\"fa fa-download fa-2x\" role=\"img\" aria-label=\"Download\"/>"
+msgstr "<i class=\"fa fa-download fa-2x\" role=\"img\" aria-label=\"Download\"/>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
@@ -260,8 +267,24 @@ msgstr "<i class=\"fa fa-spinner fa-spin\"/> 加载中 ..."
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_detail_view
+msgid ""
+"<i class=\"fa fa-thumbs-down fa-1x\" role=\"img\" aria-label=\"Dislikes\" "
+"title=\"Dislikes\"/>"
+msgstr ""
+"<i class=\"fa fa-thumbs-down fa-1x\" role=\"img\" aria-label=\"Dislikes\" "
+"title=\"Dislikes\"/>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_detail_view
 msgid "<i class=\"fa fa-thumbs-down\"/> Dislikes"
-msgstr "<i class=\"fa fa-thumbs-down\"/> 踩"
+msgstr "<i class=\"fa fa-thumbs-down\"/>不喜欢"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.slide_detail_view
+msgid "<i class=\"fa fa-thumbs-up fa-1x\" role=\"img\" aria-label=\"Likes\" title=\"Likes\"/>"
+msgstr ""
+"<i class=\"fa fa-thumbs-up fa-1x\" role=\"img\" aria-label=\"Likes\" "
+"title=\"Likes\"/>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_detail_view
@@ -332,7 +355,7 @@ msgstr ""
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "<span class=\"form-text\">Send presentation through email</span>"
-msgstr "<span class=\"form-text\">通过电子邮件发送演示</span>"
+msgstr "<span class=\"form-text\">通过EMail发送演示</span>"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_media
@@ -358,6 +381,28 @@ msgstr "<span class=\"text-muted small\">视图</span>"
 #: model_terms:ir.ui.view,arch_db:website_slides.slides_channel_header
 msgid "<span class=\"text-muted\">Sort by:</span>"
 msgstr "<span class=\"text-muted\">排序方式:</span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
+msgid ""
+"<span id=\"first\" class=\"ml-2 mr-2\" title=\"First slide\" role=\"img\" aria-label=\"First slide\">\n"
+"                                            <i class=\"fa fa-step-backward fa-2x\"/>\n"
+"                                        </span>"
+msgstr ""
+"<span id=\"first\" class=\"ml-2 mr-2\" title=\"First slide\" role=\"img\" aria-label=\"First slide\">\n"
+"                                            <i class=\"fa fa-step-backward fa-2x\"/>\n"
+"                                        </span>"
+
+#. module: website_slides
+#: model_terms:ir.ui.view,arch_db:website_slides.embed_slide
+msgid ""
+"<span id=\"fullscreen\" title=\"View fullscreen\" role=\"img\" aria-label=\"Fullscreen\">\n"
+"                                            <i class=\"fa fa-arrows-alt fa-2x\"/>\n"
+"                                        </span>"
+msgstr ""
+"<span id=\"fullscreen\" title=\"View fullscreen\" role=\"img\" aria-label=\"Fullscreen\">\n"
+"                                            <i class=\"fa fa-arrows-alt fa-2x\"/>\n"
+"                                        </span>"
 
 #. module: website_slides
 #: sql_constraint:slide.tag:0
@@ -547,7 +592,7 @@ msgid ""
 "Could not fetch data from url. Document or access right not available:\n"
 "%s"
 msgstr ""
-"无法从网址获得数据。文件或者访问权限不存在:\n"
+"无法从网址获得数据。文档或者访问权限不存在:\n"
 "%s"
 
 #. module: website_slides
@@ -608,7 +653,7 @@ msgstr "说明"
 #: code:addons/website_slides/static/src/xml/website_slides.xml:71
 #, python-format
 msgid "Discard"
-msgstr "取消"
+msgstr "丢弃"
 
 #. module: website_slides
 #: model:slide.slide,description:website_slides.slide_6
@@ -670,7 +715,7 @@ msgstr "现实顺序"
 #: model_terms:ir.ui.view,arch_db:website_slides.view_slide_slide_form
 #: selection:slide.slide,slide_type:0
 msgid "Document"
-msgstr "单据"
+msgstr "文档"
 
 #. module: website_slides
 #: model:ir.model.fields,field_description:website_slides.field_slide_slide__document_id
@@ -713,7 +758,7 @@ msgstr "下载安全"
 #. module: website_slides
 #: model:ir.model.fields,help:website_slides.field_slide_channel__publish_template_id
 msgid "Email template to send slide publication through email"
-msgstr "透过电邮发送已发布的幻灯片之电邮模板"
+msgstr "透过EMail发送已发布的幻灯片之EMail模板"
 
 #. module: website_slides
 #: model:ir.model.fields,help:website_slides.field_slide_channel__share_template_id
@@ -1159,7 +1204,7 @@ msgstr "Odoo 物料需求计划"
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_6
 msgid "Odoo Marketing"
-msgstr "Odoo 市场营销"
+msgstr "Odoo推广"
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_8
@@ -1526,7 +1571,7 @@ msgstr "文档类型将根据文档 URL 和属性（例如，演示和文档的�
 #: model:ir.model.fields,help:website_slides.field_slide_channel__website_url
 #: model:ir.model.fields,help:website_slides.field_slide_slide__website_url
 msgid "The full URL to access the document through the website."
-msgstr "通过网站访问单据的完整URL。"
+msgstr "通过网站访问文档的完整URL。"
 
 #. module: website_slides
 #: sql_constraint:slide.slide:0
@@ -1800,7 +1845,7 @@ msgstr "YouTube或谷歌文档的网址"
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "by email!"
-msgstr "通过电子邮件！"
+msgstr "通过EMail！"
 
 #. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.home

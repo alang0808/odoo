@@ -1,9 +1,15 @@
 odoo.define('web.search_view_tests', function (require) {
 "use strict";
 
+var AbstractStorageService = require('web.AbstractStorageService');
+const concurrency = require('web.concurrency');
+var FormView = require('web.FormView');
+var RamStorage = require('web.RamStorage');
 var testUtils = require('web.test_utils');
+var testUtilsDom = require('web.test_utils_dom');
 var createActionManager = testUtils.createActionManager;
 var patchDate = testUtils.patchDate;
+var createView = testUtils.createView;
 
 QUnit.module('Search View', {
     beforeEach: function () {
@@ -459,6 +465,98 @@ QUnit.module('Search View', {
 
     QUnit.module('Filters Menu');
 
+    QUnit.test('Search date and datetime fields. Support of timezones', function (assert) {
+        assert.expect(4);
+
+        this.data.partner.fields.birth_datetime = {string: "Birth DateTime", type: "datetime", store: true, sortable: true};
+        this.data.partner.records = this.data.partner.records.slice(0,-1); // exclude wrong date record
+
+        function stringToEvent ($element, string) {
+            for (var i = 0; i < string.length; i++) {
+                var keyAscii = string.charCodeAt(i);
+                $element.val($element.val()+string[i]);
+                $element.trigger($.Event('keyup', {which: keyAscii, keyCode:keyAscii}));
+            }
+        }
+
+        var searchReadSequence = 0;
+        var actionManager = createActionManager({
+            actions: [{
+                id: 11,
+                name: 'Partners Action 11',
+                res_model: 'partner',
+                type: 'ir.actions.act_window',
+                views: [[3, 'list']],
+                search_view_id: [9, 'search'],
+            }],
+            archs:  {
+                'partner,3,list': '<tree>' +
+                                      '<field name="foo"/>' +
+                                      '<field name="birthday" />' +
+                                      '<field name="birth_datetime" />' +
+                                '</tree>',
+
+                'partner,9,search': '<search>'+
+                                        '<field name="birthday"/>' +
+                                        '<field name="birth_datetime" />' +
+                                    '</search>',
+            },
+            data: this.data,
+            session: {
+                getTZOffset: function() {
+                    return 360;
+                }
+            },
+            mockRPC: function (route, args) {
+                if (route === '/web/dataset/search_read') {
+                    if (searchReadSequence === 1) { // The 0th time is at loading
+                        assert.deepEqual(args.domain, [["birthday", "=", "1983-07-15"]],
+                            'A date should stay what the user has input, but transmitted in server\'s format');
+                    } else if (searchReadSequence === 3) { // the 2nd time is at closing the first facet
+                        assert.deepEqual(args.domain, [["birth_datetime", "=", "1983-07-14 18:00:00"]],
+                            'A datetime should be transformed in UTC and transmitted in server\'s format');
+                    }
+                    searchReadSequence+=1;
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+
+        actionManager.doAction(11);
+
+        // Date case
+        var $autocomplete = $('.o_searchview_input');
+        stringToEvent($autocomplete, '07/15/1983');
+
+        $autocomplete.trigger($.Event('keyup', {
+            which: $.ui.keyCode.ENTER,
+            keyCode: $.ui.keyCode.ENTER,
+        }));
+
+        assert.equal($('.o_searchview_facet .o_facet_values').text().trim(), '07/15/1983',
+            'The format of the date in the facet should be in locale');
+
+        // Close Facet
+        $('.o_searchview_facet .o_facet_remove').click();
+
+        // DateTime case
+        $autocomplete = $('.o_searchview_input');
+        stringToEvent($autocomplete, '07/15/1983 00:00:00');
+
+        $autocomplete.trigger($.Event('keydown', {
+            which: $.ui.keyCode.DOWN,
+        }));
+        $autocomplete.trigger($.Event('keyup', {
+            which: $.ui.keyCode.ENTER,
+            keyCode: $.ui.keyCode.ENTER,
+        }));
+
+        assert.equal($('.o_searchview_facet .o_facet_values').text().trim(), '07/15/1983 00:00:00',
+            'The format of the datetime in the facet should be in locale');
+
+        actionManager.destroy();
+    });
+
     QUnit.test('add a custom filter works', function (assert) {
         assert.expect(1);
 
@@ -558,6 +656,223 @@ QUnit.module('Search View', {
         window.Date = RealDate;
     });
 
+    QUnit.test('Filter with JSON-parsable domain works', function (assert) {
+        assert.expect(1);
+
+        var domain = [['foo' ,'=', 'Gently Weeps']];
+        var xml_domain = JSON.stringify(domain);
+
+        var actionManager = createActionManager({
+            actions: this.actions,
+            archs: this.archs,
+            data: this.data,
+            mockRPC: function (route, args) {
+                if (route === '/web/dataset/search_read') {
+                    assert.deepEqual(args.domain, domain,
+                        'A JSON parsable xml domain should be handled just like any other');
+                }
+                return this._super.apply(this, arguments);
+            }
+        });
+
+        this.archs['partner,5,search'] =
+            '<search>'+
+                '<filter string="Foo" name="gently_weeps" domain="' + _.escape(xml_domain) + '" />' +
+            '</search>';
+        this.actions[0].search_view_id = [5, 'search'];
+        this.actions[0].context = {search_default_gently_weeps: true};
+
+        actionManager.doAction(1);
+
+        actionManager.destroy();
+    });
+
+    QUnit.test('Custom Filter datetime with equal operator, operator has been changed', function (assert) {
+        assert.expect(5);
+
+        this.data.partner.fields.date_time_field = {string: "DateTime", type: "datetime", store: true, searchable: true};
+
+        var searchReadCount = 0;
+        var actionManager = createActionManager({
+            actions: this.actions,
+            archs: this.archs,
+            data: this.data,
+            session: {
+                getTZOffset: function () {
+                    return -240;
+                },
+            },
+            mockRPC: function (route, args) {
+                if (route === '/web/dataset/search_read') {
+                    if (searchReadCount === 1) {
+                        assert.deepEqual(args.domain,
+                            [['date_time_field', '=', '2017-02-22 15:00:00']], // In UTC
+                            'domain is correct'
+                        );
+                    }
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+        // List view
+        actionManager.doAction(2);
+
+        testUtilsDom.click($('button:contains(Filters)'));
+        testUtilsDom.click($('.o_dropdown_menu .o_add_custom_filter'));
+        assert.strictEqual($('.o_dropdown_menu select.o_searchview_extended_prop_field').val(), 'date_time_field',
+            'the date_time_field should be selected in the custom filter');
+
+        assert.strictEqual($('.o_dropdown_menu select.o_searchview_extended_prop_op').val(), '=',
+            'The equal operator is selected');
+
+        // Change operator, and back
+        $('.o_dropdown_menu select.o_searchview_extended_prop_op').val('between').trigger('change');
+
+        assert.strictEqual($('.o_dropdown_menu select.o_searchview_extended_prop_op').val(), 'between',
+            'The between operator is selected');
+
+        $('.o_dropdown_menu select.o_searchview_extended_prop_op').val('=').trigger('change');
+
+        $('.o_searchview_extended_prop_value input').val('02/22/2017 11:00:00').trigger('change'); // in TZ
+
+        searchReadCount = 1;
+        testUtilsDom.click($('.o_dropdown_menu .o_apply_filter'))
+
+        assert.strictEqual($('.o_dropdown_menu .dropdown-item.selected').text().trim(), 'DateTime is equal to "02/22/2017 11:00:00"',
+            'Label of Filter is correct')
+
+        actionManager.destroy();
+    });
+
+    QUnit.test('Custom Filter datetime between operator', function (assert) {
+        assert.expect(5);
+
+        this.data.partner.fields.date_time_field = {string: "DateTime", type: "datetime", store: true, searchable: true};
+
+        var searchReadCount = 0;
+        var actionManager = createActionManager({
+            actions: this.actions,
+            archs: this.archs,
+            data: this.data,
+            session: {
+                getTZOffset: function () {
+                    return -240;
+                },
+            },
+            mockRPC: function (route, args) {
+                if (route === '/web/dataset/search_read') {
+                    if (searchReadCount === 1) {
+                        assert.deepEqual(args.domain,
+                            [
+                                '&', ['date_time_field', '>=', '2017-02-22 15:00:00'], ['date_time_field', '<=', '2017-02-22 21:00:00']  // In UTC
+                            ],
+                            'domain is correct'
+                        );
+                    }
+                }
+                return this._super.apply(this, arguments);
+            },
+        });
+        // List view
+        actionManager.doAction(2);
+
+        testUtilsDom.click($('button:contains(Filters)'));
+        testUtilsDom.click($('.o_dropdown_menu .o_add_custom_filter'));
+        assert.strictEqual($('.o_dropdown_menu select.o_searchview_extended_prop_field').val(), 'date_time_field',
+            'the date_time_field should be selected in the custom filter');
+
+        assert.strictEqual($('.o_dropdown_menu select.o_searchview_extended_prop_op').val(), '=',
+            'The equal operator is selected');
+
+        // Change operator
+        $('.o_dropdown_menu select.o_searchview_extended_prop_op').val('between').trigger('change');
+
+        assert.strictEqual($('.o_dropdown_menu select.o_searchview_extended_prop_op').val(), 'between',
+            'The between operator is selected');
+
+        $('.o_searchview_extended_prop_value input:first').val('02/22/2017 11:00:00').trigger('change'); // in TZ
+        $('.o_searchview_extended_prop_value input:last').val('02/22/2017 17:00:00').trigger('change'); // in TZ
+
+        searchReadCount = 1;
+        testUtilsDom.click($('.o_dropdown_menu .o_apply_filter'))
+
+        assert.strictEqual($('.o_dropdown_menu .dropdown-item.selected').text().trim(), 'DateTime is between "02/22/2017 11:00:00 and 02/22/2017 17:00:00"',
+            'Label of Filter is correct')
+
+        actionManager.destroy();
+    });
+
+    QUnit.module('Search View Rendering');
+
+    QUnit.test('fields and filters with groups/invisible attribute are not always rendered but activable as search default', function (assert) {
+        assert.expect(15);
+
+        var actionManager = createActionManager({
+            actions: this.actions,
+            archs: this.archs,
+            data: this.data,
+        });
+        var controlPanel = actionManager.controlPanel;
+
+        this.archs['partner,10,search'] =
+            "<search>" +
+                "<field name=\"display_name\" string=\"Foo B\" invisible=\"1\"/>" +
+                "<field name=\"foo\" string=\"Foo A\"/>" +
+                "<filter name=\"filterA\" string=\"FA\" domain=\"[]\"/>" +
+                "<filter name=\"filterB\" string=\"FB\" domain=\"[]\" invisible=\"1\"/>" +
+                "<filter name=\"filterC\" string=\"FC\" invisible=\"not context.get('show_filterC')\"/>" +
+                "<filter name=\"groupByA\" string=\"GA\" context=\"{'group_by': 'date_field:day'}\"/>" +
+                "<filter name=\"groupByB\" string=\"GB\" context=\"{'group_by': 'date_field:day'}\" invisible=\"1\"/>" +
+            "</search>"
+        this.data.partner.fields['display_name'] = {string: "Displayed name", type: 'char'};
+        this.actions[0].search_view_id = [10, 'search'];
+        this.actions[0].context = {
+            search_default_display_name: 'value',
+            search_default_filterB: true,
+            search_default_groupByB: true,
+            show_filterC: true,
+        };
+
+        actionManager.doAction(1);
+
+        // default filters/fields should be activated even if invisible
+        assert.strictEqual(controlPanel.$('.o_searchview_facet').length, 3);
+
+        controlPanel.$('span.fa-filter').click();
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("FA")').length, 1);
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("FB")').length, 0);
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("FC")').length, 1);
+        // default filter should be activated even if invisible
+        assert.strictEqual(controlPanel.$('.o_searchview_facet .o_facet_values:contains(FB)').length, 1);
+
+        controlPanel.$('button span.fa-bars').click();
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("GA")').length, 1);
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("GB")').length, 0);
+        // default filter should be activated even if invisible
+        assert.strictEqual(controlPanel.$('.o_searchview_facet .o_facet_values:contains(GB)').length, 1);
+
+        assert.strictEqual(controlPanel.$('.o_searchview_facet').eq(0).text().replace(/[\s\t]+/g, ""), "FooBvalue");
+
+        // 'a' key to filter nothing on bar
+        controlPanel.$('.o_searchview_input').val('a');
+        controlPanel.$('.o_searchview_input').trigger($.Event('keypress', { which: 65, keyCode: 65 }));
+        // the only items in autocomplete menu should be FooA: a, Filter on: FA, Groupby: GA
+        assert.strictEqual(controlPanel.$('div.o_searchview_autocomplete').text().replace(/[\s\t]+/g, ""), "SearchFooAfor:AFilteron:FAGroupby:GA");
+        controlPanel.$('.o_searchview_input').trigger($.Event('keydown', { which: $.ui.keyCode.ENTER, keyCode: $.ui.keyCode.ENTER }));
+
+        // The items in the Filters menu and the Group By menu should be the same as before
+        controlPanel.$('span.fa-filter').click();
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("FA")').length, 1);
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("FB")').length, 0);
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("FC")').length, 1);
+
+        controlPanel.$('button span.fa-bars').click();
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("GA")').length, 1);
+        assert.strictEqual(controlPanel.$('.o_menu_item a:contains("GB")').length, 0);
+
+        actionManager.destroy();
+    });
+
     QUnit.module('Favorites Menu');
 
     QUnit.test('dynamic filters are saved dynamic', function (assert) {
@@ -572,10 +887,10 @@ QUnit.module('Search View', {
                     console.log(ev.data);
                     assert.equal(
                         ev.data.filter.domain,
-                        "['&', " +
-                        "('date_field', '>=', (context_today() + relativedelta()).strftime('%Y-%m-%d')), " +
-                        "('date_field', '<', (context_today() + relativedelta(days = 1)).strftime('%Y-%m-%d'))"+
-                        "]");
+                        `["&", ` +
+                        `("date_field", ">=", (context_today() + relativedelta()).strftime("%Y-%m-%d")), ` +
+                        `("date_field", "<", (context_today() + relativedelta(days = 1)).strftime("%Y-%m-%d"))`+
+                        `]`);
                 },
             },
         });
@@ -666,7 +981,7 @@ QUnit.module('Search View', {
             data: this.data,
             intercepts: {
                 create_filter: function (ev) {
-                    assert.ok(ev.data.filter.domain === "[['foo', 'ilike', 'a']]");
+                    assert.ok(ev.data.filter.domain === `[["foo", "ilike", "a"]]`);
                 },
             },
         });
@@ -821,5 +1136,267 @@ QUnit.module('Search View', {
         actionManager.destroy();
     });
 
+    QUnit.test('save search filter in modal', function (assert) {
+        assert.expect(5);
+        this.data.partner.records.push({
+            id: 7,
+            display_name: "Partner 6",
+        }, {
+            id: 8,
+            display_name: "Partner 7",
+        }, {
+            id: 9,
+            display_name: "Partner 8",
+        }, {
+            id: 10,
+            display_name: "Partner 9",
+        });
+        this.data.partner.fields.date_field.searchable = true;
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                '<sheet>' +
+                '<group>' +
+                '<field name="bar"/>' +
+                '</group>' +
+                '</sheet>' +
+                '</form>',
+            archs: {
+                'partner,false,list': '<tree><field name="display_name"/></tree>',
+                'partner,false,search': '<search><field name="date_field"/></search>',
+            },
+            res_id: 1,
+        });
+
+        form.$buttons.find('.o_form_button_edit').click();
+        var $dropdown = form.$('.o_field_many2one input').autocomplete('widget');
+        form.$('.o_field_many2one input').click();
+        $dropdown.find('.o_m2o_dropdown_option:contains(Search)').mouseenter().click();  // Open Search More
+
+        assert.strictEqual($('tr.o_data_row').length, 9, "should display 9 records");
+
+        $('button:contains(Filters)').click();
+        $('.o_add_custom_filter:visible').click();  // Add a custom filter, datetime field is selected
+        assert.strictEqual($('.o_filter_condition select.o_searchview_extended_prop_field').val(), 'date_field',
+            "date field should be selected");
+        $('.o_apply_filter').click();
+
+        assert.strictEqual($('tr.o_data_row').length, 0, "should display 0 records");
+
+        // Save this search
+        testUtils.intercept(form, 'create_filter', function (event) {
+            assert.strictEqual(event.data.filter.name, "Awesome Test Customer Filter", "filter name should be correct");
+        });
+        $('button:contains(Favorites)').click();
+        $('.o_save_search').click();
+        var filterNameInput = $('.o_save_name .o_input[type="text"]:visible');
+        assert.strictEqual(filterNameInput.length, 1, "should display an input field for the filter name");
+        filterNameInput.val('Awesome Test Customer Filter').trigger('input');
+        $('.o_save_name button').click();
+
+        form.destroy();
+    });
+
+    QUnit.test('Customizing filter does not close the filter dropdown', function (assert) {
+        assert.expect(6);
+        var self = this;
+
+        _.each(this.data.partner.records.slice(), function (rec) {
+            var copy = _.defaults({}, rec, {id: rec.id + 10 });
+            self.data.partner.records.push(copy);
+        });
+
+        this.data.partner.fields.date_field.searchable = true;
+        var form = createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            arch: '<form string="Partners">' +
+                    '<field name="bar"/>' +
+                '</form>',
+            viewOptions: {
+                mode: 'edit',
+            },
+            archs: {
+                'partner,false,list': '<tree><field name="display_name"/></tree>',
+                'partner,false,search': '<search><field name="date_field"/></search>',
+            },
+            res_id: 1,
+            intercepts: {
+                create_filter: function (ev) {
+                    var data = ev.data;
+                    assert.strictEqual(data.filter.name, 'Fire on the bayou');
+                    assert.strictEqual(data.filter.is_default, true);
+                },
+            },
+        });
+
+        form.$('.o_input').click();
+        $('.ui-autocomplete .ui-menu-item:contains(Search More)').mouseenter().click();
+
+        var $modal = $('.modal-dialog.modal-lg');
+        assert.strictEqual($modal.length, 1, 'Modal Opened');
+
+        $modal.find('.o_search_options button:contains(Filters)').click();
+
+        var $filterDropDown = $modal.find('.o_dropdown_menu.show');
+
+        $filterDropDown.find('button:contains(Add Custom Filter)').click();
+
+        assert.ok($filterDropDown.find('button:contains(Add Custom Filter)').hasClass('o_open_menu'),
+            'The right dropdown is open');
+
+        var $filterInputs = $filterDropDown.find('.o_input');
+
+        assert.strictEqual($filterInputs.length, 3,
+            'The custom filter builder has 3 elements');
+
+        // We really are interested in the click event
+        // We do it twice on each input to make sure
+        // the parent dropdown doesn't react to any of it
+        _.each($filterInputs, function (input) {
+            var $input = $(input);
+            $input.click();
+            $input.click();
+        });
+        assert.ok($filterDropDown.is(':visible'));
+
+        // Favorites Menu
+        testUtilsDom.click($modal.find('.o_search_options button:contains(Favorites)'));
+        testUtilsDom.click($modal.find('.o_favorites_menu a:contains(Save current search)'));
+        $modal.find('.o_search_options .dropdown-menu').one('click', function (ev) {
+            // This handler is on the webClient
+            // But since the test suite doesn't have one
+            // We manually set it here
+            ev.stopPropagation();
+        });
+        $modal.find('.o_save_name:first input').val('Fire on the bayou');
+        testUtilsDom.click($modal.find('.o_save_name label:contains(Use by default)'));
+        testUtilsDom.click($modal.find('.o_save_name button:contains(Save)'));
+
+        form.destroy();
+    });
+
+    QUnit.module('Misc');
+
+    QUnit.test('search buttons visibility is stored in/retrieved from local storage', async function (assert) {
+        assert.expect(9);
+
+        var RamStorageService = AbstractStorageService.extend({
+            storage: new RamStorage(),
+        });
+
+        var actionManager = createActionManager({
+            actions: this.actions,
+            archs: this.archs,
+            data: this.data,
+            services: {
+                local_storage: RamStorageService,
+            },
+        });
+
+       testUtils.intercept(actionManager, 'call_service', function (ev) {
+            if (ev.data.service === 'local_storage' && ev.data.args[0] === 'visible_search_menu') {
+                assert.step(`${ev.data.method} ${ev.data.args.length > 1 ? ev.data.args[1] : ''}`);
+            }
+        }, true);
+
+        await actionManager.doAction(1);
+
+        assert.isVisible($('.o_search_options .o_dropdown_toggler_btn:first'));
+
+        await testUtils.dom.click($('.o_searchview_more'));
+
+        assert.isNotVisible($('.o_search_options .o_dropdown_toggler_btn:first'));
+        assert.verifySteps(['getItem ', 'getItem ', 'setItem false']);
+
+        await actionManager.doAction(2);
+
+        assert.isNotVisible($('.o_search_options .o_dropdown_toggler_btn:first'));
+        assert.verifySteps(['getItem ', 'getItem ', 'setItem false', 'getItem ']);
+
+        actionManager.destroy();
+    });
+
+    QUnit.test('update suggested filters in autocomplete menu with Japanese IME', async function (assert) {
+        assert.expect(4);
+
+        this.actions.push({
+            id: 11,
+            name: 'Partners Action 11',
+            res_model: 'partner',
+            type: 'ir.actions.act_window',
+            views: [[false, 'list']],
+            search_view_id: [11, 'search'],
+        });
+        this.archs['partner,11,search'] = `
+            <search>
+                <field name="foo"/>
+                <field name="bar"/>
+            </search>`;
+
+        const actionManager = createActionManager({
+            actions: this.actions,
+            archs: this.archs,
+            data: this.data,
+        });
+        actionManager.doAction(11);
+
+        // Simulate typing "Test" on search view.
+        const TEST = "TEST";
+        $('.o_searchview_input').val(TEST);
+        for (const char of TEST) {
+            $('.o_searchview_input').trigger($.Event('keypress', {
+                which: char.charCodeAt(0),
+                keyCode: char.charCodeAt(0),
+            }));
+        }
+        $('.o_searchview_input').trigger($.Event('keyup'));
+        await concurrency.delay(0);
+        assert.containsOnce(
+            $,
+            '.o_searchview_autocomplete',
+            "should display autocomplete dropdown menu on typing something in search view"
+        );
+        assert.strictEqual(
+            $('.o_searchview_autocomplete li:first').text(),
+            "Search Foo for: TEST",
+            `1st filter suggestion should be based on typed word "TEST"`
+        );
+
+        // Simulate soft-selection of another suggestion from IME.
+        const テスト = "テスト";
+        $('.o_searchview_input').val(テスト);
+        for (const char of テスト) {
+            $('.o_searchview_input').trigger($.Event('keypress', {
+                which: char.charCodeAt(0),
+                keyCode: char.charCodeAt(0),
+            }));
+        }
+        $('.o_searchview_input').trigger($.Event('keyup'));
+        await concurrency.delay(0);
+        assert.strictEqual(
+            $('.o_searchview_autocomplete li:first').text(),
+            "Search Foo for: テスト",
+            `1st filter suggestion should be updated with soft-selection typed word "テスト"`
+        );
+
+        // Simulate selection on suggestion item "Test" from IME.
+        $('.o_searchview_input').val("TEST");
+        const nativeInputEvent = new window.InputEvent('input', { inputType: 'insertCompositionText' });
+        const jqueryInputEvent = $.Event('input', { bubbles: true });
+        jqueryInputEvent.originalEvent = nativeInputEvent;
+        $('.o_searchview_input').trigger(jqueryInputEvent);
+        await concurrency.delay(0);
+        assert.strictEqual(
+            $('.o_searchview_autocomplete li:first').text(),
+            "Search Foo for: TEST",
+            `1st filter suggestion should finally be updated with click selection on word "TEST" from IME`
+        );
+
+        actionManager.destroy();
+    });
 });
 });

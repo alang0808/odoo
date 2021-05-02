@@ -240,6 +240,12 @@ var FieldMany2One = AbstractField.extend({
      */
     _bindAutoComplete: function () {
         var self = this;
+        // avoid ignoring autocomplete="off" by obfuscating placeholder, see #30439
+        if ($.browser.chrome && this.$input.attr('placeholder')) {
+            this.$input.attr('placeholder', function (index, val) {
+                return val.split('').join('\ufeff');
+            });
+        }
         this.$input.autocomplete({
             source: function (req, resp) {
                 _.each(self._autocompleteSources, function (source) {
@@ -564,6 +570,7 @@ var FieldMany2One = AbstractField.extend({
             initial_ids: ids ? _.map(ids, function (x) { return x[0]; }) : undefined,
             initial_view: view,
             disable_multiple_selection: true,
+            no_create: !self.can_create,
             on_selected: function (records) {
                 self.reinitialize(records[0]);
                 self.activate();
@@ -740,6 +747,36 @@ var ListFieldMany2One = FieldMany2One.extend({
      */
     _renderReadonly: function () {
         this.$el.text(this.m2o_value);
+    },
+
+    //--------------------------------------------------------------------------
+    // Handlers
+    //--------------------------------------------------------------------------
+
+    /**
+     * In case the focus is lost from a mousedown, we want to prevent the click occuring on the
+     * following mouseup since it might trigger some unwanted list functions.
+     * If it's not the case, we want to remove the added handler on the next mousedown.
+     * @see list_editable_renderer._onWindowClicked()
+     *
+     * @override
+     * @private
+     */
+    _onInputFocusout: function () {
+        if (this.can_create && this.floating) {
+            // In case the focus out is due to a mousedown, we want to prevent the next click
+            var attachedEvents = ['click', 'mousedown'];
+            var stopNextClick = (function (ev) {
+                ev.stopPropagation();
+                attachedEvents.forEach(function (eventName) {
+                    window.removeEventListener(eventName, stopNextClick, true);
+                });
+            }).bind(this);
+            attachedEvents.forEach(function (eventName) {
+                window.addEventListener(eventName, stopNextClick, true);
+            });
+        }
+        return this._super.apply(this, arguments);
     },
 });
 
@@ -1106,6 +1143,13 @@ var FieldX2Many = AbstractField.extend({
         }
         return def.then(function () {
             self.pager.updateState({ size: self.value.count });
+            var newEval = self._evalColumnInvisibleFields();
+            if (!_.isEqual(self.currentColInvisibleFields, newEval)) {
+                self.currentColInvisibleFields = newEval;
+                self.renderer.updateState(self.value, {
+                    columnInvisibleFields: self.currentColInvisibleFields,
+                });
+            }
         });
     },
     /**
@@ -1831,6 +1875,7 @@ var FieldMany2ManyTags = AbstractField.extend({
     fieldsToFetch: {
         display_name: {type: 'char'},
     },
+    limit: 1000,
 
     /**
      * @constructor
@@ -1843,6 +1888,7 @@ var FieldMany2ManyTags = AbstractField.extend({
         }
 
         this.colorField = this.nodeOptions.color_field;
+        this.hasDropdown = false;
     },
 
     //--------------------------------------------------------------------------
@@ -1909,6 +1955,7 @@ var FieldMany2ManyTags = AbstractField.extend({
         return {
             colorField: this.colorField,
             elements: elements,
+            hasDropdown: this.hasDropdown,
             readonly: this.mode === "readonly",
         };
     },
@@ -2020,6 +2067,14 @@ var FormFieldMany2ManyTags = FieldMany2ManyTags.extend({
         'mousedown .o_colorpicker a': '_onUpdateColor',
         'mousedown .o_colorpicker .o_hide_in_kanban': '_onUpdateColor',
     }),
+    /**
+     * @override
+     */
+    init: function () {
+        this._super.apply(this, arguments);
+
+        this.hasDropdown = !!this.colorField;
+    },
 
     //--------------------------------------------------------------------------
     // Handlers
@@ -2152,17 +2207,27 @@ var FieldMany2ManyCheckBoxes = AbstractField.extend({
     /**
      * @private
      */
-    _render: function () {
+    _renderCheckboxes: function () {
         var self = this;
-        this._super.apply(this, arguments);
+        this.m2mValues = this.record.specialData[this.name];
+        this.$el.html(qweb.render(this.template, {widget: this}));
         _.each(this.value.res_ids, function (id) {
             self.$('input[data-record-id="' + id + '"]').prop('checked', true);
         });
     },
     /**
+     * @override
+     * @private
+     */
+    _renderEdit: function () {
+        this._renderCheckboxes();
+    },
+    /**
+     * @override
      * @private
      */
     _renderReadonly: function () {
+        this._renderCheckboxes();
         this.$("input").prop("disabled", true);
     },
 
@@ -2284,7 +2349,7 @@ var FieldStatus = AbstractField.extend({
 var FieldSelection = AbstractField.extend({
     template: 'FieldSelection',
     specialData: "_fetchSpecialRelation",
-    supportedFieldTypes: ['selection', 'many2one'],
+    supportedFieldTypes: ['selection'],
     events: _.extend({}, AbstractField.prototype.events, {
         'change': '_onChange',
     }),
@@ -2441,6 +2506,27 @@ var FieldRadio = FieldSelection.extend({
         return true;
     },
 
+    /**
+     * Returns the currently-checked radio button, or the first one if no radio
+     * button is checked.
+     *
+     * @override
+     */
+    getFocusableElement: function () {
+        var checked = this.$("[checked='true']");
+        return checked.length ? checked : this.$("[data-index='0']");
+    },
+
+    /**
+     * Associates the 'for' attribute to the radiogroup, instead of the selected
+     * radio button.
+     *
+     * @param {string} id
+     */
+    setIDForLabel: function (id) {
+        this.$el.attr('id', id);
+    },
+
     //--------------------------------------------------------------------------
     // Private
     //--------------------------------------------------------------------------
@@ -2458,11 +2544,14 @@ var FieldRadio = FieldSelection.extend({
             currentValue = this.value;
         }
         this.$el.empty();
+        this.$el.attr('role', 'radiogroup')
+            .attr('aria-label', this.string);
         _.each(this.values, function (value, index) {
             self.$el.append(qweb.render('FieldRadio.button', {
                 checked: value[0] === currentValue,
                 id: self.unique_id + '_' + value[0],
                 index: index,
+                name: self.unique_id,
                 value: value,
             }));
         });
@@ -2584,10 +2673,12 @@ var FieldSelectionBadge = FieldSelection.extend({
  * a FieldMany2one for its value.
  * Its intern representation is similar to the many2one (a datapoint with a
  * `name_get` as data).
+ * Note that there is some logic to support char field because of one use in our
+ * codebase, but this use should be removed along with this note.
  */
 var FieldReference = FieldMany2One.extend({
     specialData: "_fetchSpecialReference",
-    supportedFieldTypes: ['char', 'reference'],
+    supportedFieldTypes: ['reference'],
     template: 'FieldReference',
     events: _.extend({}, FieldMany2One.prototype.events, {
         'change select': '_onSelectionChange',

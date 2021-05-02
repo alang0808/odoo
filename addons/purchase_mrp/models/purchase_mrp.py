@@ -15,11 +15,13 @@ class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
 
     def _update_received_qty(self):
-        super(PurchaseOrderLine, self)._update_received_qty()
+        kit_lines = self.env['purchase.order.line']
         for line in self.filtered(lambda x: x.move_ids and x.product_id.id not in x.move_ids.mapped('product_id').ids):
             bom = self.env['mrp.bom']._bom_find(product=line.product_id, company_id=line.company_id.id)
             if bom and bom.type == 'phantom':
                 line.qty_received = line._get_bom_delivered(bom=bom)
+                kit_lines += line
+        super(PurchaseOrderLine, self - kit_lines)._update_received_qty()
 
     def _get_bom_delivered(self, bom=False):
         self.ensure_one()
@@ -27,7 +29,8 @@ class PurchaseOrderLine(models.Model):
         # In the case of a kit, we need to check if all components are shipped. Since the BOM might
         # have changed, we don't compute the quantities but verify the move state.
         if bom:
-            bom_delivered = all([move.state == 'done' for move in self.move_ids])
+            moves = self.move_ids.filtered(lambda m: m.picking_id and m.picking_id.state != 'cancel')
+            bom_delivered = all([move.state == 'done' for move in moves])
             if bom_delivered:
                 return self.product_qty
             else:

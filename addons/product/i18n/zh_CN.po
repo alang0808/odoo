@@ -3,50 +3,42 @@
 # * product
 # 
 # Translators:
-# Martin Trigaux, 2018
-# Jeffery CHEN Fan <jeffery9@gmail.com>, 2018
-# liAnGjiA <liangjia@qq.com>, 2018
 # e2f_cn c5 <jarvisn@ecinnovations.com>, 2018
 # ChinaMaker <liuct@chinamaker.net>, 2018
 # 老窦 北京 <2662059195@qq.com>, 2018
-# Jackie Zhang <jzh@odoo.com>, 2018
-# guohuadeng <guohuadeng@hotmail.com>, 2018
+# JZH-Odoo <jzh@odoo.com>, 2018
 # bower Guo <124358678@qq.com>, 2018
 # roye w <159820@qq.com>, 2018
-# 广州救火 <7017511@qq.com>, 2018
 # diaojiaolou <124412206@qq.com>, 2018
-# snow wang <147156565@qq.com>, 2018
 # THL <wt39181819@gmail.com>, 2018
 # v2exerer <9010446@qq.com>, 2018
 # 山西清水欧度(QQ:54773801) <54773801@qq.com>, 2018
 # Ryan Zhang <so_happy_boy@hotmail.com>, 2018
+# keecome <7017511@qq.com>, 2018
+# snow wang <147156565@qq.com>, 2018
+# inspur qiuguodong <qiuguodong@inspur.com>, 2018
+# Martin Trigaux, 2018
+# 苏州远鼎 <tiexinliu@126.com>, 2018
+# Maie <m@maie.name>, 2019
+# F4NNIU <sparkamax@gmail.com>, 2019
+# Jerry Pan <panjianyu@inspur.com>, 2019
+# guohuadeng <guohuadeng@hotmail.com>, 2020
+# Jeffery CHEN Fan <jeffery9@gmail.com>, 2020
+# liAnGjiA <liangjia@qq.com>, 2021
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:49+0000\n"
-"PO-Revision-Date: 2018-10-08 06:49+0000\n"
-"Last-Translator: Ryan Zhang <so_happy_boy@hotmail.com>, 2018\n"
+"POT-Creation-Date: 2019-03-29 10:09+0000\n"
+"PO-Revision-Date: 2018-08-24 09:23+0000\n"
+"Last-Translator: liAnGjiA <liangjia@qq.com>, 2021\n"
 "Language-Team: Chinese (China) (https://www.transifex.com/odoo/teams/41243/zh_CN/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Language: zh_CN\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-
-#. module: product
-#: code:addons/product/models/product_template.py:469
-#, python-format
-msgid ""
-"\n"
-"                The number of variants to generate is too high.\n"
-"                You should either not generate variants for each combination or generate them on demand from the sales order.\n"
-"                To do so, open the form view of attributes and change the mode of *Create Variants*."
-msgstr ""
-"\n"
-"要生成的变体数量太多。\n"
-" 您不应为每个组合生成变体，也不应根据销售订单生成变量。\n"
-" 为此，请打开属性的表单视图并更改* Create Variants *的模式。"
 
 #. module: product
 #: selection:product.pricelist.item,applied_on:0
@@ -102,6 +94,11 @@ msgid "2 year"
 msgstr "2 年"
 
 #. module: product
+#: model_terms:ir.ui.view,arch_db:product.product_pricelist_view_kanban
+msgid "<i class=\"fa fa-money\" role=\"img\" aria-label=\"Currency\" title=\"Currency\"/>"
+msgstr "<i class=\"fa fa-money\" role=\"img\" aria-label=\"Currency\" title=\"Currency\"/>"
+
+#. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_pricelist_item_form_view
 msgid ""
 "<span attrs=\"{'invisible':[('base', '!=', 'list_price')]}\">Public Price  -  </span>\n"
@@ -113,19 +110,15 @@ msgstr ""
 "                            <span attrs=\"{'invisible':[('base', '!=', 'pricelist')]}\">其他价格表  -  </span>"
 
 #. module: product
-#: model_terms:ir.ui.view,arch_db:product.product_pricelist_item_form_view
-msgid "<span class=\"o_form_label\">New Price =</span>"
-msgstr "<span class=\"o_form_label\">新价格=</span>"
-
-#. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_category_form_view
 msgid "<span class=\"o_stat_text\"> Products</span>"
 msgstr "<span class=\"o_stat_text\"> 产品</span>"
 
 #. module: product
-#: model_terms:ir.ui.view,arch_db:product.product_variant_easy_edit_view
-msgid "<span>kg</span>"
-msgstr "<span>公斤</span>"
+#: model_terms:ir.ui.view,arch_db:product.report_simple_barcode
+#: model_terms:ir.ui.view,arch_db:product.report_simple_label
+msgid "<span class=\"text-muted\">No barcode available</span>"
+msgstr "<span class=\"text-muted\">没有可用的条码</span>"
 
 #. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_template_form_view
@@ -205,7 +198,7 @@ msgid ""
 "A consumable product is a product for which stock is not managed.\n"
 "A service is a non-material product you provide."
 msgstr ""
-"可库存商品是指在仓库中受存量管控的产品。 要使用此项目你必须安装仓库模块。\n"
+"可库存商品是指在库存中受存量管控的产品。 要使用此项目你必须安装库存模块。\n"
 "可消耗商品是指不受库存量管控的产品。\n"
 "服务是指你提供的非产品类服务业务。"
 
@@ -213,7 +206,7 @@ msgstr ""
 #: model:product.product,name:product.product_product_25
 #: model:product.template,name:product.product_product_25_product_template
 msgid "Acoustic Bloc Screens"
-msgstr "声学集团屏幕"
+msgstr "声学Bloc屏幕"
 
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__message_needaction
@@ -505,7 +498,7 @@ msgstr "计算价格"
 #: model:product.product,name:product.product_product_11b
 #: model:product.template,name:product.product_product_11b_product_template
 msgid "Conference Chair"
-msgstr "会议室椅子"
+msgstr "会议室席位"
 
 #. module: product
 #: model:ir.model,name:product.model_res_config_settings
@@ -557,6 +550,12 @@ msgstr "右转角桌子"
 #: selection:product.pricelist.item,base:0
 msgid "Cost"
 msgstr "成本"
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__cost_currency_id
+#: model:ir.model.fields,field_description:product.field_product_template__cost_currency_id
+msgid "Cost Currency"
+msgstr "成本币种"
 
 #. module: product
 #: model:ir.model.fields,help:product.field_product_template__standard_price
@@ -918,7 +917,7 @@ msgstr "显示产品列表时，给出序列号"
 #. module: product
 #: selection:product.pricelist.item,applied_on:0
 msgid "Global"
-msgstr "全球"
+msgstr "全局"
 
 #. module: product
 #: code:addons/product/models/product_template.py:32
@@ -1299,6 +1298,11 @@ msgid "Never"
 msgstr "从不"
 
 #. module: product
+#: model_terms:ir.ui.view,arch_db:product.product_pricelist_item_form_view
+msgid "New Price ="
+msgstr "新价格 ="
+
+#. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__activity_date_deadline
 #: model:ir.model.fields,field_description:product.field_product_template__activity_date_deadline
 msgid "Next Activity Deadline"
@@ -1521,6 +1525,7 @@ msgstr "价格表"
 #: model:ir.model.fields,field_description:product.field_product_product__pricelist_id
 #: model:ir.model.fields,field_description:product.field_product_template__pricelist_id
 #: model:ir.model.fields,field_description:product.field_res_partner__property_product_pricelist
+#: model:ir.model.fields,field_description:product.field_res_users__property_product_pricelist
 #: model_terms:ir.ui.view,arch_db:product.product_template_form_view
 msgid "Pricelist"
 msgstr "价格表"
@@ -1621,7 +1626,7 @@ msgstr "产品属性值"
 #. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_template_attribute_line_form
 msgid "Product Attribute and Values"
-msgstr "产品属性以及值"
+msgstr "产品属性和值"
 
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__attribute_line_ids
@@ -2054,7 +2059,7 @@ msgstr ""
 #. module: product
 #: model:product.attribute.value,name:product.product_attribute_value_1
 msgid "Steel"
-msgstr "铁"
+msgstr "钢铁"
 
 #. module: product
 #: selection:product.template,type:0
@@ -2071,6 +2076,26 @@ msgstr "储藏纸箱"
 #: model:ir.model,name:product.model_product_supplierinfo
 msgid "Supplier Pricelist"
 msgstr "供应商价格表"
+
+#. module: product
+#: model:ir.model.fields,help:product.field_product_product__valid_archived_variant_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_existing_variant_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_product_attribute_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_product_attribute_value_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_product_attribute_value_wnva_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_product_attribute_wnva_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_product_template_attribute_line_ids
+#: model:ir.model.fields,help:product.field_product_product__valid_product_template_attribute_line_wnva_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_archived_variant_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_existing_variant_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_product_attribute_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_product_attribute_value_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_product_attribute_value_wnva_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_product_attribute_wnva_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_product_template_attribute_line_ids
+#: model:ir.model.fields,help:product.field_product_template__valid_product_template_attribute_line_wnva_ids
+msgid "Technical compute"
+msgstr "技术计算"
 
 #. module: product
 #: model:ir.model.fields,help:product.field_product_product__pricelist_id
@@ -2126,7 +2151,19 @@ msgid ""
 msgstr "此类别下的产品数量（不考虑子类别）"
 
 #. module: product
-#: code:addons/product/models/product_attribute.py:55
+#: code:addons/product/models/product_template.py:480
+#, python-format
+msgid ""
+"The number of variants to generate is too high. You should either not "
+"generate variants for each combination or generate them on demand from the "
+"sales order. To do so, open the form view of attributes and change the mode "
+"of *Create Variants*."
+msgstr ""
+"要生成的变体数量太多。 您不应为每个组合生成变体，也不应根据销售订单生成变量。 为此，请打开属性的表单视图并更改* Create Variants "
+"*的模式。"
+
+#. module: product
+#: code:addons/product/models/product_attribute.py:85
 #, python-format
 msgid ""
 "The operation cannot be completed:\n"
@@ -2139,6 +2176,12 @@ msgstr ""
 #: model:ir.model.fields,help:product.field_product_supplierinfo__price
 msgid "The price to purchase a product"
 msgstr "该价格购买产品"
+
+#. module: product
+#: code:addons/product/models/product_template.py:943
+#, python-format
+msgid "The product template is archived so no combination is possible."
+msgstr "产品模板已经存档，所以无法合并。"
 
 #. module: product
 #: model:ir.model.fields,help:product.field_product_product__lst_price
@@ -2162,6 +2205,24 @@ msgstr "这体积是m3"
 #: model:ir.model.fields,help:product.field_product_template__weight
 msgid "The weight of the contents in Kg, not including any packaging, etc."
 msgstr "以Kg(公斤)表示内容物重量，不包含任何包装等。"
+
+#. module: product
+#: code:addons/product/models/product_template.py:1010
+#, python-format
+msgid "There are no possible combination."
+msgstr "没有可用的组合"
+
+#. module: product
+#: code:addons/product/models/product_template.py:1005
+#, python-format
+msgid "There are no remaining closest combination."
+msgstr "没有接近的组合"
+
+#. module: product
+#: code:addons/product/models/product_template.py:963
+#, python-format
+msgid "There are no remaining possible combination."
+msgstr "没有可用的组合"
 
 #. module: product
 #: sql_constraint:product.attribute.value:0
@@ -2195,19 +2256,32 @@ msgstr "这是所有属性额外价格的总和"
 #. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_template_form_view
 msgid "This note is only for internal purposes."
-msgstr "这张备注只用于内部用途。"
+msgstr "本说明仅供内部使用。"
 
 #. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_template_form_view
 msgid "This note will show up on sales orders & invoices."
-msgstr "这条备注将显示在销售订单和发票上。"
+msgstr "此注释将显示在销售订单和发票上。"
 
 #. module: product
 #: model:ir.model.fields,help:product.field_res_partner__property_product_pricelist
+#: model:ir.model.fields,help:product.field_res_users__property_product_pricelist
 msgid ""
 "This pricelist will be used, instead of the default one, for sales to the "
 "current partner"
 msgstr "这价格表将会被使用,取代默认值,用之出售给当前伙伴."
+
+#. module: product
+#: code:addons/product/models/uom_uom.py:16
+#, python-format
+msgid ""
+"This rounding precision is higher than the Decimal Accuracy (%s digits).\n"
+"This may cause inconsistencies in computations.\n"
+"Please set a precision between %s and 1."
+msgstr ""
+"此舍入精度高于小数精度(%s 位).\n"
+"这可能会导致计算不一致。\n"
+"请将精度设置在 %s 与 1 之间。"
 
 #. module: product
 #: model:ir.model.fields,help:product.field_product_supplierinfo__product_code
@@ -2333,9 +2407,62 @@ msgid "Use pricelists to adapt your price per customers"
 msgstr "为每个客户使用价格表来适配您的价格"
 
 #. module: product
+#: model_terms:ir.ui.view,arch_db:product.product_template_form_view
+msgid "Valid"
+msgstr "有效"
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_archived_variant_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_archived_variant_ids
+msgid "Valid Archived Variants"
+msgstr ""
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_existing_variant_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_existing_variant_ids
+msgid "Valid Existing Variants"
+msgstr ""
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_product_template_attribute_line_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_product_template_attribute_line_ids
+msgid "Valid Product Attribute Lines"
+msgstr "验证产品规格值"
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_product_template_attribute_line_wnva_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_product_template_attribute_line_wnva_ids
+msgid "Valid Product Attribute Lines Without No Variant Attributes"
+msgstr ""
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_product_attribute_value_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_product_attribute_value_ids
+msgid "Valid Product Attribute Values"
+msgstr "有效的产品属性值"
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_product_attribute_value_wnva_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_product_attribute_value_wnva_ids
+msgid "Valid Product Attribute Values Without No Variant Attributes"
+msgstr ""
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_product_attribute_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_product_attribute_ids
+msgid "Valid Product Attributes"
+msgstr "有效的产品属性"
+
+#. module: product
+#: model:ir.model.fields,field_description:product.field_product_product__valid_product_attribute_wnva_ids
+#: model:ir.model.fields,field_description:product.field_product_template__valid_product_attribute_wnva_ids
+msgid "Valid Product Attributes Without No Variant Attributes"
+msgstr ""
+
+#. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_supplierinfo_form_view
 msgid "Validity"
-msgstr "验证"
+msgstr "有效"
 
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_attribute_value__name
@@ -2457,6 +2584,13 @@ msgid "Volume"
 msgstr "体积"
 
 #. module: product
+#: code:addons/product/models/decimal_precision.py:33
+#: code:addons/product/models/uom_uom.py:15
+#, python-format
+msgid "Warning!"
+msgstr "警告!"
+
+#. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__website_message_ids
 #: model:ir.model.fields,field_description:product.field_product_template__website_message_ids
 msgid "Website Messages"
@@ -2471,6 +2605,7 @@ msgstr "网站沟通记录"
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__weight
 #: model:ir.model.fields,field_description:product.field_product_template__weight
+#: model:product.uom.categ,name:product.product_uom_categ_kgm
 msgid "Weight"
 msgstr "重量"
 
@@ -2501,7 +2636,7 @@ msgstr "重量单位"
 #: model:ir.model.fields,field_description:product.field_product_product__weight_uom_name
 #: model:ir.model.fields,field_description:product.field_product_template__weight_uom_name
 msgid "Weight unit of measure label"
-msgstr "重量单位计量标签"
+msgstr "重量计量单位标签"
 
 #. module: product
 #: model_terms:ir.ui.view,arch_db:product.product_variant_easy_edit_view
@@ -2514,21 +2649,43 @@ msgid "White"
 msgstr "白"
 
 #. module: product
+#: code:addons/product/models/decimal_precision.py:34
+#, python-format
+msgid ""
+"You are setting a Decimal Accuracy less precise than the UOMs:\n"
+"%s\n"
+"This may cause inconsistencies in computations.\n"
+"Please increase the rounding of those units of measure, or the digits of this Decimal Accuracy."
+msgstr ""
+"您设置的小数精度低于计量单位:\n"
+"%s\n"
+"这可能会导致计算不一致。\n"
+"请增加这些度量单位的四舍五入，或此小数精度的位数。"
+
+#. module: product
+#: code:addons/product/models/product_attribute.py:46
+#, python-format
+msgid ""
+"You are trying to change the type of an attribute value still referenced on "
+"at least one product template: %s"
+msgstr ""
+
+#. module: product
 #: model_terms:ir.actions.act_window,help:product.product_pricelist_action2
 msgid ""
 "You can assign pricelists to your customers or select one when creating a "
 "new sales quotation."
-msgstr "你可以给你的客户分配价目表，或者在创建一个新的销售报价时选择一个。"
+msgstr "您可以为客户分配价目表，也可以在创建新的销售报价时选择一个。"
 
 #. module: product
-#: code:addons/product/models/product_pricelist.py:437
+#: code:addons/product/models/product_pricelist.py:442
 #, python-format
 msgid ""
 "You cannot assign the Main Pricelist as Other Pricelist in PriceList Item"
-msgstr "不能将主价目表作为价目表中的其他价目表指定。"
+msgstr "您不能将主要价目表分配为PriceList项目中的其他价格表"
 
 #. module: product
-#: code:addons/product/models/product.py:54
+#: code:addons/product/models/product.py:57
 #, python-format
 msgid "You cannot create recursive categories."
 msgstr "不能创建递归的类别"
@@ -2542,10 +2699,16 @@ msgid ""
 msgstr "您不能将“帐户”的小数精度定义为大于公司主要货币的舍入因子"
 
 #. module: product
+#: code:addons/product/models/product_template.py:332
+#, python-format
+msgid "You cannot define two attribute lines for the same attribute."
+msgstr "相同属性不能重复定义"
+
+#. module: product
 #: code:addons/product/models/product_attribute.py:79
 #, python-format
 msgid "You cannot use this attribute with the following value."
-msgstr "不能使用以下值使用此属性。"
+msgstr "变体属性值未录入，或不能将此属性与以下值配合使用。"
 
 #. module: product
 #: code:addons/product/wizard/product_price_list.py:26
@@ -2611,6 +2774,11 @@ msgstr "例如 Odoo企业订阅"
 #: model_terms:ir.ui.view,arch_db:product.product_pricelist_view
 msgid "e.g. USD Retailers"
 msgstr "例如USD零售商"
+
+#. module: product
+#: model_terms:ir.ui.view,arch_db:product.product_template_form_view
+msgid "from"
+msgstr "从"
 
 #. module: product
 #: model:product.product,weight_uom_name:product.consu_delivery_01
@@ -2707,3 +2875,8 @@ msgstr "产品模板"
 #: model_terms:ir.ui.view,arch_db:product.product_supplierinfo_form_view
 msgid "to"
 msgstr "到"
+
+#. module: product
+#: model_terms:ir.ui.view,arch_db:product.product_template_form_view
+msgid "until"
+msgstr ""

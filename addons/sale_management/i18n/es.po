@@ -3,22 +3,28 @@
 # * sale_management
 # 
 # Translators:
-# Martin Trigaux, 2018
-# Pedro M. Baeza <pedro.baeza@gmail.com>, 2018
 # Luis M. Ontalba <luis.martinez@tecnativa.com>, 2018
-# e2f_EPV Translator <e2f_EPV@outlook.com>, 2018
-# e2f_es_ t7 <e2f_es_t7@outlook.com>, 2018
-# e2f_es_ t8 <e2f_es_t8@outlook.com>, 2018
-# Rubi Navarro <ren@odoo.com>, 2018
+# 966ff43e6966712895a590e7320ca288, 2018
+# 36700cd705c35e1852bdffcd0b296648, 2018
+# 715cd7e95e9ee8a7f9785bf3e53bc76f, 2018
+# renodoo <ren@odoo.com>, 2018
 # Cristopher Cravioto <ccr@odoo.com>, 2018
+# Martin Trigaux, 2018
 # Cristian Salamea <ovnicraft@gmail.com>, 2018
+# gabriumaa <gabriel.umana@delfixcr.com>, 2019
+# Rick Hunter <rick_hunter_ec@yahoo.com>, 2019
+# Miguel Orueta <mo@landoo.es>, 2019
+# Nacho Fortea <nfortea@planeasoluciones.com>, 2019
+# Osiris Román <osiris.roman@yachaytech.edu.ec>, 2020
+# Pedro M. Baeza <pedro.baeza@gmail.com>, 2020
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:48+0000\n"
-"PO-Revision-Date: 2018-10-08 06:48+0000\n"
-"Last-Translator: Cristian Salamea <ovnicraft@gmail.com>, 2018\n"
+"POT-Creation-Date: 2019-08-08 13:50+0000\n"
+"PO-Revision-Date: 2018-08-24 09:24+0000\n"
+"Last-Translator: Pedro M. Baeza <pedro.baeza@gmail.com>, 2020\n"
 "Language-Team: Spanish (https://www.transifex.com/odoo/teams/41243/es/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -35,25 +41,17 @@ msgstr "% descuento"
 #. module: sale_management
 #: model:sale.order.template.line,name:sale_management.sale_order_template_line_1
 msgid "4 Person Desk"
-msgstr ""
-
-#. module: sale_management
-#: model_terms:ir.ui.view,arch_db:sale_management.res_config_settings_view_form
-msgid ""
-"<em attrs=\"{'invisible': "
-"[('module_sale_quotation_builder','=',False)]}\">Warning: this option will "
-"install the Website app.</em>"
-msgstr ""
+msgstr "Escritorio para 4 personas"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_portal_content_inherit_sale_management
 msgid "<span>Discount</span>"
-msgstr ""
+msgstr "<span>Descuento</span>"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.report_saleorder_document_inherit_sale_management
 msgid "<span>Optional Products</span>"
-msgstr ""
+msgstr "<span>Productos Opcionales</span>"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_template__active
@@ -69,7 +67,7 @@ msgstr "Agregar nota"
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_form_quote
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_template_view_form
 msgid "Add a product"
-msgstr ""
+msgstr "Agregar un producto"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_template_view_form
@@ -79,12 +77,12 @@ msgstr "Agregar una sección"
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_portal_content_inherit_sale_management
 msgid "Add one"
-msgstr ""
+msgstr "Agregue uno"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_portal_content_inherit_sale_management
 msgid "Add to cart"
-msgstr ""
+msgstr "Agregar al carrito"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_form_quote
@@ -94,7 +92,7 @@ msgstr "Añadir a las líneas de pedido"
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_digest_digest__kpi_all_sale_total
 msgid "All Sales"
-msgstr ""
+msgstr "Todas las ventas"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_template_view_search
@@ -110,6 +108,16 @@ msgstr "Valores de atributo"
 #: model:ir.ui.menu,name:sale_management.menu_product_attribute_action
 msgid "Attributes"
 msgstr "Atributos"
+
+#. module: sale_management
+#: code:addons/sale_management/models/sale_order_template.py:39
+#, python-format
+msgid ""
+"Before archiving \"%s\" please select another default template in the "
+"settings."
+msgstr ""
+"Antes de archivar \"%s\" seleccione otra plantilla predeterminada en la "
+"configuración."
 
 #. module: sale_management
 #: model:ir.model,name:sale_management.model_res_config_settings
@@ -134,12 +142,12 @@ msgstr "Crear Factura"
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.res_config_settings_view_form
 msgid "Create standardized offers with default products"
-msgstr ""
+msgstr "Crear plantillas de ofertas con productos predeterminados"
 
 #. module: sale_management
 #: model_terms:ir.actions.act_window,help:sale_management.sale_order_template_action
 msgid "Create your quotation template"
-msgstr ""
+msgstr "Cree su plantilla de presupuesto"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_option__create_uid
@@ -173,8 +181,13 @@ msgstr "Descripción"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.res_config_settings_view_form
-msgid "Design your quotation templates using building blocks<br/>"
+msgid ""
+"Design your quotation templates using building blocks<br/>\n"
+"                            <em attrs=\"{'invisible': [('module_sale_quotation_builder','=',False)]}\">Warning: this option will install the Website app.</em>"
 msgstr ""
+"Diseñe sus plantillas de ofertas utilizando bloques de diseño<br/>\n"
+"<em attrs=\"{'invisible': [('module_sale_quotation_builder','=',False)]}\">Aviso: esta opción instalará el módulo de sitio web.</em>\n"
+" "
 
 #. module: sale_management
 #: model:ir.model,name:sale_management.model_digest_digest
@@ -215,11 +228,14 @@ msgid ""
 "Forbidden product, unit price, quantity, and UoM on non-accountable sale "
 "quote line"
 msgstr ""
+"Prohibido incluir producto, precio unitario, cantidad o UdM en una línea de "
+"pedido de venta virtual"
 
 #. module: sale_management
 #: model:ir.model.fields,help:sale_management.field_sale_order_option__sequence
 msgid "Gives the sequence order when displaying a list of optional products."
 msgstr ""
+"Da el orden de secuencia al mostrar una lista de productos opcionales."
 
 #. module: sale_management
 #: model:ir.model.fields,help:sale_management.field_sale_order_template_line__sequence
@@ -248,7 +264,7 @@ msgstr ""
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_digest_digest__kpi_all_sale_total_value
 msgid "Kpi All Sale Total Value"
-msgstr ""
+msgstr "indicador clave de rendimiento Valor total de venta total"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_option____last_update
@@ -289,6 +305,8 @@ msgstr "Líneas"
 #: sql_constraint:sale.order.template.line:0
 msgid "Missing required product and UoM on accountable sale quote line."
 msgstr ""
+"Falta el producto y/o la unidad de medida en la línea de pedido de venta "
+"completa."
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_template_view_form
@@ -305,7 +323,7 @@ msgstr ""
 #. module: sale_management
 #: model:sale.order.template.option,name:sale_management.sale_order_template_option_1
 msgid "Office Chair"
-msgstr ""
+msgstr "Silla de oficina"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_template__require_payment
@@ -359,7 +377,7 @@ msgstr "Cantidad"
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_res_config_settings__module_sale_quotation_builder
 msgid "Quotation Builder"
-msgstr ""
+msgstr "Constructor de presupuestos"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_template__number_of_days
@@ -378,7 +396,7 @@ msgstr "Plantilla de presupuesto"
 #. module: sale_management
 #: model:ir.model,name:sale_management.model_sale_order_template_line
 msgid "Quotation Template Line"
-msgstr ""
+msgstr "Linea de plantilla de presupuesto"
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_template_view_form
@@ -388,7 +406,7 @@ msgstr "Líneas de plantilla de presupuesto"
 #. module: sale_management
 #: model:ir.model,name:sale_management.model_sale_order_template_option
 msgid "Quotation Template Option"
-msgstr ""
+msgstr "Opción de plantilla de presupuesto"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_template_line__sale_order_template_id
@@ -418,7 +436,7 @@ msgstr "Eliminar"
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_portal_content_inherit_sale_management
 msgid "Remove one"
-msgstr ""
+msgstr "Quitar uno"
 
 #. module: sale_management
 #: model:ir.model.fields,help:sale_management.field_sale_order_template__require_signature
@@ -426,13 +444,15 @@ msgid ""
 "Request a online signature to the customer in order to confirm orders "
 "automatically."
 msgstr ""
+"Solicite una firma en línea al cliente para confirmar los pedidos "
+"automáticamente."
 
 #. module: sale_management
 #: model:ir.model.fields,help:sale_management.field_sale_order_template__require_payment
 msgid ""
 "Request an online payment to the customer in order to confirm orders "
 "automatically."
-msgstr ""
+msgstr "Solicitar pago en línea para confirmar pedidos"
 
 #. module: sale_management
 #: model:ir.model,name:sale_management.model_sale_order_option
@@ -484,7 +504,7 @@ msgstr "Secuencia"
 #. module: sale_management
 #: model:ir.model.fields,help:sale_management.field_sale_order_template_line__display_type
 msgid "Technical field for UX purpose."
-msgstr ""
+msgstr "Campo técnico para propósitos UX"
 
 #. module: sale_management
 #: model:ir.model.fields,field_description:sale_management.field_sale_order_template__note
@@ -536,12 +556,25 @@ msgid ""
 "                Send these quotes by email and let your customers sign online.\n"
 "                Use cross-selling and discounts to push and boost your sales."
 msgstr ""
+"Use plantillas para crear presupuestos profesionales y pulidos en minutos.\n"
+"                Envíe estos presupuestos por correo electrónico y deje que sus clientes firmen en línea.\n"
+"                Utilice las ventas cruzadas y los descuentos para impulsar y aumentar sus ventas."
 
 #. module: sale_management
-#: code:addons/sale_management/models/sale_order.py:178
+#: code:addons/sale_management/models/sale_order.py:198
 #, python-format
 msgid "You cannot add options to a confirmed order."
 msgstr "No puede añadir opciones a un pedido confirmado."
+
+#. module: sale_management
+#: code:addons/sale_management/models/sale_order_template.py:90
+#, python-format
+msgid ""
+"You cannot change the type of a sale quote line. Instead you should delete "
+"the current line and create a new line of the proper type."
+msgstr ""
+"No puede cambiar la línea del presupuesto de venta. En vez de eso, debería "
+"borrar la línea actual y crear una nueva línea del tipo correcto."
 
 #. module: sale_management
 #: model_terms:ir.ui.view,arch_db:sale_management.sale_order_template_view_form

@@ -674,6 +674,233 @@ class TestTemplating(ViewCase):
             second.get('data-oe-id'),
             "second should come from the extension view")
 
+    def test_branding_inherit_replace_node(self):
+        view1 = self.View.create({
+            'name': "Base view",
+            'type': 'qweb',
+            'arch': """<hello>
+                <world></world>
+                <world><t t-esc="hello"/></world>
+                <world></world>
+            </hello>
+            """
+        })
+        self.View.create({
+            'name': "Extension",
+            'type': 'qweb',
+            'inherit_id': view1.id,
+            'arch': """<xpath expr="/hello/world[1]" position="replace">
+                <world>Is a ghetto</world>
+                <world>Wonder when I'll find paradise</world>
+            </xpath>
+            """
+        })
+
+        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        # First world - has been replaced by inheritance
+        [initial] = arch.xpath('/hello[1]/world[1]')
+        self.assertEqual(
+            '/xpath/world[1]',
+            initial.get('data-oe-xpath'),
+            'Inherited nodes have correct xpath')
+
+        # Second world added by inheritance
+        [initial] = arch.xpath('/hello[1]/world[2]')
+        self.assertEqual(
+            '/xpath/world[2]',
+            initial.get('data-oe-xpath'),
+            'Inherited nodes have correct xpath')
+
+        # Third world - is not editable
+        [initial] = arch.xpath('/hello[1]/world[3]')
+        self.assertFalse(
+            initial.get('data-oe-xpath'),
+            'node containing t-esc is not branded')
+
+        # The most important assert
+        # Fourth world - should have a correct oe-xpath, which is 3rd in main view
+        [initial] = arch.xpath('/hello[1]/world[4]')
+        self.assertEqual(
+            '/hello[1]/world[3]',
+            initial.get('data-oe-xpath'),
+            "The node's xpath position should be correct")
+
+    def test_branding_inherit_replace_node2(self):
+        view1 = self.View.create({
+            'name': "Base view",
+            'type': 'qweb',
+            'arch': """<hello>
+                <world></world>
+                <world><t t-esc="hello"/></world>
+                <world></world>
+            </hello>
+            """
+        })
+        self.View.create({
+            'name': "Extension",
+            'type': 'qweb',
+            'inherit_id': view1.id,
+            'arch': """<xpath expr="/hello/world[1]" position="replace">
+                <war>Is a ghetto</war>
+                <world>Wonder when I'll find paradise</world>
+            </xpath>
+            """
+        })
+
+        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        [initial] = arch.xpath('/hello[1]/war[1]')
+        self.assertEqual(
+            '/xpath/war',
+            initial.get('data-oe-xpath'),
+            'Inherited nodes have correct xpath')
+
+        # First world: from inheritance
+        [initial] = arch.xpath('/hello[1]/world[1]')
+        self.assertEqual(
+            '/xpath/world',
+            initial.get('data-oe-xpath'),
+            'Inherited nodes have correct xpath')
+
+        # Second world - is not editable
+        [initial] = arch.xpath('/hello[1]/world[2]')
+        self.assertFalse(
+            initial.get('data-oe-xpath'),
+            'node containing t-esc is not branded')
+
+        # The most important assert
+        # Third world - should have a correct oe-xpath, which is 3rd in main view
+        [initial] = arch.xpath('/hello[1]/world[3]')
+        self.assertEqual(
+            '/hello[1]/world[3]',
+            initial.get('data-oe-xpath'),
+            "The node's xpath position should be correct")
+
+    def test_branding_inherit_top_t_field(self):
+        view1 = self.View.create({
+            'name': "Base view",
+            'type': 'qweb',
+            'arch': """
+                <hello>
+                    <world></world>
+                    <world t-field="a"/>
+                    <world></world>
+                    <world></world>
+                </hello>
+            """
+        })
+        self.View.create({
+            'name': "Extension",
+            'type': 'qweb',
+            'inherit_id': view1.id,
+            'arch': """
+                <xpath expr="/hello/world[3]" position="after">
+                    <world t-field="b"/>
+                </xpath>
+            """
+        })
+        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        # First t-field should have an indication of xpath
+        [node] = arch.xpath('//*[@t-field="a"]')
+        self.assertEqual(
+            node.get('data-oe-field-xpath'),
+            '/hello[1]/world[2]',
+            'First t-field has indication of xpath through dedicated attribute')
+
+        # Second t-field, from inheritance, should also have an indication of xpath
+        [node] = arch.xpath('//*[@t-field="b"]')
+        self.assertEqual(
+            node.get('data-oe-field-xpath'),
+            '/xpath/world',
+            'Inherited t-field has indication of xpath through dedicated attribute')
+
+        # The most important assert
+        # The last world xpath should not have been impacted by the t-field from inheritance
+        [node] = arch.xpath('//world[last()]')
+        self.assertEqual(
+            node.get('data-oe-xpath'),
+            '/hello[1]/world[4]',
+            "The node's xpath position should be correct")
+
+        # Also test inherit via non-xpath t-field node, direct children of data,
+        # is not impacted by the feature
+        self.View.create({
+            'name': "Extension",
+            'type': 'qweb',
+            'inherit_id': view1.id,
+            'arch': """
+                <data>
+                    <world t-field="a" position="replace">
+                        <world t-field="z"/>
+                    </world>
+                </data>
+            """
+        })
+        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        node = arch.xpath('//world')[1]
+        self.assertEqual(
+            node.get('t-field'),
+            'z',
+            "The node has properly been replaced")
+
+    def test_branding_primary_inherit(self):
+        view1 = self.View.create({
+            'name': "Base view",
+            'type': 'qweb',
+            'arch': """<root>
+                <item order="1"/>
+            </root>
+            """
+        })
+        view2 = self.View.create({
+            'name': "Extension",
+            'type': 'qweb',
+            'mode': 'primary',
+            'inherit_id': view1.id,
+            'arch': """<xpath expr="//item" position="after">
+                <item order="2"/>
+            </xpath>
+            """
+        })
+
+        arch_string = view2.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        [initial] = arch.xpath('//item[@order=1]')
+        self.assertEqual(
+            initial.get('data-oe-id'),
+            str(view1.id),
+            "initial should come from the root view")
+        self.assertEqual(
+            initial.get('data-oe-xpath'),
+            '/root[1]/item[1]',
+            "initial's xpath should be within the inherited view only")
+
+        [second] = arch.xpath('//item[@order=2]')
+        self.assertEqual(
+            second.get('data-oe-id'),
+            str(view2.id),
+            "second should come from the extension view")
+        self.assertEqual(
+            second.get('data-oe-xpath'),
+            '/xpath/item',
+            "second xpath should be on the inheriting view only")
+
     def test_branding_distribute_inner(self):
         """ Checks that the branding is correctly distributed within a view
         extension
@@ -723,6 +950,42 @@ class TestTemplating(ViewCase):
                 })
             )
         )
+
+    def test_branding_attribute_groups(self):
+        view = self.View.create({
+            'name': "Base View",
+            'type': 'qweb',
+            'arch': """<root>
+                <item groups="base.group_no_one"/>
+            </root>""",
+        })
+
+        arch_string = view.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        self.assertEqual(arch, E.root(E.item({
+            'groups': 'base.group_no_one',
+            'data-oe-model': 'ir.ui.view',
+            'data-oe-id': str(view.id),
+            'data-oe-field': 'arch',
+            'data-oe-xpath': '/root[1]/item[1]',
+        })))
+
+    def test_call_no_branding(self):
+        view = self.View.create({
+            'name': "Base View",
+            'type': 'qweb',
+            'arch': """<root>
+                <item><span t-call="foo"/></item>
+            </root>""",
+        })
+
+        arch_string = view.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch = etree.fromstring(arch_string)
+        self.View.distribute_branding(arch)
+
+        self.assertEqual(arch, E.root(E.item(E.span({'t-call': "foo"}))))
 
     def test_esc_no_branding(self):
         view = self.View.create({
@@ -1549,6 +1812,41 @@ class TestViews(ViewCase):
                 'arch': arch % ('', '<field name="model"/>'),
             })
 
+    @mute_logger('odoo.addons.base.models.ir_ui_view')
+    def test_check_xml_on_reenable(self):
+        view1 = self.View.create({
+            'name': 'valid _check_xml',
+            'model': 'ir.ui.view',
+            'arch': """
+                <form string="View">
+                    <field name="name"/>
+                </form>
+            """,
+        })
+        view2 = self.View.create({
+            'name': 'valid _check_xml',
+            'model': 'ir.ui.view',
+            'inherit_id': view1.id,
+            'active': False,
+            'arch': """
+                <field name="foo" position="after">
+                    <field name="bar"/>
+                </field>
+            """
+        })
+        with self.assertRaises(ValidationError):
+            view2.active = True
+
+        # Re-enabling the view and correcting it at the same time should not raise the `_check_xml` constraint.
+        view2.write({
+            'active': True,
+            'arch': """
+                <field name="name" position="after">
+                    <span>bar</span>
+                </field>
+            """,
+        })
+
 
 class ViewModeField(ViewCase):
     """
@@ -1573,6 +1871,12 @@ class ViewModeField(ViewCase):
         })
         self.assertEqual(view2.mode, 'extension')
 
+        view2.write({'inherit_id': None})
+        self.assertEqual(view2.mode, 'primary')
+
+        view2.write({'inherit_id': view.id})
+        self.assertEqual(view2.mode, 'extension')
+
     @mute_logger('odoo.sql_db')
     def testModeExplicit(self):
         view = self.View.create({
@@ -1585,6 +1889,7 @@ class ViewModeField(ViewCase):
             'arch': '<qweb/>'
         })
         self.assertEqual(view.mode, 'primary')
+        self.assertEqual(view2.mode, 'primary')
 
         with self.assertRaises(IntegrityError):
             self.View.create({
@@ -1635,6 +1940,27 @@ class ViewModeField(ViewCase):
         })
 
         view.write({'mode': 'primary'})
+
+    def testChangeInheritOfPrimary(self):
+        """
+        A primary view with an inherit_id must remain primary when changing the inherit_id
+        """
+        base1 = self.View.create({
+            'inherit_id': None,
+            'arch': '<qweb/>',
+        })
+        base2 = self.View.create({
+            'inherit_id': None,
+            'arch': '<qweb/>',
+        })
+        view = self.View.create({
+            'mode': 'primary',
+            'inherit_id': base1.id,
+            'arch': '<qweb/>',
+        })
+        self.assertEqual(view.mode, 'primary')
+        view.write({'inherit_id': base2.id})
+        self.assertEqual(view.mode, 'primary')
 
 
 class TestDefaultView(ViewCase):

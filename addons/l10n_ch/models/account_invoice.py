@@ -4,7 +4,7 @@
 import re
 
 from odoo import models, fields, api, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 from odoo.tools.float_utils import float_split_str
 from odoo.tools.misc import mod10r
 
@@ -26,7 +26,7 @@ class AccountInvoice(models.Model):
     l10n_ch_isr_valid = fields.Boolean(compute='_compute_l10n_ch_isr_valid', help='Boolean value. True iff all the data required to generate the ISR are present')
 
     l10n_ch_isr_sent = fields.Boolean(defaut=False, help="Boolean value telling whether or not the ISR corresponding to this invoice has already been printed or sent by mail.")
-    l10n_ch_currency_name = fields.Char(related='currency_id.name', readonly=False, string="Currency Name", help="The name of this invoice's currency") #This field is used in the "invisible" condition field of the 'Print ISR' button.
+    l10n_ch_currency_name = fields.Char(related='currency_id.name', readonly=True, string="Currency Name", help="The name of this invoice's currency") #This field is used in the "invisible" condition field of the 'Print ISR' button.
 
     @api.depends('partner_bank_id.bank_id.l10n_ch_postal_eur', 'partner_bank_id.bank_id.l10n_ch_postal_chf')
     def _compute_l10n_ch_isr_postal(self):
@@ -38,6 +38,10 @@ class AccountInvoice(models.Model):
             trailing_cipher = isr_postal[-1]
             middle_part = re.sub('^0*', '', middle_part)
             return currency_code + '-' + middle_part + '-' + trailing_cipher
+
+        def _format_isr_postal_scanline(isr_postal):
+            # format the isr for scanline
+            return isr_postal[:2] + isr_postal[2:-1].rjust(6, '0') + isr_postal[-1:]
 
         for record in self:
             if record.partner_bank_id and record.partner_bank_id.bank_id:
@@ -51,7 +55,7 @@ class AccountInvoice(models.Model):
                     continue
 
                 if isr_postal:
-                    record.l10n_ch_isr_postal = isr_postal
+                    record.l10n_ch_isr_postal = _format_isr_postal_scanline(isr_postal)
                     record.l10n_ch_isr_postal_formatted = _format_isr_postal(isr_postal)
 
     @api.depends('number', 'partner_bank_id.l10n_ch_postal')
@@ -87,7 +91,7 @@ class AccountInvoice(models.Model):
                 record.l10n_ch_isr_number = mod10r(invoice_issuer_ref + internal_ref)
                 record.l10n_ch_isr_number_spaced = _space_isr_number(record.l10n_ch_isr_number)
 
-    @api.depends('currency_id.name', 'amount_total', 'partner_bank_id.bank_id', 'number', 'partner_bank_id.l10n_ch_postal', 'partner_bank_id.bank_id.l10n_ch_postal_eur', 'partner_bank_id.bank_id.l10n_ch_postal_chf')
+    @api.depends('currency_id.name', 'residual', 'partner_bank_id.bank_id', 'number', 'partner_bank_id.l10n_ch_postal', 'partner_bank_id.bank_id.l10n_ch_postal_eur', 'partner_bank_id.bank_id.l10n_ch_postal_chf')
     def _compute_l10n_ch_isr_optical_line(self):
         """ The optical reading line of the ISR looks like this :
                 left>isr_ref+ bank_ref>
@@ -113,7 +117,7 @@ class AccountInvoice(models.Model):
                     currency_code = '01'
                 elif record.currency_id.name == 'EUR':
                     currency_code = '03'
-                units, cents = float_split_str(record.amount_total, 2)
+                units, cents = float_split_str(record.residual, 2)
                 amount_to_display = units + cents
                 amount_ref = amount_to_display.zfill(10)
                 left = currency_code + amount_ref
@@ -133,15 +137,23 @@ class AccountInvoice(models.Model):
                 record.l10n_ch_currency_name in ['EUR', 'CHF']
 
     def split_total_amount(self):
-       """ Splits the total amount of this invoice in two parts, using the dot as
-       a separator, and taking two precision digits (always displayed).
-       These two parts are returned as the two elements of a tuple, as strings
-       to print in the report.
+        """ Splits the total amount of this invoice in two parts, using the dot as
+        a separator, and taking two precision digits (always displayed).
+        These two parts are returned as the two elements of a tuple, as strings
+        to print in the report.
 
-       This function is needed on the model, as it must be called in the report
-       template, which cannot reference static functions
-       """
-       return float_split_str(self.amount_total, 2)
+        This function is needed on the model, as it must be called in the report
+        template, which cannot reference static functions
+        """
+        return float_split_str(self.residual, 2)
+
+    def display_swiss_qr_code(self):
+        """ DEPRECATED FUNCTION: not used anymore. QR-bills can now always
+        be generated, with a dedicated report
+        """
+        self.ensure_one()
+        qr_parameter = self.env['ir.config_parameter'].sudo().get_param('l10n_ch.print_qrcode')
+        return self.partner_id.country_id.code == 'CH' and qr_parameter
 
     def isr_print(self):
         """ Triggered by the 'Print ISR' button.
@@ -157,6 +169,30 @@ class AccountInvoice(models.Model):
                                    - define its bank\n
                                    - associate this bank with a postal reference for the currency used in this invoice\n
                                    - fill the 'bank account' field of the invoice with the postal to be used to receive the related payment. A default account will be automatically set for all invoices created after you defined a postal account for your company."""))
+
+    def can_generate_qr_bill(self):
+        """ Returns True iff the invoice can be used to generate a QR-bill.
+        """
+        self.ensure_one()
+
+        # First part of this condition is due to fix commit https://github.com/odoo/odoo/commit/719f087b1b5be5f1f276a0f87670830d073f6ef4
+        # We do that to ensure not to try generating QR-bills for modules that haven't been
+        # updated yet. Not doing that could crash when trying to send an invoice by mail,
+        # as the QR report data haven't been loaded.
+        # TODO: remove this in master
+        return not self.env.ref('l10n_ch.l10n_ch_swissqr_template').inherit_id \
+               and self.partner_bank_id.validate_swiss_code_arguments(self.partner_bank_id.currency_id, self.partner_id, self.reference)
+
+    def print_ch_qr_bill(self):
+        """ Triggered by the 'Print QR-bill' button.
+        """
+        self.ensure_one()
+
+        if not self.can_generate_qr_bill():
+            raise UserError(_("Cannot generate the QR-bill. Please check you have configured the address of your company and debtor. If you are using a QR-IBAN, also check the invoice's payment reference is a QR reference."))
+
+        self.l10n_ch_isr_sent = True
+        return self.env.ref('l10n_ch.l10n_ch_qr_report').report_action(self)
 
     def action_invoice_sent(self):
         """ Overridden. Triggered by the 'send by mail' button.
@@ -174,3 +210,24 @@ class AccountInvoice(models.Model):
         if self.env.context.get('l10n_ch_mark_isr_as_sent'):
             self.filtered(lambda inv: not inv.l10n_ch_isr_sent).write({'l10n_ch_isr_sent': True})
         return super(AccountInvoice, self.with_context(mail_post_autofollow=True)).message_post(**kwargs)
+
+    @api.multi
+    def _get_computed_reference(self):
+        self.ensure_one()
+        if self.company_id.invoice_reference_type == 'ch_isr':
+            return self.l10n_ch_isr_number
+        else:
+            return super()._get_computed_reference()
+
+    @api.model
+    def space_qrr_reference(self, qrr_ref):
+        """ Makes the provided QRR reference human-friendly, spacing its elements
+        by blocks of 5 from right to left.
+        """
+        spaced_qrr_ref = ''
+        i = len(qrr_ref) # i is the index after the last index to consider in substrings
+        while i > 0:
+            spaced_qrr_ref = qrr_ref[max(i-5, 0) : i] + ' ' + spaced_qrr_ref
+            i -= 5
+
+        return spaced_qrr_ref

@@ -90,10 +90,10 @@ img.o_forum_avatar_big {
 }
 
 .oe_answer_true {
-    color: #3c763d;
+    color: #3c763d !important;
 
     &:hover {
-        color: #4D964E;
+        color: #4D964E !important;
     }
 }
 
@@ -201,4 +201,8 @@ button.btn-link.text-muted {
     .o_forum_tooltip_header {
         min-height: 75px;
     }
+}
+
+.website_forum {
+    margin-bottom: $spacer;
 }

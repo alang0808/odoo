@@ -10,6 +10,7 @@ var FormController = require('web.FormController');
 var FormRenderer = require('web.FormRenderer');
 var FormView = require('web.FormView');
 var pyUtils = require('web.py_utils');
+var session  = require('web.session');
 var viewRegistry = require('web.view_registry');
 
 var _t = core._t;
@@ -246,10 +247,23 @@ var BoardRenderer = FormRenderer.extend({
                     // the action does not exist anymore
                     return $.when();
                 }
-                var context = pyUtils.eval('context', new Context(params.context, action.context));
+                var evalContext = new Context(params.context).eval();
+                if (evalContext.group_by && evalContext.group_by.length === 0) {
+                    delete evalContext.group_by;
+                }
+                // tz and lang are saved in the custom view
+                // override the https://github.com/odoo/odoo/pull/28408language to take the current one
+                var rawContext = new Context(action.context, evalContext, {lang: session.user_context.lang});
+                var context = pyUtils.eval('context', rawContext, evalContext);
                 var domain = params.domain || pyUtils.eval('domain', action.domain || '[]', action.context);
-                var viewType = params.viewType || action.views[0][1];
-                var view = _.find(action.views, function (descr) {
+
+                // When creating a view, `action.views` is expected to be an array of dicts, while
+                // '/web/action/load' returns an array of arrays.
+                action._views = action.views;
+                action.views = $.map(action.views, function (view) { return {viewID: view[0], type: view[1]}});
+
+                var viewType = params.viewType || action._views[0][1];
+                var view = _.find(action._views, function (descr) {
                     return descr[1] === viewType;
                 }) || [false, viewType];
                 return self.loadViews(action.res_model, context, [view])
@@ -266,7 +280,7 @@ var BoardRenderer = FormRenderer.extend({
                     });
                     return view.getController(self).then(function (controller) {
                         self._boardFormViewIDs[controller.handle] = _.first(
-                            _.find(action.views, function (descr) {
+                            _.find(action._views, function (descr) {
                                 return descr[1] === 'form';
                             })
                         );
@@ -328,7 +342,7 @@ var BoardRenderer = FormRenderer.extend({
             self.defs.push(self._createController({
                 $node: $html.find('.oe_action[data-id=' + action.id + '] .oe_content'),
                 actionID: _.str.toNumber(action.name),
-                context: new Context(action.context),
+                context: action.context,
                 domain: Domain.prototype.stringToArray(action.domain, {}),
                 viewType: action.view_mode,
             }));

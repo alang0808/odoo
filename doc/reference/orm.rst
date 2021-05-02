@@ -445,6 +445,28 @@ stored::
 
     nickname = fields.Char(related='user_id.partner_id.name', store=True)
 
+.. warning::
+
+    You cannot chain :class:`~odoo.fields.Many2many` or :class:`~odoo.fields.One2many` fields in ``related`` fields dependencies.
+
+    ``related`` can be used to refer to a :class:`~odoo.fields.One2many` or
+    :class:`~odoo.fields.Many2many` field on another model on the
+    condition that it's done through a ``Many2one`` relation on the current model.
+    ``One2many`` and ``Many2many`` are not supported and the results will not be
+    aggregated correctly::
+
+      m2o_id = fields.Many2one()
+      m2m_ids = fields.Many2many()
+      o2m_ids = fields.One2many()
+
+      # Supported
+      d_ids = fields.Many2many(related="m2o_id.m2m_ids")
+      e_ids = fields.One2many(related="m2o_id.o2m_ids")
+
+      # Won't work: use a custom Many2many computed field instead
+      f_ids = fields.Many2many(related="m2m_ids.m2m_ids")
+      g_ids = fields.One2many(related="o2m_ids.o2m_ids")
+
 onchange: updating UI on the fly
 --------------------------------
 
@@ -700,12 +722,41 @@ Model Reference
 
     .. attribute:: _parent_store
 
-        Alongside :attr:`~.parent_left` and :attr:`~.parent_right`, sets up a
-        `nested set <http://en.wikipedia.org/wiki/Nested_set_model>`_  to
-        enable fast hierarchical queries on the records of the current model
+        Alongside a :attr:`~.parent_path` field, sets up an indexed storage
+        of the tree structure of records, to enable faster hierarchical queries
+        on the records of the current model using the ``child_of`` and
+        ``parent_of`` domain operators.
         (default: ``False``)
 
         :type: bool
+
+    .. attribute:: _parent_name
+
+      Alternative field to use as parent, used by indexed storage of the tree structure of records
+      (default: ``'parent_id'``)
+
+         :type: str
+
+    .. attribute:: _date_name
+
+      Alternative field to use for default calendar view
+      (default: ``'date'``)
+
+         :type: str     
+
+    .. attribute:: _fold_name
+
+      Alternative field to determine folded groups in kanban views
+      (default: ``'fold'``)
+
+         :type: str 
+
+    .. attribute:: _translate
+
+      False disables translations export for this model
+      (default: ``True``)
+
+         :type: bool
 
     .. rubric:: CRUD
 
@@ -825,17 +876,17 @@ Model Reference
     .. attribute:: parent_id
 
         used to order records in a tree structure and enables the ``child_of``
-        operator in domains
+        and ``parent_of`` operators in domains
 
         :type: :class:`~odoo.fields.Many2one`
 
-    .. attribute:: parent_left
+    .. attribute:: parent_path
 
-        used with :attr:`~._parent_store`, allows faster tree structure access
+        used to store an index of the tree structure when :attr:`~._parent_store`
+        is set to True - must be declared with ``index=True`` for proper operation.
 
-    .. attribute:: parent_right
+        :type: :class:`~odoo.fields.Char`
 
-        see :attr:`~.parent_left`
 
 .. _reference/orm/decorators:
 
@@ -1010,20 +1061,22 @@ them (e.g. to change their default sort order):
 
 .. literalinclude:: ../../odoo/addons/test_documentation_examples/extension.py
     :language: python
-    :lines: 5-
+    :lines: 7-
 
 .. literalinclude:: ../../odoo/addons/test_documentation_examples/tests/test_extension.py
     :language: python
-    :lines: 8,13
+    :lines: 10,15
 
 will yield:
 
 .. literalinclude:: ../../odoo/addons/test_documentation_examples/tests/test_extension.py
     :language: text
-    :lines: 11
+    :lines: 13
 
-.. note:: it will also yield the various :ref:`automatic fields
-          <reference/orm/model/automatic>` unless they've been disabled
+.. note::
+
+    It will also yield the various :ref:`automatic fields
+    <reference/orm/model/automatic>` unless they've been disabled
 
 Delegation
 ----------
@@ -1057,6 +1110,11 @@ and it's possible to write directly on the delegated field:
 
 .. warning:: when using delegation inheritance, methods are *not* inherited,
              only fields
+
+.. warning::
+
+    * `_inherits` is more or less implemented, avoid it if you can;
+    * chained `_inherits` is essentially not implemented, we cannot guarantee anything on the final behavior.
 
 .. _reference/orm/domains:
 
@@ -1115,6 +1173,12 @@ A domain is a list of criteria, each criterion being a triple (either a
         Takes the semantics of the model into account (i.e following the
         relationship field named by
         :attr:`~odoo.models.Model._parent_name`).
+    ``parent_of``
+        is a parent (ascendant) of a ``value`` record.
+
+        Takes the semantics of the model into account (i.e following the
+        relationship field named by
+        :attr:`~odoo.models.Model._parent_name`). 
 
 ``value``
     variable type, must be comparable (through ``operator``) to the named

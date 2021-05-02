@@ -37,7 +37,7 @@ tour.register('sale_tour', {
     in_modal: false,
 }, {
     trigger: ".o_field_x2many_list_row_add > a",
-    extra_trigger: ".o_sale_order",
+    extra_trigger: ".o_field_many2one[name='partner_id'] .o_external_button",
     content: _t("Click here to add some products or services to your quotation."),
     position: "bottom",
 }, {
@@ -46,7 +46,7 @@ tour.register('sale_tour', {
     content: _t("Select a product, or create a new one on the fly."),
     position: "right",
     run: function (actions) {
-        actions.text("DESK0001", this.$anchor.find("input"));
+        actions.text("Chair", this.$anchor.find("input"));
     },
 }, {
     trigger: ".ui-menu-item > a",
@@ -58,12 +58,12 @@ tour.register('sale_tour', {
             $('.modal-dialog:has(div.o_dialog_warning) footer.modal-footer .btn-primary').trigger('click');
         }
     },
-    id: "quotation_product_selected",
 }, {
     trigger: ".o_form_button_save",
     extra_trigger: ".o_sale_order",
     content: _t("Once your quotation is ready, you can save, print or send it by email."),
     position: "right",
+    id: "form_button_save_clicked"
 }, {
     trigger: ".o_sale_print",
     extra_trigger: ".o_sale_order.o_form_readonly",

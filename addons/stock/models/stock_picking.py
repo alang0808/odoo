@@ -4,9 +4,11 @@
 from collections import namedtuple
 import json
 import time
+from datetime import date
 
 from itertools import groupby
-from odoo import api, fields, models, _
+from odoo import api, fields, models, _, SUPERUSER_ID
+from odoo.osv import expression
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from odoo.tools.float_utils import float_compare, float_is_zero, float_round
 from odoo.exceptions import UserError
@@ -120,7 +122,7 @@ class PickingType(models.Model):
         domain = []
         if name:
             domain = ['|', ('name', operator, name), ('warehouse_id.name', operator, name)]
-        picking_ids = self._search(domain + args, limit=limit, access_rights_uid=name_get_uid)
+        picking_ids = self._search(expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid)
         return self.browse(picking_ids).name_get()
 
     @api.onchange('code')
@@ -294,7 +296,7 @@ class Picking(models.Model):
                                'initial demand. When the picking is done this allows '
                                'changing the done quantities.')
     # Used to search on pickings
-    product_id = fields.Many2one('product.product', 'Product', related='move_lines.product_id', readonly=False)
+    product_id = fields.Many2one('product.product', 'Product', related='move_lines.product_id', readonly=True)
     show_operations = fields.Boolean(compute='_compute_show_operations')
     show_lots_text = fields.Boolean(compute='_compute_show_lots_text')
     has_tracking = fields.Boolean(compute='_compute_has_tracking')
@@ -438,6 +440,15 @@ class Picking(models.Model):
             else:
                 picking.show_validate = True
 
+    @api.onchange('partner_id')
+    def onchange_partner_id(self):
+        if self.partner_id:
+            picking_id = isinstance(self.id, int) and self.id or getattr(self, '_origin', False) and self._origin.id
+            if picking_id:
+                moves = self.env['stock.move'].search([('picking_id', '=', picking_id)])
+                for move in moves:
+                    move.write({'partner_id': self.partner_id.id})
+
     @api.onchange('picking_type_id', 'partner_id')
     def onchange_picking_type(self):
         if self.picking_type_id:
@@ -484,8 +495,8 @@ class Picking(models.Model):
         # TDE FIXME: what ?
         # As the on_change in one2many list is WIP, we will overwrite the locations on the stock moves here
         # As it is a create the format will be a list of (0, 0, dict)
-        if vals.get('move_lines') and vals.get('location_id') and vals.get('location_dest_id'):
-            for move in vals['move_lines']:
+        if vals.get('location_id') and vals.get('location_dest_id'):
+            for move in vals.get('move_lines', []) + vals.get('move_ids_without_package', []):
                 if len(move) == 3 and move[0] == 0:
                     move[2]['location_id'] = vals['location_id']
                     move[2]['location_dest_id'] = vals['location_dest_id']
@@ -522,7 +533,7 @@ class Picking(models.Model):
     @api.multi
     def unlink(self):
         self.mapped('move_lines')._action_cancel()
-        self.mapped('move_lines').unlink() # Checks if moves are not done
+        self.with_context(prefetch_fields=False).mapped('move_lines').unlink()  # Checks if moves are not done
         return super(Picking, self).unlink()
 
     # Actions
@@ -531,6 +542,10 @@ class Picking(models.Model):
     @api.one
     def action_assign_owner(self):
         self.move_line_ids.write({'owner_id': self.owner_id.id})
+
+    def action_assign_partner(self):
+        for picking in self:
+            picking.move_lines.write({'partner_id': picking.partner_id.id})
 
     @api.multi
     def do_print_picking(self):
@@ -619,7 +634,7 @@ class Picking(models.Model):
                                                     'picking_type_id': pick.picking_type_id.id,
                                                    })
                     ops.move_id = new_move.id
-                    new_move._action_confirm()
+                    new_move = new_move._action_confirm()
                     todo_moves |= new_move
                     #'qty_done': ops.qty_done})
         todo_moves._action_done()
@@ -645,6 +660,12 @@ class Picking(models.Model):
             all_in = False
         return all_in
 
+    def _get_entire_pack_location_dest(self, move_line_ids):
+        location_dest_ids = move_line_ids.mapped('location_dest_id')
+        if len(location_dest_ids) > 1:
+            return False
+        return location_dest_ids.id
+
     @api.multi
     def _check_entire_pack(self):
         """ This function check if entire packs are moved in the picking"""
@@ -653,13 +674,13 @@ class Picking(models.Model):
             for pack in origin_packages:
                 if picking._check_move_lines_map_quant_package(pack):
                     package_level_ids = picking.package_level_ids.filtered(lambda pl: pl.package_id == pack)
-                    move_lines_to_pack = picking.move_line_ids.filtered(lambda ml: ml.package_id == pack)
+                    move_lines_to_pack = picking.move_line_ids.filtered(lambda ml: ml.package_id == pack and not ml.result_package_id)
                     if not package_level_ids:
                         self.env['stock.package_level'].create({
                             'picking_id': picking.id,
                             'package_id': pack.id,
                             'location_id': pack.location_id.id,
-                            'location_dest_id': picking.move_line_ids.filtered(lambda ml: ml.package_id == pack).mapped('location_dest_id')[:1].id,
+                            'location_dest_id': self._get_entire_pack_location_dest(move_lines_to_pack) or picking.location_dest_id.id,
                             'move_line_ids': [(6, 0, move_lines_to_pack.ids)]
                         })
                         move_lines_to_pack.write({
@@ -677,11 +698,14 @@ class Picking(models.Model):
                             'result_package_id': pack.id,
                             'package_level_id': package_level_ids[0].id,
                         })
+                        for pl in package_level_ids:
+                            pl.location_dest_id = self._get_entire_pack_location_dest(pl.move_line_ids) or picking.location_dest_id.id
 
     @api.multi
     def do_unreserve(self):
         for picking in self:
             picking.move_lines._do_unreserve()
+            picking.package_level_ids.filtered(lambda p: not p.move_ids).unlink()
 
     @api.multi
     def button_validate(self):
@@ -692,7 +716,7 @@ class Picking(models.Model):
         # If no lots when needed, raise error
         picking_type = self.picking_type_id
         precision_digits = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        no_quantities_done = all(float_is_zero(move_line.qty_done, precision_digits=precision_digits) for move_line in self.move_line_ids)
+        no_quantities_done = all(float_is_zero(move_line.qty_done, precision_digits=precision_digits) for move_line in self.move_line_ids.filtered(lambda m: m.state not in ('done', 'cancel')))
         no_reserved_quantities = all(float_is_zero(move_line.product_qty, precision_rounding=move_line.product_uom_id.rounding) for move_line in self.move_line_ids)
         if no_reserved_quantities and no_quantities_done:
             raise UserError(_('You cannot validate a transfer if no quantites are reserved nor done. To force the transfer, switch in edit more and encode the done quantities.'))
@@ -886,6 +910,8 @@ class Picking(models.Model):
 
         documents = {}
         for (parent, responsible), moves in grouped_moves:
+            if not parent:
+                continue
             moves = list(moves)
             moves = self.env[moves[0]._name].concat(*moves)
             # Get the note
@@ -918,14 +944,15 @@ class Picking(models.Model):
         """
         for (parent, responsible), rendering_context in documents.items():
             note = render_method(rendering_context)
-
-            self.env['mail.activity'].create({
-                'activity_type_id': self.env.ref('mail.mail_activity_data_warning').id,
-                'note': note,
-                'user_id': responsible.id,
-                'res_id': parent.id,
-                'res_model_id': self.env['ir.model'].search([('model', '=', parent._name)], limit=1).id,
-            })
+            # FIXME workaround for purchase_requistion not inheriting from mail.activity.mixin
+            if not hasattr(parent, 'activity_schedule'):
+                continue
+            parent.activity_schedule(
+                'mail.mail_activity_data_warning',
+                date.today(),
+                note=note,
+                user_id=responsible.id or SUPERUSER_ID
+            )
 
     def _log_less_quantities_than_expected(self, moves):
         """ Log an activity on picking that follow moves. The note
@@ -962,7 +989,11 @@ class Picking(models.Model):
             return self.env.ref('stock.exception_on_picking').render(values=values)
 
         documents = self._log_activity_get_documents(moves, 'move_dest_ids', 'DOWN', _keys_in_sorted, _keys_in_groupby)
+        documents = self._less_quantities_than_expected_add_documents(moves, documents)
         self._log_activity(_render_note_exception_quantity, documents)
+
+    def _less_quantities_than_expected_add_documents(self, moves, documents):
+        return documents
 
     def _get_impacted_pickings(self, moves):
         """ This function is used in _log_less_quantities_than_expected
@@ -1027,7 +1058,14 @@ class Picking(models.Model):
                         done_to_keep = ml.qty_done
                         new_move_line = ml.copy(
                             default={'product_uom_qty': 0, 'qty_done': ml.qty_done})
-                        ml.write({'product_uom_qty': quantity_left_todo, 'qty_done': 0.0})
+                        vals = {'product_uom_qty': quantity_left_todo, 'qty_done': 0.0}
+                        if pick.picking_type_id.code == 'incoming':
+                            if ml.lot_id:
+                                vals['lot_id'] = False
+                            if ml.lot_name:
+                                vals['lot_name'] = False
+
+                        ml.write(vals)
                         new_move_line.write({'product_uom_qty': done_to_keep})
                         move_lines_to_pack |= new_move_line
 
@@ -1083,4 +1121,13 @@ class Picking(models.Model):
         packages = self.move_line_ids.mapped('result_package_id')
         action['domain'] = [('id', 'in', packages.ids)]
         action['context'] = {'picking_id': self.id}
+        return action
+
+    def action_picking_move_tree(self):
+        action = self.env.ref('stock.stock_move_action').read()[0]
+        action['views'] = [
+            (self.env.ref('stock.view_picking_move_tree').id, 'tree'),
+        ]
+        action['context'] = self.env.context
+        action['domain'] = [('picking_id', 'in', self.ids)]
         return action

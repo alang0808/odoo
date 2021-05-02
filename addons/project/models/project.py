@@ -81,7 +81,7 @@ class Project(models.Model):
 
     @api.multi
     def unlink(self):
-        for project in self:
+        for project in self.with_context(active_test=False):
             if project.tasks:
                 raise UserError(_('You cannot delete a project containing tasks. You can either archive it or first delete all of its tasks.'))
         return super(Project, self).unlink()
@@ -105,27 +105,19 @@ class Project(models.Model):
 
     @api.multi
     def attachment_tree_view(self):
-        self.ensure_one()
-        domain = [
+        attachment_action = self.env.ref('base.action_attachment')
+        action = attachment_action.read()[0]
+        action['domain'] = str([
             '|',
-            '&', ('res_model', '=', 'project.project'), ('res_id', 'in', self.ids),
-            '&', ('res_model', '=', 'project.task'), ('res_id', 'in', self.task_ids.ids)]
-        return {
-            'name': _('Attachments'),
-            'domain': domain,
-            'res_model': 'ir.attachment',
-            'type': 'ir.actions.act_window',
-            'view_id': False,
-            'view_mode': 'kanban,tree,form',
-            'view_type': 'form',
-            'help': _('''<p class="o_view_nocontent_smiling_face">
-                        Documents are attached to the tasks and issues of your project.</p><p>
-                        Send messages or log internal notes with attachments to link
-                        documents to your project.
-                    </p>'''),
-            'limit': 80,
-            'context': "{'default_res_model': '%s','default_res_id': %d}" % (self._name, self.id)
-        }
+            '&',
+            ('res_model', '=', 'project.project'),
+            ('res_id', 'in', self.ids),
+            '&',
+            ('res_model', '=', 'project.task'),
+            ('res_id', 'in', self.task_ids.ids)
+        ])
+        action['context'] = "{'default_res_model': '%s','default_res_id': %d}" % (self._name, self.id)
+        return action
 
     @api.model
     def activate_sample_project(self):
@@ -253,19 +245,18 @@ class Project(models.Model):
             project.access_warning = _(
                 "The project cannot be shared with the recipient(s) because the privacy of the project is too restricted. Set the privacy to 'Visible by following customers' in order to make it accessible by the recipient(s).")
 
-    @api.depends('percentage_satisfaction_task')
+    @api.depends('tasks.rating_ids.rating', 'tasks.rating_ids.parent_res_id')
     def _compute_percentage_satisfaction_project(self):
-        domain = [('create_date', '>=', fields.Datetime.to_string(fields.datetime.now() - timedelta(days=30)))]
+        res = self.env['project.task']._compute_parent_rating_percentage_satisfaction(self, rating_satisfaction_days=30)
         for project in self:
-            activity = project.tasks.rating_get_grades(domain)
-            project.percentage_satisfaction_project = activity['great'] * 100 / sum(activity.values()) if sum(activity.values()) else -1
+            project.percentage_satisfaction_project = res[project.id]
 
     #TODO JEM: Only one field can be kept since project only contains task
-    @api.depends('tasks.rating_ids.rating')
+    @api.depends('tasks.rating_ids.rating', 'tasks.rating_ids.parent_res_id')
     def _compute_percentage_satisfaction_task(self):
+        res = self.env['project.task']._compute_parent_rating_percentage_satisfaction(self)
         for project in self:
-            activity = project.tasks.rating_get_grades()
-            project.percentage_satisfaction_task = activity['great'] * 100 / sum(activity.values()) if sum(activity.values()) else -1
+            project.percentage_satisfaction_task = res[project.id]
 
     @api.depends('rating_status', 'rating_status_period')
     def _compute_rating_request_deadline(self):
@@ -286,11 +277,18 @@ class Project(models.Model):
         """ copy and map tasks from old to new project """
         tasks = self.env['project.task']
         # We want to copy archived task, but do not propagate an active_test context key
-        task_ids = self.env['project.task'].with_context(active_test=False).search([('project_id', '=', self.id)]).ids
+        task_ids = self.env['project.task'].with_context(active_test=False).search([('project_id', '=', self.id)], order='parent_id').ids
+        old_to_new_tasks = {}
         for task in self.env['project.task'].browse(task_ids):
             # preserve task name and stage, normally altered during copy
             defaults = self._map_tasks_default_valeus(task)
-            tasks += task.copy(defaults)
+            if task.parent_id:
+                # set the parent to the duplicated task
+                defaults['parent_id'] = old_to_new_tasks.get(task.parent_id.id, False)
+            new_task = task.copy(defaults)
+            old_to_new_tasks[task.id] = new_task.id
+            tasks += new_task
+
         return self.browse(new_project_id).write({'tasks': [(6, 0, tasks.ids)]})
 
     @api.multi
@@ -301,6 +299,8 @@ class Project(models.Model):
         if not default.get('name'):
             default['name'] = _("%s (copy)") % (self.name)
         project = super(Project, self).copy(default)
+        if self.subtask_project_id == self:
+            project.subtask_project_id = project
         for follower in self.message_follower_ids:
             project.message_subscribe(partner_ids=follower.partner_id.ids, subtype_ids=follower.subtype_ids.ids)
         if 'tasks' not in default:
@@ -338,7 +338,7 @@ class Project(models.Model):
         """ Subscribe to all existing active tasks when subscribing to a project """
         res = super(Project, self).message_subscribe(partner_ids=partner_ids, channel_ids=channel_ids, subtype_ids=subtype_ids)
         project_subtypes = self.env['mail.message.subtype'].browse(subtype_ids) if subtype_ids else None
-        task_subtypes = project_subtypes.mapped('parent_id').ids if project_subtypes else None
+        task_subtypes = (project_subtypes.mapped('parent_id') | project_subtypes.filtered(lambda sub: sub.internal or sub.default)).ids if project_subtypes else None
         if not subtype_ids or task_subtypes:
             self.mapped('tasks').message_subscribe(
                 partner_ids=partner_ids, channel_ids=channel_ids, subtype_ids=task_subtypes)
@@ -434,6 +434,12 @@ class Task(models.Model):
         return self.stage_find(project_id, [('fold', '=', False)])
 
     @api.model
+    def _default_company_id(self):
+        if self._context.get('default_project_id'):
+            return self.env['project.project'].browse(self._context['default_project_id']).company_id
+        return self.env['res.company']._company_default_get()
+
+    @api.model
     def _read_group_stage_ids(self, stages, domain, order):
         search_domain = [('id', 'in', stages.ids)]
         if 'default_project_id' in self.env.context:
@@ -470,7 +476,6 @@ class Task(models.Model):
     date_assign = fields.Datetime(string='Assigning Date', index=True, copy=False, readonly=True)
     date_deadline = fields.Date(string='Deadline', index=True, copy=False, track_visibility='onchange')
     date_last_stage_update = fields.Datetime(string='Last Stage Update',
-        default=fields.Datetime.now,
         index=True,
         copy=False,
         readonly=True)
@@ -491,9 +496,7 @@ class Task(models.Model):
         string='Customer',
         default=lambda self: self._get_default_partner())
     manager_id = fields.Many2one('res.users', string='Project Manager', related='project_id.user_id', readonly=True, related_sudo=False)
-    company_id = fields.Many2one('res.company',
-        string='Company',
-        default=lambda self: self.env['res.company']._company_default_get())
+    company_id = fields.Many2one('res.company', string='Company', required=True, default=_default_company_id)
     color = fields.Integer(string='Color Index')
     user_email = fields.Char(related='user_id.email', string='User Email', readonly=True, related_sudo=False)
     attachment_ids = fields.One2many('ir.attachment', compute='_compute_attachment_ids', string="Main Attachments",
@@ -601,6 +604,8 @@ class Task(models.Model):
                 self.partner_id = self.project_id.partner_id
             if self.project_id not in self.stage_id.project_ids:
                 self.stage_id = self.stage_find(self.project_id.id, [('fold', '=', False)])
+            # keep multi company consistency
+            self.company_id = self.project_id.company_id
         else:
             self.stage_id = False
 
@@ -681,15 +686,17 @@ class Task(models.Model):
         # force some parent values, if needed
         if 'parent_id' in vals and vals['parent_id']:
             vals.update(self._subtask_values_from_parent(vals['parent_id']))
+            context.pop('default_parent_id', None)
         # for default stage
         if vals.get('project_id') and not context.get('default_project_id'):
             context['default_project_id'] = vals.get('project_id')
         # user_id change: update date_assign
         if vals.get('user_id'):
             vals['date_assign'] = fields.Datetime.now()
-        # Stage change: Update date_end if folded stage
+        # Stage change: Update date_end if folded stage and date_last_stage_update
         if vals.get('stage_id'):
             vals.update(self.update_date_end(vals['stage_id']))
+            vals['date_last_stage_update'] = fields.Datetime.now()
         task = super(Task, self.with_context(context)).create(vals)
         return task
 

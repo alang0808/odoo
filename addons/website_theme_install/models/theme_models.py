@@ -3,6 +3,7 @@
 
 import logging
 from odoo import api, fields, models
+from odoo.tools.translate import xml_translate
 from odoo.modules.module import get_resource_from_path
 
 _logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ class ThemeView(models.Model):
     priority = fields.Integer(default=16, required=True)
     mode = fields.Selection([('primary', "Base view"), ('extension', "Extension View")])
     active = fields.Boolean(default=True)
-    arch = fields.Text()
+    arch = fields.Text(translate=xml_translate)
     arch_fs = fields.Char(default=compute_arch_fs)
     inherit_id = fields.Reference(selection=[('ir.ui.view', 'ir.ui.view'), ('theme.ir.ui.view', 'theme.ir.ui.view')])
     copy_ids = fields.One2many('ir.ui.view', 'theme_template_id', 'Views using a copy of me', copy=False, readonly=True)
@@ -39,6 +40,14 @@ class ThemeView(models.Model):
             if not inherit:
                 # inherit_id not yet created, add to the queue
                 return False
+
+        if inherit and inherit.website_id != website:
+            website_specific_inherit = self.env['ir.ui.view'].with_context(active_test=False).search([
+                ('key', '=', inherit.key),
+                ('website_id', '=', website.id)
+            ], limit=1)
+            if website_specific_inherit:
+                inherit = website_specific_inherit
 
         new_view = {
             'type': self.type or 'qweb',
@@ -90,7 +99,7 @@ class ThemeMenu(models.Model):
     _name = 'theme.website.menu'
     _description = 'Website Theme Menu'
 
-    name = fields.Char(required=True)
+    name = fields.Char(required=True, translate=True)
     url = fields.Char(default='')
     page_id = fields.Many2one('theme.website.page', ondelete='cascade')
     new_window = fields.Boolean('New Window')
@@ -106,10 +115,10 @@ class ThemeMenu(models.Model):
         new_menu = {
             'name': self.name,
             'url': self.url,
-            'page_id': page_id,
+            'page_id': page_id and page_id.id or False,
             'new_window': self.new_window,
             'sequence': self.sequence,
-            'parent_id': parent_id,
+            'parent_id': parent_id and parent_id.id or False,
             'theme_template_id': self.id,
         }
         return new_menu
@@ -161,10 +170,23 @@ class Theme(models.AbstractModel):
     @api.model
     def _toggle_view(self, xml_id, active):
         obj = self.env.ref(xml_id)
+        website = self.env['website'].get_current_website()
         if obj._name == 'theme.ir.ui.view':
-            website = self.env['website'].get_current_website()
             obj = obj.with_context(active_test=False)
             obj = obj.copy_ids.filtered(lambda x: x.website_id == website)
+        else:
+            # If a theme post copy wants to enable/disable a view, this is to
+            # enable/disable a given functionality which is disabled/enabled
+            # by default. So if a post copy asks to enable/disable a view which
+            # is already enabled/disabled, we would not consider it otherwise it
+            # would COW the view for nothing.
+            View = self.env['ir.ui.view'].with_context(active_test=False)
+            has_specific = obj.key and View.search_count([
+                ('key', '=', obj.key),
+                ('website_id', '=', website.id)
+            ]) >= 1
+            if not has_specific and active == obj.active:
+                return
         obj.write({'active': active})
 
     @api.model
@@ -179,23 +201,23 @@ class Theme(models.AbstractModel):
 class IrUiView(models.Model):
     _inherit = 'ir.ui.view'
 
-    theme_template_id = fields.Many2one('theme.ir.ui.view')
+    theme_template_id = fields.Many2one('theme.ir.ui.view', copy=False)
 
 
 class IrAttachment(models.Model):
     _inherit = 'ir.attachment'
 
-    key = fields.Char()
-    theme_template_id = fields.Many2one('theme.ir.attachment')
+    key = fields.Char(copy=False)
+    theme_template_id = fields.Many2one('theme.ir.attachment', copy=False)
 
 
 class WebiteMenu(models.Model):
     _inherit = 'website.menu'
 
-    theme_template_id = fields.Many2one('theme.website.menu')
+    theme_template_id = fields.Many2one('theme.website.menu', copy=False)
 
 
 class WebsitePage(models.Model):
     _inherit = 'website.page'
 
-    theme_template_id = fields.Many2one('theme.website.page')
+    theme_template_id = fields.Many2one('theme.website.page', copy=False)

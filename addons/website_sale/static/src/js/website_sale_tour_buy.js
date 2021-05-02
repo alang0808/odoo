@@ -21,7 +21,7 @@ tour.register('shop_buy_product', {
         },
         {
             content: "select conference chair",
-            trigger: '.oe_product_cart a:contains("Conference Chair")',
+            trigger: '.oe_product_cart:first a:contains("Conference Chair")',
         },
         {
             content: "select Conference Chair Aluminium",
@@ -44,8 +44,8 @@ tour.register('shop_buy_product', {
         },
         {
             content: "add suggested",
-            extra_trigger: '#wrap:not(:has(#cart_products:contains("[A8767] Storage Box")))',
-            trigger: '.oe_cart:has(tr:contains("Steel")) a:contains("Add to Cart")',
+            extra_trigger: '#wrap:not(:has(#cart_products:contains("Storage Box")))',
+            trigger: '.oe_cart:has(tr:contains("Storage Box")) a:contains("Add to Cart")',
         },
         {
             content: "add one more",
@@ -53,7 +53,7 @@ tour.register('shop_buy_product', {
             trigger: '#cart_products tr:contains("Steel") a.js_add_cart_json:eq(1)',
         },
         {
-            content: "remove Headphones",
+            content: "remove Storage Box",
             extra_trigger: '#cart_products tr:contains("Steel") input.js_quantity:propValue(2)',
             trigger: '#cart_products tr:contains("Storage Box") a.js_add_cart_json:first',
         },
@@ -81,8 +81,18 @@ tour.register('shop_buy_product', {
         {
             content: "finish",
             trigger: '.oe_website_sale:contains("Pending... The order will be validated after the payment.")',
+            // Leave /shop/confirmation to prevent RPC loop to /shop/payment/get_status.
+            // The RPC could be handled in python while the tour is killed (and the session), leading to crashes
+            run: function () {
+                window.location.href = '/aboutus'; // Redirect in JS to avoid the RPC loop (20x1sec)
+            },
             timeout: 30000,
-        }
+        },
+        {
+            content: "wait page loaded",
+            trigger: 'h3:contains("Great products for great people")',
+            run: function () {}, // it's a check
+        },
     ]
 );
 

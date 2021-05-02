@@ -149,6 +149,20 @@
                 <field name="state" widget="statusbar" statusbar_visible="confirm,validate"/>
             </header>
             <sheet>
+                <div class="alert alert-info" role="alert" attrs="{'invisible': ['|', ('tz_mismatch', '=', False), ('holiday_type', '=', 'category')]}">
+                    <span attrs="{'invisible': [('holiday_type', '!=', 'employee')]}">
+                        The employee has a different timezone than yours! Here dates and times are displayed in the employee's timezone
+                    </span>
+                    <span attrs="{'invisible': [('holiday_type', '!=', 'department')]}">
+                        The department's company has a different timezone than yours! Here dates and times are displayed in the company's timezone
+                    </span>
+                    <span attrs="{'invisible': [('holiday_type', '!=', 'company')]}">
+                        The company has a different timezone than yours! Here dates and times are displayed in the company's timezone
+                    </span>
+                    (<field name="tz"/>).
+                </div>
+                <field name="tz_mismatch" invisible="1"/>
+                <field name="holiday_type" invisible="1"/>
                 <field name="leave_type_request_unit" invisible="1"/>
                 <group>
                     <group>
@@ -171,7 +185,7 @@
                         <div>
                             <field name="date_from" invisible="1"/>
                             <field name="date_to" invisible="1"/>
-                            <div class="o_row o_row_readonly">
+                            <div class="o_row o_row_readonly o_hr_holidays_dates">
                                 <field name="request_date_from" class="oe_inline"
                                     attrs="{'readonly': [('state', 'not in', ('draft', 'confirm'))]}"/>
                                 <span class="oe_inline"
@@ -286,7 +300,7 @@
         <field name="name">hr.holidays.view.tree</field>
         <field name="model">hr.leave</field>
         <field name="arch" type="xml">
-            <tree decoration-danger="state == 'refuse'" decoration-info="state == ' draft'" string="Leave Requests"
+            <tree decoration-danger="state == 'refuse'" decoration-info="state == 'draft'" string="Leave Requests"
                    decoration-bf="message_needaction == True">
                 <field name="employee_id"/>
                 <field name="holiday_type" string="Mode" groups="base.group_no_one"/>
@@ -294,7 +308,7 @@
                 <field name="name"/>
                 <field name="date_from"/>
                 <field name="date_to"/>
-                <field name="number_of_days" string="Number of Days" sum="Total leaves"/>
+                <field name="duration_display"/>
                 <field name="state"/>
                 <field name="payslip_status" widget="toggle_button" options='{"active": "Reported in last payslips", "inactive": "To Report in Payslip"}' groups="hr_holidays.group_hr_holidays_manager"/>
                 <field name="category_id" invisible="1"/>
@@ -349,7 +363,7 @@
         <field name="view_type">form</field>
         <field name="view_mode">calendar</field>
         <field name="context">{'search_default_year': 1, 'search_default_group_employee': 1}</field>
-        <field name="domain">[('holiday_type','=','employee'), ('state', '!=', 'refuse')]</field>
+        <field name="domain">[('holiday_type','=','employee'), ('state', '!=', 'refuse'), ('employee_id.active','=',True)]</field>
         <field name="search_view_id" ref="view_hr_holidays_filter"/>
     </record>
 

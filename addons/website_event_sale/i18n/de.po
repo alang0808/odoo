@@ -3,16 +3,17 @@
 # * website_event_sale
 # 
 # Translators:
-# Martin Trigaux, 2018
-# Ermin Trevisan <trevi@twanda.com>, 2018
 # Renzo Meister, 2018
+# Martin Trigaux, 2019
+# Ermin Trevisan <trevi@twanda.com>, 2020
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~11.5\n"
+"Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-21 13:18+0000\n"
-"PO-Revision-Date: 2018-09-21 13:18+0000\n"
-"Last-Translator: Renzo Meister, 2018\n"
+"POT-Creation-Date: 2019-03-29 10:10+0000\n"
+"PO-Revision-Date: 2018-08-24 09:34+0000\n"
+"Last-Translator: Ermin Trevisan <trevi@twanda.com>, 2020\n"
 "Language-Team: German (https://www.transifex.com/odoo/teams/41243/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -36,9 +37,29 @@ msgid "<span>left</span>"
 msgstr "<span>übrig</span>"
 
 #. module: website_event_sale
+#: code:addons/website_event_sale/models/product_pricelist.py:16
+#, python-format
+msgid ""
+"A pricelist item with a positive min. quantity cannot be applied to this "
+"event tickets product."
+msgstr ""
+"Eine Preislistenposition mit einer positiven Mindestmenge kann nicht auf "
+"dieses Ticketprodukt angewendet werden."
+
+#. module: website_event_sale
+#: code:addons/website_event_sale/models/product_pricelist.py:13
+#, python-format
+msgid ""
+"A pricelist item with a positive min. quantity will not be applied to the "
+"event tickets products."
+msgstr ""
+"Eine Preislistenposition mit einer positiven Mindestmenge kann nicht auf "
+"dieses Ticketprodukt angewendet werden."
+
+#. module: website_event_sale
 #: model:ir.model.fields,field_description:website_event_sale.field_product_product__event_ticket_ids
 msgid "Event Tickets"
-msgstr "Veranstaltungskarten"
+msgstr "Veranstaltungstickets"
 
 #. module: website_event_sale
 #: model_terms:ir.ui.view,arch_db:website_event_sale.registration_complete_inherit_website_event_sale
@@ -51,12 +72,17 @@ msgid "Only"
 msgstr "Nur"
 
 #. module: website_event_sale
+#: model:ir.model,name:website_event_sale.model_product_pricelist_item
+msgid "Pricelist Item"
+msgstr "Preislistenposition"
+
+#. module: website_event_sale
 #: model:ir.model,name:website_event_sale.model_product_product
 msgid "Product"
 msgstr "Produkt"
 
 #. module: website_event_sale
-#: code:addons/website_event_sale/controllers/main.py:59
+#: code:addons/website_event_sale/controllers/main.py:63
 #, python-format
 msgid "Registration"
 msgstr "Anmeldung"
@@ -86,8 +112,8 @@ msgstr "Ausverkauft"
 #, python-format
 msgid "Sorry, The %(ticket)s tickets for the %(event)s event are sold out."
 msgstr ""
-"Entschuldigung, die %(ticket)s Tickets für den %(event)s Anlass sind "
-"ausverkauft."
+"Entschuldigung, die %(ticket)s -Tickets für die Veranstaltung %(event)s sind"
+" leider ausverkauft."
 
 #. module: website_event_sale
 #: code:addons/website_event_sale/models/sale_order.py:77
@@ -96,8 +122,8 @@ msgid ""
 "Sorry, only %(remaining_seats)d seats are still available for the %(ticket)s"
 " ticket for the %(event)s event."
 msgstr ""
-"Entschuldigung, es sind nur noch %(remaining_seats)d freie Plätze von den "
-"%(ticket)s Tickets für den %(event)s Anlass verfügbar."
+"Entschuldigung, leider sind nur noch %(remaining_seats)d freie  %(ticket)s "
+"-Tickets für die Veranstaltung %(event)s verfügbar."
 
 #. module: website_event_sale
 #: code:addons/website_event_sale/models/sale_order.py:39
@@ -109,6 +135,12 @@ msgstr "Das Ticket passt nicht zu diesem Produkt."
 #: model_terms:ir.ui.view,arch_db:website_event_sale.registration_complete_inherit_website_event_sale
 msgid "Ticket"
 msgstr "Ticket"
+
+#. module: website_event_sale
+#: code:addons/website_event_sale/models/product_pricelist.py:20
+#, python-format
+msgid "Warning"
+msgstr "Warnung"
 
 #. module: website_event_sale
 #: model:ir.model,name:website_event_sale.model_website

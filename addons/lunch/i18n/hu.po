@@ -3,22 +3,68 @@
 # * lunch
 # 
 # Translators:
-# krnkris, 2016
-# Martin Trigaux, 2016
-# gezza <geza.nagy@oregional.hu>, 2016
+# Martin Trigaux, 2018
+# krnkris, 2018
+# gezza <geza.nagy@oregional.hu>, 2018
+# Ákos Nagy <akos.nagy@oregional.hu>, 2018
+# Tamás Németh <ntomasz81@gmail.com>, 2020
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~11.4\n"
+"Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-02 09:56+0000\n"
-"PO-Revision-Date: 2018-08-02 09:56+0000\n"
-"Last-Translator: gezza <geza.nagy@oregional.hu>, 2016\n"
+"POT-Creation-Date: 2019-01-09 10:32+0000\n"
+"PO-Revision-Date: 2018-08-24 09:20+0000\n"
+"Last-Translator: Tamás Németh <ntomasz81@gmail.com>, 2020\n"
 "Language-Team: Hungarian (https://www.transifex.com/odoo/teams/41243/hu/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Language: hu\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_kanban
+msgid ""
+"<i class=\"fa fa-check\" role=\"img\" aria-label=\"Receive button\" "
+"title=\"Receive button\"/>"
+msgstr ""
+"<i class=\"fa fa-check\" role=\"img\" aria-label=\"Receive button\" "
+"title=\"Receive button\"/>"
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_kanban
+#: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_kanban
+msgid "<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
+msgstr "<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Date\" title=\"Date\"/>"
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.view_lunch_cashmove_kanban
+msgid "<i class=\"fa fa-money\" role=\"img\" aria-label=\"Amount\" title=\"Amount\"/>"
+msgstr "<i class=\"fa fa-money\" role=\"img\" aria-label=\"Amount\" title=\"Amount\"/>"
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_kanban
+msgid "<i class=\"fa fa-money\" role=\"img\" aria-label=\"Money\" title=\"Money\"/>"
+msgstr "<i class=\"fa fa-money\" role=\"img\" aria-label=\"Money\" title=\"Money\"/>"
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_kanban
+msgid ""
+"<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Order button\" "
+"title=\"Order button\"/>"
+msgstr ""
+"<i class=\"fa fa-phone\" role=\"img\" aria-label=\"Order button\" "
+"title=\"Order button\"/>"
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_kanban
+msgid ""
+"<i class=\"fa fa-times\" role=\"img\" aria-label=\"Cancel button\" "
+"title=\"Cancel button\"/>"
+msgstr ""
+"<i class=\"fa fa-times\" role=\"img\" aria-label=\"Cancel button\" "
+"title=\"Cancel button\"/>"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_form
@@ -29,6 +75,116 @@ msgstr "<span class=\"o_stat_text\">Egyenleg</span>"
 #: model_terms:ir.ui.view,arch_db:lunch.report_lunch_order
 msgid "<strong>Total</strong>"
 msgstr "<strong>Összesen</strong>"
+
+#. module: lunch
+#: model:mail.template,body_html:lunch.lunch_order_mail_supplier
+msgid ""
+"<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding-top: 16px; background-color: #F1F1F1; font-family:Verdana, Arial,sans-serif; color: #454748; width: 100%; border-collapse:separate;\"><tr><td align=\"center\">\n"
+"<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"padding: 16px; background-color: white; color: #454748; border-collapse:separate;\">\n"
+"<tbody>\n"
+"    <!-- HEADER -->\n"
+"    <tr>\n"
+"        <td align=\"center\" style=\"min-width: 590px;\">\n"
+"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                <tr><td valign=\"middle\">\n"
+"                    <span style=\"font-size: 10px;\">Lunch Order</span><br/>\n"
+"                </td><td valign=\"middle\" align=\"right\">\n"
+"                    <img src=\"/logo.png?company=${user.company_id.id}\" style=\"padding: 0px; margin: 0px; height: auto; width: 80px;\" t-att-alt=\"'%s' % company.name\"/>\n"
+"                </td></tr>\n"
+"                <tr><td colspan=\"2\" style=\"text-align:center;\">\n"
+"                  <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin:16px 0px 16px 0px;\"/>\n"
+"                </td></tr>\n"
+"            </table>\n"
+"        </td>\n"
+"    </tr>\n"
+"    <!-- CONTENT -->\n"
+"    <tr>\n"
+"        <td align=\"center\" style=\"min-width: 590px;\">\n"
+"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                <tr>\n"
+"                    <td valign=\"top\" style=\"font-size: 13px;\">\n"
+"    <div>\n"
+"        % set lines = ctx['lines']\n"
+"        % set order = ctx['order']\n"
+"        % set supplier = user.env['res.partner'].browse(order['supplier_id'])\n"
+"        % set currency = user.env['res.currency'].browse(order['currency_id'])\n"
+"        <p>\n"
+"        Dear ${order['supplier_name']},\n"
+"        </p><p>\n"
+"        Here is, today orders for ${order['company_name']}:\n"
+"        </p>\n"
+"\n"
+"      <ul>\n"
+"        % for line in lines:\n"
+"            <li>\n"
+"                <strong>\n"
+"                    ${line['product']}\n"
+"                    (x${line['quantity']})\n"
+"                 </strong>\n"
+"                % if line['note']:\n"
+"                    <em>(${line['note']})</em>\n"
+"                % endif\n"
+"                <div style=\"display: inline-block; float:right\">\n"
+"                    ${format_amount(line['price'], currency)}\n"
+"                </div>\n"
+"            </li>\n"
+"        % endfor\n"
+"        </ul>\n"
+"\n"
+"        <p>Amounting in <strong>${format_amount(order['amount_total'], currency)}</strong>.</p>\n"
+"        <p>Do not hesitate to contact us if you have any question.</p>\n"
+"    </div>\n"
+"                    </td>\n"
+"                </tr>\n"
+"                <tr>\n"
+"                    <td style=\"text-align:center;\">\n"
+"                        <hr width=\"100%\" style=\"background-color:rgb(204,204,204);border:medium none;clear:both;display:block;font-size:0px;min-height:1px;line-height:0; margin: 16px 0px 16px 0px;\"/>\n"
+"                    </td>\n"
+"                </tr>\n"
+"            </table>\n"
+"        </td>\n"
+"    </tr>\n"
+"    <!-- FOOTER -->\n"
+"    <tr>\n"
+"        <td align=\"center\" style=\"min-width: 590px;\">\n"
+"            <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: white; font-size: 11px; padding: 0px 8px 0px 8px; border-collapse:separate;\">\n"
+"                <tr><td valign=\"middle\" align=\"left\">\n"
+"                    ${user.company_id.name}\n"
+"                </td></tr>\n"
+"                <tr><td valign=\"middle\" align=\"left\" style=\"opacity: 0.7;\">\n"
+"                    ${user.company_id.phone}\n"
+"                    % if user.company_id.phone and (user.company_id.email or user.company_id.website)\n"
+"                    |\n"
+"                    % endif\n"
+"                    % if user.company_id.email\n"
+"                    <a href=\"'mailto:%s' % ${user.company_id.email}\" style=\"text-decoration:none; color: #454748;\">${user.company_id.email}</a>\n"
+"                    % endif\n"
+"                    % if user.company_id.email and user.company_id.website\n"
+"                    |\n"
+"                    % endif\n"
+"                    % if user.company_id.website\n"
+"                    <a href=\"'%s' % ${user.company_id.website}\" style=\"text-decoration:none; color: #454748;\">\n"
+"                    ${user.company_id.website}\n"
+"                    </a>\n"
+"                    % endif\n"
+"                </td></tr>\n"
+"            </table>\n"
+"        </td>\n"
+"    </tr>\n"
+"</tbody>\n"
+"</table>\n"
+"</td></tr>\n"
+"<!-- POWERED BY -->\n"
+"<tr><td align=\"center\" style=\"min-width: 590px;\">\n"
+"    <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"590\" style=\"min-width: 590px; background-color: #F1F1F1; color: #454748; padding: 8px; border-collapse:separate;\">\n"
+"      <tr><td style=\"text-align: center; font-size: 13px;\">\n"
+"        Powered by <a target=\"_blank\" href=\"https://www.odoo.com\" style=\"color: #875A7B;\">Odoo</a>\n"
+"      </td></tr>\n"
+"    </table>\n"
+"</td></tr>\n"
+"</table>\n"
+"        "
+msgstr ""
 
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_cashmove_action_control_accounts
@@ -57,10 +213,10 @@ msgstr "Aktív"
 #: code:addons/lunch/static/src/xml/lunch.xml:15
 #, python-format
 msgid "Add"
-msgstr "Hozzáad"
+msgstr "Hozzáadás"
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:294
+#: code:addons/lunch/models/lunch.py:425
 #, python-format
 msgid "Alert"
 msgstr "Figyelmeztetés"
@@ -96,6 +252,11 @@ msgstr "És"
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_product_view_search
 msgid "Archived"
 msgstr "Archivált"
+
+#. module: lunch
+#: model:ir.model.fields,field_description:lunch.field_lunch_product__available
+msgid "Available"
+msgstr "Rendelkezésre álló"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_order__balance_visible
@@ -151,13 +312,13 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_tree
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_order_line_lucky
 msgid "Cancel"
-msgstr "Mégse"
+msgstr "Mégsem"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_search
 #: selection:lunch.order,state:0 selection:lunch.order.line,state:0
 msgid "Cancelled"
-msgstr "Visszavont"
+msgstr "Visszavonva"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_order_line__cashmove
@@ -172,17 +333,17 @@ msgstr "Pénz mozgatás egyenlege"
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_order_line_action_control_suppliers
 msgid ""
-"Click on the <span class=\"fa fa-phone text-success\"></span> to announce that the order is ordered.<br>\n"
-"                Click on the <span class=\"fa fa-check text-success\"></span> to announce that the order is received.<br>\n"
-"                Click on the <span class=\"fa fa-times-circle text-danger\"></span> red X to announce that the order isn't available."
+"Click on the <span class=\"fa fa-phone text-success\" title=\"Order button\"></span> to announce that the order is ordered.<br>\n"
+"                Click on the <span class=\"fa fa-check text-success\" title=\"Receive button\"></span> to announce that the order is received.<br>\n"
+"                Click on the <span class=\"fa fa-times-circle text-danger\" title=\"Cancel button\"></span> red X to announce that the order isn't available."
 msgstr ""
 
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_order_line_action_by_supplier
 msgid ""
-"Click on the <span class=\"fa fa-phone text-success\"></span> to announce that the order is ordered.<br>\n"
-"                Click on the <span class=\"fa fa-check text-success\"></span> to announce that the order is received.<br>\n"
-"                Click on the <span class=\"fa fa-times-circle text-danger\"></span> to announce that the order isn't available."
+"Click on the <span class=\"fa fa-phone text-success\" title=\"Order button\"></span> to announce that the order is ordered.<br>\n"
+"                Click on the <span class=\"fa fa-check text-success\" title=\"Receive button\"></span> to announce that the order is received.<br>\n"
+"                Click on the <span class=\"fa fa-times-circle text-danger\" title=\"Cancel button\"></span> to announce that the order isn't available."
 msgstr ""
 
 #. module: lunch
@@ -193,7 +354,7 @@ msgstr "Vállalat"
 #. module: lunch
 #: model:ir.ui.menu,name:lunch.menu_lunch_config
 msgid "Configuration"
-msgstr "Beállítások"
+msgstr "Konfiguráció"
 
 #. module: lunch
 #: model:ir.actions.act_window,name:lunch.lunch_cashmove_action_control_accounts
@@ -219,12 +380,12 @@ msgstr ""
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_cashmove_action_control_accounts
 msgid "Create a new payment"
-msgstr ""
+msgstr "Új kifizetés"
 
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_product_action
 msgid "Create a new product for lunch"
-msgstr ""
+msgstr "Új ételtermék létrehozása"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_alert__create_uid
@@ -235,7 +396,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:lunch.field_lunch_product__create_uid
 #: model:ir.model.fields,field_description:lunch.field_lunch_product_category__create_uid
 msgid "Created by"
-msgstr "Készítette"
+msgstr "Létrehozta"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_alert__create_date
@@ -246,7 +407,7 @@ msgstr "Készítette"
 #: model:ir.model.fields,field_description:lunch.field_lunch_product__create_date
 #: model:ir.model.fields,field_description:lunch.field_lunch_product_category__create_date
 msgid "Created on"
-msgstr "Létrehozás dátuma"
+msgstr "Létrehozva"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_order__currency_id
@@ -258,6 +419,7 @@ msgstr "Pénznem"
 #: model:ir.model.fields,field_description:lunch.field_lunch_cashmove__date
 #: model:ir.model.fields,field_description:lunch.field_lunch_order__date
 #: model:ir.model.fields,field_description:lunch.field_lunch_order_line__date
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_search
 msgid "Date"
 msgstr "Dátum"
 
@@ -342,7 +504,7 @@ msgstr "Péntek"
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_search
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_product_view_search
 msgid "Group By"
-msgstr "Csoportosítás"
+msgstr "Csoportosítás ezzel"
 
 #. module: lunch
 #: model:ir.module.category,description:lunch.module_lunch_category
@@ -369,11 +531,9 @@ msgstr ""
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_cashmove_action_account
 msgid ""
-"Here you can see your cash moves.<br>A cash moves can be either an expense or a payment.\n"
+"Here you can see your cash moves.<br>A cash move can either be an expense or a payment.\n"
 "                An expense is automatically created when an order is received while a payment is a reimbursement to the company encoded by the manager."
 msgstr ""
-" Itt láthatja a készpénz mozgásokat.<br>Egy készpénz mozgás lehet költség vagy befizetés. \n"
-"                Egy kiadást automatikusan létrehoz a megrendelés beérkezésekor, ugyanakkor egy befizetés mint a munkavállaló visszatérítése a vállalat részére, melyet az osztályvezető rögzít be. "
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.view_lunch_order_line_lucky
@@ -400,7 +560,12 @@ msgstr "Én nem érzem magam gazdagnak"
 #: model:ir.model.fields,field_description:lunch.field_lunch_product__id
 #: model:ir.model.fields,field_description:lunch.field_lunch_product_category__id
 msgid "ID"
-msgstr "Azonosító ID"
+msgstr "Azonosító"
+
+#. module: lunch
+#: model:ir.model.fields,help:lunch.field_lunch_alert__partner_id
+msgid "If specified, the selected vendor can be ordered only on selected days"
+msgstr ""
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_cashmove__state
@@ -416,7 +581,7 @@ msgstr "Ez egy beszerzési megrendelés vagy egy befizetés"
 #: model:ir.model.fields,field_description:lunch.field_lunch_product____last_update
 #: model:ir.model.fields,field_description:lunch.field_lunch_product_category____last_update
 msgid "Last Modified on"
-msgstr "Utoljára frissítve ekkor"
+msgstr "Legutóbb frissítve"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_alert__write_uid
@@ -427,7 +592,7 @@ msgstr "Utoljára frissítve ekkor"
 #: model:ir.model.fields,field_description:lunch.field_lunch_product__write_uid
 #: model:ir.model.fields,field_description:lunch.field_lunch_product_category__write_uid
 msgid "Last Updated by"
-msgstr "Utoljára frissítette"
+msgstr "Legutóbb frissítette"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_alert__write_date
@@ -438,7 +603,7 @@ msgstr "Utoljára frissítette"
 #: model:ir.model.fields,field_description:lunch.field_lunch_product__write_date
 #: model:ir.model.fields,field_description:lunch.field_lunch_product_category__write_date
 msgid "Last Updated on"
-msgstr "Utoljára frissítve "
+msgstr "Legutóbb frissítve "
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_form
@@ -446,7 +611,6 @@ msgid "List"
 msgstr "Lista"
 
 #. module: lunch
-#: model:ir.model.fields,field_description:lunch.field_res_users__group_lunch_user
 #: model:ir.module.category,name:lunch.module_lunch_category
 #: model:ir.ui.menu,name:lunch.menu_lunch
 msgid "Lunch"
@@ -458,13 +622,14 @@ msgid "Lunch Alert"
 msgstr "Ebéd figyelmeztető"
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:265
+#: code:addons/lunch/models/lunch.py:393
+#: model:ir.model,name:lunch.model_lunch_cashmove
 #, python-format
 msgid "Lunch Cashmove"
 msgstr "Ebéd készpénzmozgás"
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:66
+#: code:addons/lunch/models/lunch.py:67
 #: model:ir.actions.report,name:lunch.action_report_lunch_order
 #: model:ir.model,name:lunch.model_lunch_order
 #: model_terms:ir.ui.view,arch_db:lunch.report_lunch_order
@@ -475,6 +640,26 @@ msgstr "Ebédrendelés"
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_view_form
 msgid "Lunch Order Form"
+msgstr ""
+
+#. module: lunch
+#: model:ir.model,name:lunch.model_lunch_order_line
+msgid "Lunch Order Line"
+msgstr ""
+
+#. module: lunch
+#: model:ir.model,name:lunch.model_lunch_order_line_lucky
+msgid "Lunch Order Line Lucky"
+msgstr ""
+
+#. module: lunch
+#: model:ir.model,name:lunch.model_lunch_product
+msgid "Lunch Product"
+msgstr ""
+
+#. module: lunch
+#: model:ir.model,name:lunch.model_lunch_product_category
+msgid "Lunch Product Category"
 msgstr ""
 
 #. module: lunch
@@ -501,7 +686,7 @@ msgstr "Ebéd: Ételek beérkezése"
 #: model:ir.ui.menu,name:lunch.menu_lunch_admin
 #: model:res.groups,name:lunch.group_lunch_manager
 msgid "Manager"
-msgstr "Igazgató"
+msgstr "Menedzser"
 
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_order_line_lucky__max_budget
@@ -553,20 +738,20 @@ msgstr "Új megrendelés"
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_cashmove_action_account
 msgid "No cash move yet"
-msgstr ""
+msgstr "Még nincs pénzmozgás"
 
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_order_line_action_control_suppliers
 msgid "No lunch order yet"
-msgstr ""
+msgstr "Még nincs ebédrendelés"
 
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_order_line_action
 msgid "No previous order found"
-msgstr ""
+msgstr "Nem található előző rendelés"
 
 #. module: lunch
-#: code:addons/lunch/wizard/lucky_order.py:39
+#: code:addons/lunch/wizard/lucky_order.py:40
 #, python-format
 msgid "No product is matching your request. Now you will starve to death."
 msgstr "Nincs termék ahhoz amit igényelt. Most éhen fog halni."
@@ -579,27 +764,27 @@ msgstr "Nem érkezett meg"
 #. module: lunch
 #: model:ir.model.fields,field_description:lunch.field_lunch_order_line__note
 msgid "Note"
-msgstr "Jegyzet"
+msgstr "Megjegyzés"
 
 #. module: lunch
 #: model_terms:ir.actions.act_window,help:lunch.lunch_order_line_action_by_supplier
 msgid "Nothing to order today"
-msgstr ""
+msgstr "Ma nincs rendelés"
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:225
+#: code:addons/lunch/models/lunch.py:318
 #, python-format
 msgid "Only your lunch manager cancels the orders."
 msgstr "Csak az ebéd manager törölheti a megrendeléseket."
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:194
+#: code:addons/lunch/models/lunch.py:287
 #, python-format
 msgid "Only your lunch manager processes the orders."
 msgstr "Csak az ebéd manager hajthatja végre a megrendeléseket."
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:214
+#: code:addons/lunch/models/lunch.py:307
 #, python-format
 msgid "Only your lunch manager sets the orders as received."
 msgstr "Csak az ebéd manager állíthatja beérkezettre a megrendeléseket."
@@ -644,6 +829,11 @@ msgstr "Megrendelések fa szerkezete"
 #: model:ir.ui.menu,name:lunch.lunch_order_line_menu_control_suppliers
 msgid "Orders by Vendor"
 msgstr "Megrendelések beszállítónként"
+
+#. module: lunch
+#: model:mail.template,subject:lunch.lunch_order_mail_supplier
+msgid "Orders for ${ctx['order']['company_name']}"
+msgstr ""
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_cashmove_view_search
@@ -741,6 +931,18 @@ msgid "Products Tree"
 msgstr "Termékek fa szerkezete"
 
 #. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_alert_view_form
+msgid ""
+"Products from this vendor can <strong>not</strong> be ordered at that "
+"moment."
+msgstr ""
+
+#. module: lunch
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_alert_view_form
+msgid "Products from this vendor can be ordered at that moment."
+msgstr ""
+
+#. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_kanban
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_tree
 msgid "Receive"
@@ -774,13 +976,8 @@ msgstr "Szombat"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_alert_view_form
-msgid "Schedule Date"
-msgstr "Ütemezés dátuma"
-
-#. module: lunch
-#: model_terms:ir.ui.view,arch_db:lunch.lunch_alert_view_form
-msgid "Schedule Hour"
-msgstr "Ütemezési óra"
+msgid "Schedule"
+msgstr "Ütemezés"
 
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_alert_view_search
@@ -836,7 +1033,7 @@ msgid "The company this user is currently working for."
 msgstr "A cég, amelynek a jelenlegi felhasználó dolgozik."
 
 #. module: lunch
-#: code:addons/lunch/models/lunch.py:129
+#: code:addons/lunch/models/lunch.py:130
 #, python-format
 msgid "The date of your order is in the past."
 msgstr "Megrendelésének dátuma a múltban van."
@@ -861,11 +1058,6 @@ msgstr "Ez az első alkalom, hogy ételt rendelt"
 #: model:ir.model.fields,field_description:lunch.field_lunch_alert__thursday
 msgid "Thursday"
 msgstr "Csütörtök"
-
-#. module: lunch
-#: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_search
-msgid "Today"
-msgstr "Ma"
 
 #. module: lunch
 #: model:ir.ui.menu,name:lunch.lunch_order_line_menu_by_supplier
@@ -900,14 +1092,35 @@ msgid "User"
 msgstr "Felhasználó"
 
 #. module: lunch
-#: model:ir.model,name:lunch.model_res_users
-msgid "Users"
-msgstr "Felhasználók"
+#: code:addons/lunch/models/lunch.py:234
+#, python-format
+msgid ""
+"Validate order for one company at a time to send emails (mixed orders from "
+"%s and %s)"
+msgstr ""
 
 #. module: lunch
+#: code:addons/lunch/models/lunch.py:239
+#, python-format
+msgid ""
+"Validate order for one currency at a time to send emails (mixed orders from "
+"%s and %s)"
+msgstr ""
+
+#. module: lunch
+#: code:addons/lunch/models/lunch.py:229
+#, python-format
+msgid ""
+"Validate order for one supplier at a time to send emails (mixed orders from "
+"%s and %s)"
+msgstr ""
+
+#. module: lunch
+#: model:ir.model.fields,field_description:lunch.field_lunch_alert__partner_id
 #: model:ir.model.fields,field_description:lunch.field_lunch_order_line__supplier
 #: model:ir.model.fields,field_description:lunch.field_lunch_order_line_lucky__supplier_ids
 #: model:ir.model.fields,field_description:lunch.field_lunch_product__supplier
+#: model_terms:ir.ui.view,arch_db:lunch.lunch_alert_view_form
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_product_view_search
 msgid "Vendor"
 msgstr "Beszállító"
@@ -915,6 +1128,12 @@ msgstr "Beszállító"
 #. module: lunch
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_order_line_view_search
 msgid "Vendor Orders by Date"
+msgstr ""
+
+#. module: lunch
+#: code:addons/lunch/models/lunch.py:192
+#, python-format
+msgid "Vendor(s) '%s' is not available today"
 msgstr ""
 
 #. module: lunch
@@ -961,7 +1180,6 @@ msgid "cashmove tree"
 msgstr "készpénzmozgás fa"
 
 #. module: lunch
-#: model:ir.model,name:lunch.model_lunch_cashmove
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_cashmove_view_search_2
 msgid "lunch cashmove"
 msgstr "ebéd készpénzmozgás"
@@ -970,23 +1188,3 @@ msgstr "ebéd készpénzmozgás"
 #: model_terms:ir.ui.view,arch_db:lunch.lunch_cashmove_view_search
 msgid "lunch employee payment"
 msgstr "munkavállaló ebéd befizetés"
-
-#. module: lunch
-#: model:ir.model,name:lunch.model_lunch_order_line
-msgid "lunch order line"
-msgstr "ebéd megrendelés tételsor"
-
-#. module: lunch
-#: model:ir.model,name:lunch.model_lunch_product
-msgid "lunch product"
-msgstr "ebéd termék"
-
-#. module: lunch
-#: model:ir.model,name:lunch.model_lunch_product_category
-msgid "lunch product category"
-msgstr "ebéd termék kategória"
-
-#. module: lunch
-#: model:ir.model,name:lunch.model_lunch_order_line_lucky
-msgid "lunch.order.line.lucky"
-msgstr "lunch.order.line.lucky"

@@ -120,6 +120,7 @@ QUnit.module('HR Attendance', {
                     employee_id: [barcode],
                 },
                 next_action: "hr_attendance.hr_attendance_action_kiosk_mode",
+                barcode: barcode,
             }
             var clientAction = new GreetingMessage(null, action);
             testUtils.addMockEnvironment(clientAction, {
@@ -172,7 +173,7 @@ QUnit.module('HR Attendance', {
         assert.strictEqual(clientActions.length, 3, 'Number of clientActions must = 3.');
         assert.strictEqual(rpcCount, 2, 'RPC call should have been done only twice.');
 
-        _.each(clientActions, function(clientAction) {
+        _.each(clientActions.reverse(), function(clientAction) {
             clientAction.destroy();
         });
     });

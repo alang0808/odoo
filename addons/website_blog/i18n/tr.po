@@ -3,11 +3,8 @@
 # * website_blog
 # 
 # Translators:
-# Ediz Duman <neps1192@gmail.com>, 2018
 # Ayhan KIZILTAN <akiziltan76@hotmail.com>, 2018
-# Martin Trigaux, 2018
 # Levent Karakaş <levent@mektup.at>, 2018
-# Murat Kaplan <muratk@projetgrup.com>, 2018
 # Ahmet Altinisik <aaltinisik@altinkaya.com.tr>, 2018
 # Ertuğrul Güreş <ertugrulg@projetgrup.com>, 2018
 # Mehmet Demirel <mdemirell@gmail.com>, 2018
@@ -15,15 +12,22 @@
 # dhkabayel <dhkabayel@gmail.com>, 2018
 # Gökhan Erdoğdu <gokhan.erdogdu@mechsoft.com.tr>, 2018
 # Thermo Dynamic <emirhanayar2004@gmail.com>, 2018
-# Umur Akın <umura@projetgrup.com>, 2018
+# Martin Trigaux, 2018
+# Murat Kaplan <muratk@projetgrup.com>, 2018
 # Buket Şeker <buket_skr@hotmail.com>, 2018
+# Ediz Duman <neps1192@gmail.com>, 2019
+# Abdullah Onur Uğur <aonurugur@outlook.com>, 2019
+# Umur Akın <umura@projetgrup.com>, 2019
+# abc Def <hdogan1974@gmail.com>, 2020
+# Murat Durmuş <muratd@projetgrup.com>, 2020
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:49+0000\n"
-"PO-Revision-Date: 2018-10-08 06:49+0000\n"
-"Last-Translator: Buket Şeker <buket_skr@hotmail.com>, 2018\n"
+"POT-Creation-Date: 2019-01-09 10:32+0000\n"
+"PO-Revision-Date: 2018-08-24 09:33+0000\n"
+"Last-Translator: Murat Durmuş <muratd@projetgrup.com>, 2020\n"
 "Language-Team: Turkish (https://www.transifex.com/odoo/teams/41243/tr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -100,7 +104,7 @@ msgstr "&amp;times;"
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_feed
 msgid "&lt;?xml version=\"1.0\" encoding=\"utf-8\"?&gt;"
-msgstr ""
+msgstr "&lt;?xml versiyon=\"1.0\" kodlama=\"utf-8\"?&gt;"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.view_blog_blog_form
@@ -184,6 +188,8 @@ msgid ""
 "<b>That's it, your blog post is published!</b> Discover more features "
 "through the <i>Customize</i> menu."
 msgstr ""
+"<b>İşte bu, blog yayınınız yayınlandı!</b> <i>Özelleştir</i>menüsünden daha "
+"fazla özellik keşfedin."
 
 #. module: website_blog
 #. openerp-web
@@ -194,10 +200,47 @@ msgid ""
 " image or table, set bold or italic, etc. Drag and drop building blocks for "
 "more graphical blogs."
 msgstr ""
+"<b>Hikayenizi buraya yazın.</b>Metninizi şekillendirmek için üst araç "
+"çubuğunu kullanın: bir resim veya tablo ekleyin, kalın veya italik olarak "
+"ayarlayın vb. Daha grafik bloglar için yapı taşlarını sürükleyip bırakın."
+
+#. module: website_blog
+#: model_terms:ir.ui.view,arch_db:website_blog.blog_post_view_kanban
+msgid "<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Post date\" title=\"Post date\"/>"
+msgstr ""
+"<i class=\"fa fa-clock-o\" role=\"img\" aria-label=\"Post date\" "
+"title=\"Post date\"/>"
+
+#. module: website_blog
+#: model_terms:ir.ui.view,arch_db:website_blog.tag_category
+msgid ""
+"<i class=\"fa fa-tag\" role=\"img\" aria-label=\"Tag category\" title=\"Tag "
+"category\"/>"
+msgstr ""
+
+#. module: website_blog
+#: model_terms:ir.ui.view,arch_db:website_blog.latest_blogs
+msgid ""
+"<span class=\"fa fa-calendar mr8\" role=\"img\" aria-label=\"Post date\" "
+"title=\"Post date\"/>"
+msgstr ""
+
+#. module: website_blog
+#: model_terms:ir.ui.view,arch_db:website_blog.latest_blogs
+msgid ""
+"<span class=\"fa fa-exclamation-triangle ml8\" title=\"Unpublished\" "
+"role=\"img\" aria-label=\"Unpublished\"/>"
+msgstr ""
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.latest_blogs
 msgid "<span class=\"fa fa-folder-open\"/> In"
+msgstr ""
+
+#. module: website_blog
+#: model_terms:ir.ui.view,arch_db:website_blog.blog_post_complete
+#: model_terms:ir.ui.view,arch_db:website_blog.blog_post_short
+msgid "<span class=\"fa fa-tags\" role=\"img\" aria-label=\"Tags\" title=\"Tags\"/>"
 msgstr ""
 
 #. module: website_blog
@@ -243,6 +286,13 @@ msgstr "Sektör lideri teknoloji ekleme"
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.s_latest_posts_options
 msgid "All blogs"
+msgstr "Tüm Bloglar"
+
+#. module: website_blog
+#. openerp-web
+#: code:addons/website_blog/static/src/js/website_blog.js:32
+#, python-format
+msgid "Amazing blog article : %s! Check it live: %s"
 msgstr ""
 
 #. module: website_blog
@@ -253,6 +303,8 @@ msgid ""
 "An error occured with this latest posts block. If the problem persists, "
 "please consider deleting it and adding a new one"
 msgstr ""
+"Bu son yayın bloğunda bir hata oluştu. Sorun devam ederse, lütfen silmeyi ve"
+" yeni bir tane eklemeyi düşünün"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_blog_view_search
@@ -346,13 +398,13 @@ msgstr "Blog Yazısı"
 #: code:addons/website_blog/models/website.py:53
 #, python-format
 msgid "Blog Post <b>%s</b> seems to be calling this file !"
-msgstr ""
+msgstr "Blog Post <b>%s</b> bu dosyayı çağırıyor gibi görünüyor!"
 
 #. module: website_blog
 #: code:addons/website_blog/models/website.py:28
 #, python-format
 msgid "Blog Post <b>%s</b> seems to have a link to this page !"
-msgstr ""
+msgstr "Blog Post <b>%s</b>Bu sayfaya bir bağlantı var gibi görünüyor!"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_complete
@@ -384,7 +436,7 @@ msgstr "Blog Etiket"
 #. module: website_blog
 #: model:ir.model,name:website_blog.model_blog_tag_category
 msgid "Blog Tag Category"
-msgstr ""
+msgstr "Blog Etiketi Kategorisi"
 
 #. module: website_blog
 #: model:ir.actions.act_window,name:website_blog.action_tags
@@ -456,7 +508,7 @@ msgstr ""
 #: code:addons/website_blog/static/src/js/website.tour.blog.js:40
 #, python-format
 msgid "Click on <b>Save</b> to set the picture as cover."
-msgstr ""
+msgstr "Resmi kapak olarak ayarlamak için  <b>Kaydet'e </b> tıklayın."
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.latest_blogs
@@ -477,7 +529,7 @@ msgstr "Kapak Özellikleri"
 #. module: website_blog
 #: model_terms:ir.actions.act_window,help:website_blog.action_blog_post
 msgid "Create a new blog post"
-msgstr ""
+msgstr "Yeni bir blog gönderisi oluştur"
 
 #. module: website_blog
 #: model:ir.model.fields,field_description:website_blog.field_blog_blog__create_uid
@@ -621,7 +673,7 @@ msgstr "GitHub"
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_short
 #: model_terms:ir.ui.view,arch_db:website_blog.opt_blog_rc_follow_us
 msgid "Google Plus"
-msgstr ""
+msgstr "Google Plus"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.website_blog
@@ -685,7 +737,7 @@ msgstr "İşaretliyse, yeni mesajlar dikkatinize sunulacak."
 #: model:ir.model.fields,help:website_blog.field_blog_blog__message_has_error
 #: model:ir.model.fields,help:website_blog.field_blog_post__message_has_error
 msgid "If checked, some messages have a delivery error."
-msgstr ""
+msgstr "İşaretliyse,bazı mesajlar gönderi hatası içermektedir."
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.opt_blog_rc_follow_us
@@ -873,7 +925,7 @@ msgstr "Kapak Yok "
 #: code:addons/website_blog/static/src/js/s_latest_posts_frontend.js:44
 #, python-format
 msgid "No blog post was found. Make sure your posts are published."
-msgstr ""
+msgstr "Blog yazısı bulunamadı. Gönderilerinizin yayınlandığından emin olun."
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_post_short
@@ -917,7 +969,7 @@ msgstr "Eylem gerektiren mesaj sayısı"
 #: model:ir.model.fields,help:website_blog.field_blog_blog__message_has_error_counter
 #: model:ir.model.fields,help:website_blog.field_blog_post__message_has_error_counter
 msgid "Number of messages with delivery error"
-msgstr ""
+msgstr "Teslimat hatası olan mesaj sayısı"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.s_latest_posts_options
@@ -1078,14 +1130,14 @@ msgstr "Yayını bu siteye kısıtla."
 #: model:ir.model.fields,field_description:website_blog.field_blog_post__is_seo_optimized
 #: model:ir.model.fields,field_description:website_blog.field_blog_tag__is_seo_optimized
 msgid "SEO optimized"
-msgstr ""
+msgstr "SEO en iyileştirildi."
 
 #. module: website_blog
 #. openerp-web
 #: code:addons/website_blog/static/src/js/website_blog.editor.js:38
 #, python-format
 msgid "Select Blog"
-msgstr ""
+msgstr "Blog Seçin"
 
 #. module: website_blog
 #. openerp-web
@@ -1099,7 +1151,7 @@ msgstr "Yeni bir blog yazısı oluşturmak için bu menü öğesini seçin."
 #: code:addons/website_blog/static/src/js/website.tour.blog.js:26
 #, python-format
 msgid "Set a blog post <b>cover</b>."
-msgstr ""
+msgstr "Bir blog yayını <b>kapağı </b> ayarlayın."
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.website_blog
@@ -1150,17 +1202,17 @@ msgstr "Alt Başlık"
 #: model:ir.ui.menu,name:website_blog.menu_website_blog_tag_category_global
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_tag_category_tree
 msgid "Tag Categories"
-msgstr ""
+msgstr "Etiket Kategorileri"
 
 #. module: website_blog
 #: model:ir.actions.act_window,name:website_blog.action_tag_category
 msgid "Tag Category"
-msgstr ""
+msgstr "Etiket Kategorisi"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_tag_category_form
 msgid "Tag Category Form"
-msgstr ""
+msgstr "Etiket Kategori Formu"
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_tag_form
@@ -1175,7 +1227,7 @@ msgstr "Etiket Listesi"
 #. module: website_blog
 #: sql_constraint:blog.tag.category:0
 msgid "Tag category already exists !"
-msgstr ""
+msgstr "Etiket kategorisi zaten var!"
 
 #. module: website_blog
 #: sql_constraint:blog.tag:0
@@ -1316,6 +1368,8 @@ msgstr "Başlıksız Gönderimler"
 #, python-format
 msgid "Use this icon to preview your blog post on <b>mobile devices</b>."
 msgstr ""
+"Blog yayınınızı  <b>mobil cihazlarda</b>  önizlemek için bu simgeyi "
+"kullanın."
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.blog_tag_form
@@ -1382,7 +1436,7 @@ msgstr "Web sitesi meta başlık"
 #: model:ir.model.fields,field_description:website_blog.field_blog_post__website_meta_og_img
 #: model:ir.model.fields,field_description:website_blog.field_blog_tag__website_meta_og_img
 msgid "Website opengraph image"
-msgstr ""
+msgstr "Web sitesi açılış grafik görüntüsü "
 
 #. module: website_blog
 #: model_terms:ir.ui.view,arch_db:website_blog.website_blog

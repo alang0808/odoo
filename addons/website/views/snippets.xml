@@ -14,8 +14,8 @@
 </template>
 
 <template id="s_cover" name="Cover">
-    <section class="s_cover parallax bg-black-50 oe_img_bg oe_custom_bg pt96 pb96" data-scroll-background-ratio="1">
-        <span class="s_parallax_bg" style="background-image: url('/web/image/website.s_cover_default_image'); background-position: 50% 0;"/>
+    <section class="s_cover parallax s_parallax_is_fixed bg-black-50 pt96 pb96" data-scroll-background-ratio="1">
+        <span class="s_parallax_bg oe_img_bg oe_custom_bg" style="background-image: url('/web/image/website.s_cover_default_image'); background-position: 50% 0;"/>
         <div class="container">
             <div class="row s_nb_column_fixed">
                 <div class="col-lg-12 s_title" data-name="Title">
@@ -74,11 +74,11 @@
 </template>
 
 <template id="s_banner" name="Banner">
-    <section class="s_banner parallax s_parallax_is_fixed oe_img_bg pt96 pb96" data-scroll-background-ratio="1">
-        <span class="s_parallax_bg" style="background-image: url('/web/image/website.s_banner_default_image'); background-position: 50% 0;"/>
+    <section class="s_banner parallax s_parallax_is_fixed pt96 pb96" data-scroll-background-ratio="1">
+        <span class="s_parallax_bg oe_img_bg oe_custom_bg" style="background-image: url('/web/image/website.s_banner_default_image'); background-position: 50% 0;"/>
         <div class="container">
             <div class="row s_nb_column_fixed">
-                <div class="col-lg-7 bg-white jumbotron pt32 pb32" data-name="Box">
+                <div class="col-lg-7 bg-white jumbotron rounded pt32 pb32" data-name="Box">
                     <div class="row">
                         <div class="col-lg-12 s_title s_col_no_bgcolor" data-name="Title">
                             <h1 class="s_title_thin"><font style="font-size: 62px;"><b>Sell Online.</b> Easily.</font></h1>
@@ -351,7 +351,7 @@
 <template id="s_image_gallery" name="Image Gallery">
     <section class="o_gallery o_spc-medium o_slideshow s_image_gallery" data-columns="3" style="height: 500px; overflow: hidden;">
         <div class="container">
-            <div class="alert alert-info css_editable_mode_display text-center" role="status"><span class="o_add_images" style="cursor: pointer;"><i class="fa fa-plus-circle"/> Add Images</span></div>
+            <div class="alert alert-info css_non_editable_mode_hidden text-center" role="status"><span class="o_add_images" style="cursor: pointer;"><i class="fa fa-plus-circle"/> Add Images</span></div>
         </div>
     </section>
 </template>
@@ -567,7 +567,7 @@
                 <div class="col-lg-12 pt16 pb16">
                     <div id="myCollapse" class="accordion" role="tablist">
                         <div class="card bg-white">
-                            <a href="#" role="tab" data-toggle="collapse" aria-expanded="true" class="card-header text-primary">Terms of service</a>
+                            <a href="#" role="tab" data-toggle="collapse" aria-expanded="true" class="card-header">Terms of service</a>
                             <div class="collapse show" role="tabpanel">
                                 <div class="card-body">
                                     <p class="card-text">These terms of service ("Terms", "Agreement") are an agreement between the website ("Website operator", "us", "we" or "our") and you ("User", "you" or "your"). This Agreement sets forth the general terms and conditions of your use of this website and any of its products or services (collectively, "Website" or "Services").</p>
@@ -575,7 +575,7 @@
                             </div>
                         </div>
                         <div class="card bg-white">
-                            <a href="#" role="tab" data-toggle="collapse" aria-expanded="false" class="collapsed card-header text-primary">Links to other Websites</a>
+                            <a href="#" role="tab" data-toggle="collapse" aria-expanded="false" class="collapsed card-header">Links to other Websites</a>
                             <div class="collapse" role="tabpanel">
                                 <div class="card-body">
                                     <p class="card-text">Although this Website may be linked to other websites, we are not, directly or indirectly, implying any approval, association, sponsorship, endorsement, or affiliation with any linked website, unless specifically stated herein.</p>
@@ -584,7 +584,7 @@
                             </div>
                         </div>
                         <div class="card bg-white">
-                            <a href="#" role="tab" data-toggle="collapse" aria-expanded="false" class="collapsed card-header text-primary">Use of Cookies</a>
+                            <a href="#" role="tab" data-toggle="collapse" aria-expanded="false" class="collapsed card-header">Use of Cookies</a>
                             <div class="collapse" role="tabpanel">
                                 <div class="card-body">
                                     <p class="card-text">Website may use cookies to personalize and facilitate maximum navigation of the User by this site. The User may configure his / her browser to notify and reject the installation of the cookies sent by us.</p>
@@ -736,8 +736,8 @@
 </template>
 
 <template id="s_parallax" name="Parallax">
-    <section class="s_parallax s_parallax_is_fixed parallax bg-black-50 pt160 pb160" data-scroll-background-ratio="1">
-        <span class="s_parallax_bg" style="background-image: url('/web/image/website.s_parallax_default_image'); background-position: 50% 75%;"/>
+    <section class="s_parallax parallax s_parallax_is_fixed bg-black-50 pt160 pb160" data-scroll-background-ratio="1">
+        <span class="s_parallax_bg oe_img_bg oe_custom_bg" style="background-image: url('/web/image/website.s_parallax_default_image'); background-position: 50% 75%;"/>
         <div class="oe_structure">
             <section>
                 <div class="container">
@@ -1003,7 +1003,7 @@
     </div>
 
     <!-- STYLES | .s_rating -->
-    <div data-selector=".s_rating [class*='col-lg-']">
+    <div data-selector=".s_rating > div">
         <div class="dropdown-submenu">
             <a tabindex="-1" href="#" class="dropdown-item">Icon</a>
             <div class="dropdown-menu" role="menu">
@@ -1081,7 +1081,7 @@
                 <a href="#" class="dropdown-item" role="menuitem" data-select-class="slide">Slide</a>
                 <a href="#" class="dropdown-item" role="menuitem" data-select-class="carousel-fade slide">Fade</a>
                 <div class="dropdown-divider"/>
-                <a href="#" class="dropdown-item" role="menuitem" data-select-class="s_carousel_no_transition">None</a>
+                <a href="#" class="dropdown-item" role="menuitem" data-select-class="">None</a>
             </div>
         </div>
         <div class="dropdown-submenu">
@@ -1278,35 +1278,33 @@
 
     <!-- Color | Columns -->
     <div data-js="colorpicker"
-        data-selector="section [class*='col-lg-']"
-        data-exclude=".s_col_no_bgcolor, .s_col_no_bgcolor > [class*='col-lg-'], .o_gallery [class*='col-lg-']">
+        data-selector="section .row > div"
+        data-exclude=".s_col_no_bgcolor, .s_col_no_bgcolor.row > div, .o_gallery .row > div">
         <div class="dropdown-submenu">
             <a tabindex="-1" href="#" class="dropdown-item"><i class="fa fa-eyedropper"/>Background Color</a>
             <div class="dropdown-menu" role="menu"/>
         </div>
     </div>
 
-    <div data-selector="section [class*='col-lg-']"
-        data-exclude=".s_col_no_bgcolor, .s_col_no_bgcolor > [class*='col-lg-'], .o_gallery [class*='col-lg-']">
+    <div data-selector="section .row > div"
+        data-exclude=".s_col_no_bgcolor, .s_col_no_bgcolor.row > div, .o_gallery .row > div">
         <div class="dropdown-submenu">
             <a tabindex="-1" href="#" class="dropdown-item"><i class="fa fa-magic"/>Styles</a>
             <div class="dropdown-menu" role="menu">
-                <a href="#" class="dropdown-item" role="menuitem" data-select-class="border">Border</a>
-                <a href="#" class="dropdown-item" role="menuitem" data-select-class="rounded">Rounded</a>
-                <a href="#" class="dropdown-item" role="menuitem" data-select-class="shadow">Shadow</a>
-                <div class="dropdown-divider"/>
-                <a href="#" class="dropdown-item" role="menuitem" data-select-class="">None</a>
+                <a href="#" class="dropdown-item" role="menuitem" data-toggle-class="border">Border</a>
+                <a href="#" class="dropdown-item" role="menuitem" data-toggle-class="rounded">Rounded</a>
+                <a href="#" class="dropdown-item" role="menuitem" data-toggle-class="shadow">Shadow</a>
             </div>
         </div>
     </div>
 
     <div data-js="sizing_y"
-        data-selector="section, .row > [class*='col-lg-'], :not(.o_gallery > .container) > .carousel, .parallax, .s_hr, .s_btn"/>
+        data-selector="section, .row > div, :not(.o_gallery > .container) > .carousel, .parallax, .s_hr, .s_btn"/>
 
     <div data-js="sizing_x"
-        data-selector=".row > [class*='col-lg-']"
-        data-drop-near=".row > [class*='col-lg-']"
-        data-exclude=".s_col_no_resize > [class*='col-lg-']">
+        data-selector=".row > div"
+        data-drop-near=".row > div"
+        data-exclude=".s_col_no_resize.row > div">
     </div>
 
     <div id="so_snippet_addition"

@@ -206,6 +206,9 @@ define([
       setTimeout(function () {
         var layoutInfo = dom.makeLayoutInfo(target);
         /* ODOO: (start_modification */
+        if (!layoutInfo) {
+            return;
+        }
         var $editable = layoutInfo.editable();
         if (event.setStyleInfoFromEditable) {
             var styleInfo = modules.editor.styleFromNode($editable);
@@ -365,7 +368,7 @@ define([
             (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
             (keycode > 218 && keycode < 223))) {   // [\]' (in order))
           eventName = 'visible';
-        } else if (!keycode) {
+        } else if (!keycode && event.key !== 'Dead') {
           self.invoke('restoreRange', $editable);
         }
         // ODOO: end_modification)

@@ -5,11 +5,11 @@ import base64
 import datetime
 import logging
 import psycopg2
+import smtplib
 import threading
 import re
 
 from collections import defaultdict
-from email.utils import formataddr
 
 from odoo import _, api, fields, models
 from odoo import tools
@@ -64,7 +64,18 @@ class MailMail(models.Model):
         # notification field: if not set, set if mail comes from an existing mail.message
         if 'notification' not in values and values.get('mail_message_id'):
             values['notification'] = True
-        return super(MailMail, self).create(values)
+        new_mail = super(MailMail, self).create(values)
+        if values.get('attachment_ids'):
+            new_mail.attachment_ids.check(mode='read')
+        return new_mail
+
+    @api.multi
+    def write(self, vals):
+        res = super(MailMail, self).write(vals)
+        if vals.get('attachment_ids'):
+            for mail in self:
+                mail.attachment_ids.check(mode='read')
+        return res
 
     @api.multi
     def unlink(self):
@@ -119,6 +130,8 @@ class MailMail(models.Model):
             ids = filtered_ids
         else:
             ids = list(set(filtered_ids) & set(ids))
+        ids.sort()
+
         res = None
         try:
             # auto-commit except in testing mode
@@ -149,15 +162,17 @@ class MailMail(models.Model):
                 failed = self.env['mail.notification']
                 if failure_type:
                     failed = notifications.filtered(lambda notif: notif.res_partner_id not in success_pids)
-                    failed.write({
+                    failed.sudo().write({
                         'email_status': 'exception',
                         'failure_type': failure_type,
                         'failure_reason': failure_reason,
                     })
                     messages = notifications.mapped('mail_message_id').filtered(lambda m: m.res_id and m.model)
                     messages._notify_failure_update()  # notify user that we have a failure
-                (notifications - failed).write({
+                (notifications - failed).sudo().write({
                     'email_status': 'sent',
+                    'failure_type': '',
+                    'failure_reason': '',
                 })
         if not failure_type or failure_type == 'RECIPIENT':  # if we have another error, we want to keep the mail.
             mail_to_delete_ids = [mail.id for mail in self if mail.auto_delete]
@@ -186,7 +201,7 @@ class MailMail(models.Model):
         body = self._send_prepare_body()
         body_alternative = tools.html2plaintext(body)
         if partner:
-            email_to = [formataddr((partner.name or 'False', partner.email or 'False'))]
+            email_to = [tools.formataddr((partner.name or 'False', partner.email or 'False'))]
         else:
             email_to = tools.email_split_and_format(self.email_to)
         res = {
@@ -281,7 +296,7 @@ class MailMail(models.Model):
                 # `datas` (binary field) could bloat the browse cache, triggerring
                 # soft/hard mem limits with temporary data.
                 attachments = [(a['datas_fname'], base64.b64decode(a['datas']), a['mimetype'])
-                               for a in attachments.sudo().read(['datas_fname', 'datas', 'mimetype'])]
+                               for a in attachments.sudo().read(['datas_fname', 'datas', 'mimetype']) if a['datas'] is not False]
 
                 # specific behavior to customize the send email for notified partners
                 email_list = []
@@ -291,7 +306,6 @@ class MailMail(models.Model):
                     values = mail._send_prepare_values(partner=partner)
                     values['partner_id'] = partner
                     email_list.append(values)
-
 
                 # headers
                 headers = {}
@@ -316,6 +330,22 @@ class MailMail(models.Model):
                     'state': 'exception',
                     'failure_reason': _('Error without exception. Probably due do sending an email without computed recipients.'),
                 })
+                # Update notification in a transient exception state to avoid concurrent
+                # update in case an email bounces while sending all emails related to current
+                # mail record.
+                notifs = self.env['mail.notification'].search([
+                    ('is_email', '=', True),
+                    ('mail_id', 'in', mail.ids),
+                    ('email_status', 'not in', ('sent', 'canceled'))
+                ])
+                if notifs:
+                    notif_msg = _('Error without exception. Probably due do concurrent access update of notification records. Please see with an administrator.')
+                    notifs.sudo().write({
+                        'email_status': 'exception',
+                        'failure_type': 'UNKNOWN',
+                        'failure_reason': notif_msg,
+                    })
+
                 # build an RFC2822 email.message.Message object and send it without queuing
                 res = None
                 for email in email_list:
@@ -358,9 +388,6 @@ class MailMail(models.Model):
                     # /!\ can't use mail.state here, as mail.refresh() will cause an error
                     # see revid:odo@openerp.com-20120622152536-42b2s28lvdv3odyr in 6.1
                 mail._postprocess_sent_message(success_pids=success_pids, failure_type=failure_type)
-            except UnicodeEncodeError as exc:
-                _logger.exception('UnicodeEncodeError on text "%s" while processing mail ID %r.', exc.object, mail.id)
-                raise MailDeliveryException(_("Mail Delivery Failed"), "Invalid text: %s" % exc.object)
             except MemoryError:
                 # prevent catching transient MemoryErrors, bubble up to notify user or abort cron job
                 # instead of marking the mail as failed
@@ -369,11 +396,12 @@ class MailMail(models.Model):
                     mail.id, mail.message_id)
                 # mail status will stay on ongoing since transaction will be rollback
                 raise
-            except psycopg2.Error:
-                # If an error with the database occurs, chances are that the cursor is unusable.
-                # This will lead to an `psycopg2.InternalError` being raised when trying to write
-                # `state`, shadowing the original exception and forbid a retry on concurrent
-                # update. Let's bubble it.
+            except (psycopg2.Error, smtplib.SMTPServerDisconnected):
+                # If an error with the database or SMTP session occurs, chances are that the cursor
+                # or SMTP session are unusable, causing further errors when trying to save the state.
+                _logger.exception(
+                    'Exception while processing mail with ID %r and Msg-Id %r.',
+                    mail.id, mail.message_id)
                 raise
             except Exception as e:
                 failure_reason = tools.ustr(e)
@@ -381,10 +409,13 @@ class MailMail(models.Model):
                 mail.write({'state': 'exception', 'failure_reason': failure_reason})
                 mail._postprocess_sent_message(success_pids=success_pids, failure_reason=failure_reason, failure_type='UNKNOWN')
                 if raise_exception:
-                    if isinstance(e, AssertionError):
-                        # get the args of the original error, wrap into a value and throw a MailDeliveryException
-                        # that is an except_orm, with name and value as arguments
-                        value = '. '.join(e.args)
+                    if isinstance(e, (AssertionError, UnicodeEncodeError)):
+                        if isinstance(e, UnicodeEncodeError):
+                            value = "Invalid text: %s" % e.object
+                        else:
+                            # get the args of the original error, wrap into a value and throw a MailDeliveryException
+                            # that is an except_orm, with name and value as arguments
+                            value = '. '.join(e.args)
                         raise MailDeliveryException(_("Mail Delivery Failed"), value)
                     raise
 

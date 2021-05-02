@@ -252,7 +252,7 @@ function formatInteger(value, field, options) {
  * return an empty string.  Note that it accepts two types of input parameters:
  * an array, in that case we assume that the many2one value is of the form
  * [id, nameget], and we return the nameget, or it can be an object, and in that
- * case, we assume that it is a record from a BasicModel.
+ * case, we assume that it is a record datapoint from a BasicModel.
  *
  * @param {Array|Object|false} value
  * @param {Object} [field]
@@ -262,7 +262,18 @@ function formatInteger(value, field, options) {
  * @returns {string}
  */
 function formatMany2one(value, field, options) {
-    value = value && (_.isArray(value) ? value[1] : value.data.display_name) || '';
+    if (!value) {
+        value = '';
+    } else if (_.isArray(value)) {
+        // value is a pair [id, nameget]
+        value = value[1];
+    } else {
+        // value is a datapoint, so we read its display_name field, which
+        // may in turn be a datapoint (if the name field is a many2one)
+        while (value.data) {
+            value = value.data.display_name || '';
+        }
+    }
     if (options && options.escape) {
         value = _.escape(value);
     }
@@ -363,7 +374,7 @@ function formatPercentage(value, field, options) {
     if (options.humanReadable && options.humanReadable(value * 100)) {
         return result + "%";
     }
-    return parseFloat(result) + "%";
+    return (parseFloat(result) + "%").replace('.', _t.database.parameters.decimal_point);
 }
 /**
  * Returns a string representing the value of the selection.
@@ -415,7 +426,7 @@ function parseDate(value, field, options) {
     if (options && options.isUTC) {
         date = moment.utc(value);
     } else {
-        date = moment.utc(value, [datePattern, datePatternWoZero, moment.ISO_8601], true);
+        date = moment.utc(value, [datePattern, datePatternWoZero, moment.ISO_8601]);
     }
     if (date.isValid()) {
         if (date.year() === 0) {
@@ -459,7 +470,7 @@ function parseDateTime(value, field, options) {
         // phatomjs crash if we don't use this format
         datetime = moment.utc(value.replace(' ', 'T') + 'Z');
     } else {
-        datetime = moment.utc(value, [pattern1, pattern2, moment.ISO_8601], true);
+        datetime = moment.utc(value, [pattern1, pattern2, moment.ISO_8601]);
         if (options && options.timezone) {
             datetime.add(-session.getTZOffset(datetime), 'minutes');
         }
@@ -587,6 +598,22 @@ function parseFloatTime(value) {
 }
 
 /**
+ * Parse a String containing a percentage and convert it to float.
+ * The percentage can be a regular xx.xx float or a xx%.
+ *
+ * @param {string} value
+ *                The string to be parsed
+ * @returns {float}
+ * @throws {Error} if the value couldn't be converted to float
+ */
+function parsePercentage(value) {
+    if (value.slice(-1) === '%') {
+        return parseFloat(value.slice(0, -1)) / 100;
+    }
+    return parseFloat(value);
+}
+
+/**
  * Parse a String containing integer with language formating
  *
  * @param {string} value
@@ -668,6 +695,7 @@ return {
         many2one: parseMany2one,
         monetary: parseMonetary,
         one2many: _.identity,
+        percentage: parsePercentage,
         reference: parseMany2one,
         selection: _.identity, // todo
         text: _.identity, // todo

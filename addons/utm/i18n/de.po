@@ -4,17 +4,20 @@
 # 
 # Translators:
 # Ralf Hilgenstock <rh@dialoge.info>, 2018
-# Martin Trigaux, 2018
-# Ermin Trevisan <trevi@twanda.com>, 2018
 # jonas <jonas.hillebrecht@bklynsoap.com>, 2018
 # Jan Meyer, 2018
+# Martin Trigaux, 2018
+# Marco Tarsia <marco.y.tarsia@gmail.com>, 2018
+# Chris Egal <sodaswed@web.de>, 2019
+# Ermin Trevisan <trevi@twanda.com>, 2020
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-10-08 06:49+0000\n"
-"PO-Revision-Date: 2018-10-08 06:49+0000\n"
-"Last-Translator: Jan Meyer, 2018\n"
+"PO-Revision-Date: 2018-08-24 09:33+0000\n"
+"Last-Translator: Ermin Trevisan <trevi@twanda.com>, 2020\n"
 "Language-Team: German (https://www.transifex.com/odoo/teams/41243/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -83,7 +86,7 @@ msgstr ""
 #. module: utm
 #: model_terms:ir.actions.act_window,help:utm.utm_source_action
 msgid "Define a new source"
-msgstr ""
+msgstr "Definieren Sie eine neue Quelle"
 
 #. module: utm
 #: model:ir.model.fields,field_description:utm.field_utm_campaign__display_name
@@ -106,7 +109,7 @@ msgstr "Facebook"
 #. module: utm
 #: model:ir.model,name:utm.model_ir_http
 msgid "HTTP Routing"
-msgstr ""
+msgstr "HTTP Routing"
 
 #. module: utm
 #: model:ir.model.fields,field_description:utm.field_utm_campaign__id
@@ -141,7 +144,7 @@ msgstr "Zuletzt aktualisiert am"
 #. module: utm
 #: model:utm.source,name:utm.utm_source_mailing
 msgid "Lead Newsletter"
-msgstr ""
+msgstr "Interessenten-Newsletter"
 
 #. module: utm
 #: model:ir.ui.menu,name:utm.menu_link_tracker_root

@@ -45,8 +45,9 @@ class Event(models.Model):
         if self.env.user != self.env['website'].get_current_website().user_id:
             email = self.env.user.partner_id.email
             for event in self:
-                domain = ['&', '|', ('email', '=', email), ('partner_id', '=', self.env.user.partner_id.id), ('event_id', '=', event.id)]
-                event.is_participating = self.env['event.registration'].search_count(domain)
+                domain = ['&','&', '|', ('email', '=', email), ('partner_id', '=', self.env.user.partner_id.id),
+                          ('event_id', '=', event.id), ('state', '!=', 'cancel')]
+                event.is_participating = self.env['event.registration'].sudo().search_count(domain)
 
     @api.multi
     @api.depends('name')
@@ -72,19 +73,28 @@ class Event(models.Model):
             (_('Register'), '/event/%s/register' % slug(self), False),
         ]
 
-    @api.multi
-    def write(self, vals):
-        res = super(Event, self).write(vals)
+    def _toggle_create_website_menus(self, vals):
         for event in self:
             if 'website_menu' in vals:
                 if event.menu_id and not event.website_menu:
                     event.menu_id.unlink()
                 elif event.website_menu:
                     if not event.menu_id:
-                        root_menu = self.env['website.menu'].create({'name': event.name, 'website_id': event.id})
+                        root_menu = self.env['website.menu'].create({'name': event.name, 'website_id': event.website_id.id})
                         event.menu_id = root_menu
                     for sequence, (name, url, xml_id) in enumerate(event._get_menu_entries()):
                         event._create_menu(sequence, name, url, xml_id)
+
+    @api.model
+    def create(self, vals):
+        res = super(Event, self).create(vals)
+        res._toggle_create_website_menus(vals)
+        return res
+
+    @api.multi
+    def write(self, vals):
+        res = super(Event, self).write(vals)
+        self._toggle_create_website_menus(vals)
         return res
 
     def _create_menu(self, sequence, name, url, xml_id):
@@ -96,7 +106,7 @@ class Event(models.Model):
             'url': url,
             'parent_id': self.menu_id.id,
             'sequence': sequence,
-            'website_id': self.id,
+            'website_id': self.website_id.id,
         })
         return menu
 

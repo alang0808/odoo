@@ -501,6 +501,76 @@ class TestQWebNS(TransactionCase):
         with self.assertRaises(QWebException, msg=error_msg):
             view1.render()
 
+    def test_render_t_call_propagates_t_lang(self):
+        current_lang = 'en_US'
+        other_lang = 'fr_FR'
+
+        self.env['res.lang'].load_lang(lang=other_lang)
+
+        self.env['res.lang'].search([('code', '=', other_lang)], limit=1).write({
+            'active': True,
+            'decimal_point': '*',
+            'thousands_sep': '/'
+        })
+
+        view1 = self.env['ir.ui.view'].create({
+            'name': "callee",
+            'type': 'qweb',
+            'arch': u"""
+                <t t-name="base.callee">
+                    <t t-esc="9000000.00" t-options="{'widget': 'float', 'precision': 2}" />
+                </t>
+            """
+        })
+        self.env['ir.model.data'].create({
+            'name': 'callee',
+            'model': 'ir.ui.view',
+            'module': 'base',
+            'res_id': view1.id,
+        })
+
+        view2 = self.env['ir.ui.view'].create({
+            'name': "calling",
+            'type': 'qweb',
+            'arch': u"""
+                <t t-name="base.calling">
+                    <t t-call="base.callee" t-lang="'%s'" />
+                </t>
+            """ % other_lang
+        })
+
+        rendered = view2.with_context(lang=current_lang).render().strip()
+        self.assertEqual(rendered, b'9/000/000*00')
+
+    def test_render_barcode(self):
+        engine = self.env['ir.qweb']
+        partner = self.env['res.partner'].create({
+            'name': 'bacode_test',
+            'barcode': 'test'
+        })
+
+        field = etree.Element('div', {
+            't-field': u'partner.barcode',
+            't-options': u"{'widget': 'barcode', 'width': 100, 'height': 30}"
+        })
+        rendered = engine.render(field, {'partner': partner}).strip().decode()
+        self.assertRegex(rendered,r'<div><img alt="Barcode test" src="data:image/png;base64,\S+"></div>')
+
+        partner.barcode = '4012345678901'
+        field = etree.Element('div', {
+            't-field': u'partner.barcode',
+            't-options': u"{'widget': 'barcode', 'symbology': 'EAN13', 'width': 100, 'height': 30, 'img_style': 'width:100%;', 'img_alt': 'Barcode'}"
+        })
+        ean_rendered = engine.render(field, {'partner': partner}).strip().decode()
+        self.assertRegex(ean_rendered,r'<div><img style="width:100%;" alt="Barcode" src="data:image/png;base64,\S+"></div>')
+
+        field = etree.Element('div', {
+            't-field': u'partner.barcode',
+            't-options': u"{'widget': 'barcode', 'symbology': 'auto', 'width': 100, 'height': 30, 'img_style': 'width:100%;', 'img_alt': 'Barcode'}"
+        })
+        auto_rendered = engine.render(field, {'partner': partner}).strip().decode()
+        self.assertRegex(auto_rendered,r'<div><img style="width:100%;" alt="Barcode" src="data:image/png;base64,\S+"></div>')
+
 
 from copy import deepcopy
 class FileSystemLoader(object):
@@ -595,8 +665,6 @@ class TestPageSplit(TransactionCase):
             E.div({'style': 'page-break-after: always'}),
             E.table(E.tr({'data-pagebreak': 'before'}), E.tr())
         )
-        print(etree.tostring(rendered))
-        print(etree.tostring(ref))
         self.assertTreesEqual(rendered, ref)
 
     def test_split_after(self):

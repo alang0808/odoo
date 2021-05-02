@@ -5,7 +5,7 @@ from lxml import etree
 import json
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 
 class AccountAnalyticLine(models.Model):
@@ -23,6 +23,15 @@ class AccountAnalyticLine(models.Model):
 
     employee_id = fields.Many2one('hr.employee', "Employee")
     department_id = fields.Many2one('hr.department', "Department", compute='_compute_department_id', store=True, compute_sudo=True)
+
+    @api.constrains('task_id', 'project_id')
+    def _check_task_project(self):
+        for line in self:
+            if line.task_id and line.project_id and line.task_id.project_id != line.project_id:
+                raise ValidationError(_(
+                    "The project and the task's project are inconsistent. " +
+                    "The selected task must be in the selected project."
+                ))
 
     @api.onchange('project_id')
     def onchange_project_id(self):
@@ -42,7 +51,10 @@ class AccountAnalyticLine(models.Model):
 
     @api.onchange('employee_id')
     def _onchange_employee_id(self):
-        self.user_id = self.employee_id.user_id
+        if self.employee_id:
+            self.user_id = self.employee_id.user_id
+        else:
+            self.user_id = self._default_user()
 
     @api.depends('employee_id')
     def _compute_department_id(self):
@@ -148,7 +160,7 @@ class AccountAnalyticLine(models.Model):
             :return: a dictionary mapping each record id to its corresponding
                 dictionnary values to write (may be empty).
         """
-        result = dict.fromkeys(self.ids, dict())
+        result = {id_: {} for id_ in self.ids}
         sudo_self = self.sudo()  # this creates only one env for all operation that required sudo()
         # (re)compute the amount (depending on unit_amount, employee_id for the cost, and account_id for currency)
         if any([field_name in values for field_name in ['unit_amount', 'employee_id', 'account_id']]):

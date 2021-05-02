@@ -6,6 +6,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from odoo.osv import expression
 from odoo.tools.safe_eval import safe_eval
+from odoo.tools.sql import column_exists, create_column
 
 
 class SaleOrder(models.Model):
@@ -51,7 +52,11 @@ class SaleOrder(models.Model):
     def _action_confirm(self):
         """ On SO confirmation, some lines should generate a task or a project. """
         result = super(SaleOrder, self)._action_confirm()
-        self.mapped('order_line').sudo()._timesheet_service_generation()
+        for order in self:
+            order.mapped('order_line').sudo().with_context(
+                default_company_id=order.company_id.id,
+                force_company=order.company_id.id,
+            )._timesheet_service_generation()
         return result
 
     @api.multi
@@ -65,7 +70,8 @@ class SaleOrder(models.Model):
 
         task_projects = self.tasks_ids.mapped('project_id')
         if len(task_projects) == 1 and len(self.tasks_ids) > 1:  # redirect to task of the project (with kanban stage, ...)
-            action = self.env.ref('project.act_project_project_2_project_task_all').read()[0]
+            action = self.with_context(active_id=task_projects.id).env.ref(
+                'project.act_project_project_2_project_task_all').read()[0]
             if action.get('context'):
                 eval_context = self.env['ir.actions.actions']._get_eval_context()
                 eval_context.update({'active_id': task_projects.id})
@@ -107,7 +113,7 @@ class SaleOrder(models.Model):
     def action_view_timesheet(self):
         self.ensure_one()
         action = self.env.ref('hr_timesheet.timesheet_action_all').read()[0]
-        action['context'] = self.env.context  # erase default filters
+        action['context'] = {}  # erase default filters
 
         if self.timesheet_count > 0:
             action['domain'] = [('so_line', 'in', self.order_line.ids)]
@@ -163,6 +169,21 @@ class SaleOrderLine(models.Model):
                 line.product_updatable = False
             else:
                 super(SaleOrderLine, line)._compute_product_updatable()
+
+    def _auto_init(self):
+        """
+        Create column to stop ORM from computing it himself (too slow)
+        """
+        if not column_exists(self.env.cr, 'sale_order_line', 'is_service'):
+            create_column(self.env.cr, 'sale_order_line', 'is_service', 'bool')
+            self.env.cr.execute("""
+                UPDATE sale_order_line line
+                SET is_service = (pt.type = 'service')
+                FROM product_product pp
+                LEFT JOIN product_template pt ON pt.id = pp.product_tmpl_id
+                WHERE pp.id = line.product_id
+            """)
+        return super()._auto_init()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -232,6 +253,10 @@ class SaleOrderLine(models.Model):
                 'sale_line_id': self.id,
                 'partner_id': self.order_id.partner_id.id,
                 'email_from': self.order_id.partner_id.email,
+            })
+            # duplicating a project doesn't set the SO on sub-tasks
+            project.tasks.filtered(lambda task: task.parent_id != False).write({
+                'sale_line_id': self.id,
             })
         else:
             project = self.env['project.project'].create(values)
@@ -320,6 +345,12 @@ class SaleOrderLine(models.Model):
                     map_so_project_templates[(so_line.order_id.id, so_line.product_id.project_template_id.id)] = project
                 else:
                     map_so_project[so_line.order_id.id] = project
+            elif not project:
+                # Attach subsequent SO lines to the created project
+                so_line.project_id = (
+                    map_so_project_templates.get((so_line.order_id.id, so_line.product_id.project_template_id.id))
+                    or map_so_project.get(so_line.order_id.id)
+                )
             if so_line.product_id.service_tracking == 'task_new_project':
                 if not project:
                     if so_line.product_id.project_template_id:

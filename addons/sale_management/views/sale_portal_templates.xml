@@ -15,6 +15,7 @@
 
         <xpath expr="//section[@id='details']//table[@id='sales_order_table']/thead/tr" position="inside">
             <th t-if="display_remove">
+                <!-- TODO: remove in master -->
                 <t t-set="colspan" t-value="colspan+1"/>
             </th>
         </xpath>
@@ -31,7 +32,7 @@
             <t t-if="any([(not option.line_id) for option in sale_order.sale_order_option_ids])">
                 <section>
                     <h3>Optional Products</h3>
-                    <t t-set="display_discount" t-value="True in [option.discount for option in sale_order.sale_order_option_ids]"/>
+                    <t t-set="display_discount" t-value="any([option.discount for option in sale_order.sale_order_option_ids])"/>
                     <table class="table table-sm">
                         <thead>
                             <tr>

@@ -5,6 +5,7 @@ var core = require('web.core');
 var Widget = require('web.Widget');
 
 var QWeb = core.qweb;
+var _t = core._t;
 
 
 
@@ -15,6 +16,7 @@ var DropdownMenu = Widget.extend({
         'click .o_item_option': '_onOptionClick',
         'click span.o_trash_button': '_onTrashClick',
         'hidden.bs.dropdown': '_onBootstrapClose',
+        'click .dropdown-item-text': '_onDropDownItemTextClick',
     },
 
     /**
@@ -58,7 +60,13 @@ var DropdownMenu = Widget.extend({
      * override
      */
     start: function () {
+        var self = this;
         this.$menu = this.$('.o_dropdown_menu');
+        this.$dropdownReference = this.$('.o_dropdown_toggler_btn');
+
+        if (_t.database.parameters.direction === 'rtl') {
+            this.$menu.addClass('dropdown-menu-right');
+        }
     },
 
     //--------------------------------------------------------------------------
@@ -198,6 +206,15 @@ var DropdownMenu = Widget.extend({
             item.isOpen = false;
         });
         this._renderMenuItems();
+    },
+    /**
+     * Reacts to click on bootstrap's dropdown-item-text
+     * Protects against Bootstrap dropdown close from inside click
+     *
+     * @private
+     */
+    _onDropDownItemTextClick: function (ev) {
+        ev.stopPropagation();
     },
     /**
      * @private

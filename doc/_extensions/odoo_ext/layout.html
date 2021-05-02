@@ -1,12 +1,5 @@
 {% extends "basic/layout.html" %}
 
-{% set script_files = script_files + [
-'_static/jquery.min.js',
-'_static/bootstrap.js',
-'_static/doc.js',
-'_static/jquery.noconflict.js',
-] %}
-
 {% set classes = [] %}
 {% if pagename == master_doc %}
   {% set classes = classes + ['index'] %}
@@ -23,6 +16,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://fonts.googleapis.com/css?family=Work+Sans:500,600" rel="stylesheet">
+  {{ super() }}
+{%- endblock -%}
+
+{%- block linktags -%}
+    <link rel="canonical" href="{{ canonical }}" />
   {{ super() }}
 {%- endblock -%}
 
@@ -279,7 +277,7 @@
                 <li><a href="https://github.com/odoo/odoo">Github</a></li>
                 <li><a href="http://www.odoo.com/page/download">Download</a></li>
                 <li class="divider"></li>
-                <li><a href="http://runbot.odoo.com/runbot/repo/git-github-com-odoo-enterprise-7">Runbot</a></li>
+                <li><a href="https://runbot.odoo.com">Runbot</a></li>
                 <li><a href="https://github.com/odoo/odoo/wiki/Translations">Translations</a></li>
                 <li class="divider"></li>
                 <li><a href="http://www.odoo.com/page/odoo-community">Mailing Lists</a></li>

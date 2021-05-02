@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from odoo import fields
 from odoo.addons.payment.models.payment_acquirer import ValidationError
 from odoo.addons.payment.tests.common import PaymentAcquirerCommon
 from odoo.addons.payment_paypal.controllers.main import PaypalController
@@ -57,6 +58,7 @@ class PaypalForm(PaypalCommon):
             'first_name': 'Norbert',
             'last_name': 'Buyer',
             'amount': '0.01',
+            'bn': 'OdooInc_SP',
             'currency_code': 'EUR',
             'address1': 'Huge Street 2/543',
             'city': 'Sin City',
@@ -66,6 +68,7 @@ class PaypalForm(PaypalCommon):
             'return': urls.url_join(base_url, PaypalController._return_url),
             'notify_url': urls.url_join(base_url, PaypalController._notify_url),
             'cancel_return': urls.url_join(base_url, PaypalController._cancel_url),
+            'custom': '{"return_url": "/payment/process"}',
         }
 
         # check form result
@@ -139,7 +142,7 @@ class PaypalForm(PaypalCommon):
             'item_name': u'test_ref_2',
             'address_country': u'France',
             'charset': u'windows-1252',
-            'custom': u'',
+            'custom': u'{"return_url": "/payment/process"}',
             'notify_version': u'3.7',
             'address_name': u'Norbert Poilu',
             'pending_reason': u'multi_currency',
@@ -182,7 +185,6 @@ class PaypalForm(PaypalCommon):
         self.assertEqual(tx.state, 'pending', 'paypal: wrong state after receiving a valid pending notification')
         self.assertEqual(tx.state_message, 'multi_currency', 'paypal: wrong state message after receiving a valid pending notification')
         self.assertEqual(tx.acquirer_reference, '08D73520KX778924N', 'paypal: wrong txn_id after receiving a valid pending notification')
-        self.assertFalse(tx.date, 'paypal: validation date should not be updated whenr receiving pending notification')
 
         # update tx
         tx.write({
@@ -196,4 +198,16 @@ class PaypalForm(PaypalCommon):
         # check
         self.assertEqual(tx.state, 'done', 'paypal: wrong state after receiving a valid pending notification')
         self.assertEqual(tx.acquirer_reference, '08D73520KX778924N', 'paypal: wrong txn_id after receiving a valid pending notification')
-        self.assertEqual(tx.date, '2013-11-18 11:21:19', 'paypal: wrong validation date')
+        self.assertEqual(fields.Datetime.to_string(tx.date), '2013-11-18 11:21:19', 'paypal: wrong validation date')
+
+    def test_21_paypal_compute_fees(self):
+        #If the merchant needs to keep 100€, the transaction will be equal to 103.30€.
+        #In this way, Paypal will take 103.30 * 2.9% + 0.30 = 3.30€
+        #And the merchant will take 103.30 - 3.30 = 100€
+        self.paypal.write({
+            'fees_active': True,
+            'fees_int_fixed': 0.30,
+            'fees_int_var': 2.90,
+        })
+        total_fee = self.paypal.paypal_compute_fees(100, False, False)
+        self.assertEqual(round(total_fee, 2), 3.3, 'Wrong computation of the Paypal fees')

@@ -160,7 +160,8 @@ class Message(models.Model):
                 (self._table, operator)
         self.env.cr.execute(query, (value,))
         ids = [t[0] for t in self.env.cr.fetchall()]
-        return [('id', 'in', ids)]
+        # return domain with an implicit AND
+        return [('id', 'in', ids), (1, '=', 1)]
 
     @api.one
     @api.depends('size')
@@ -231,6 +232,7 @@ class MultiTag(models.Model):
     _description = 'Test New API Multi Tag'
 
     name = fields.Char()
+    active = fields.Boolean(default=True)
 
 
 class Edition(models.Model):
@@ -408,6 +410,8 @@ class CompanyDependent(models.Model):
     _description = 'Test New API Company'
 
     foo = fields.Char(company_dependent=True)
+    date = fields.Date(company_dependent=True)
+    moment = fields.Datetime(company_dependent=True)
     tag_id = fields.Many2one('test_new_api.multi.tag', company_dependent=True)
 
 
@@ -468,3 +472,45 @@ class BinarySvg(models.Model):
     name = fields.Char(required=True)
     image_attachment = fields.Binary(attachment=True)
     image_wo_attachment = fields.Binary(attachment=False)
+
+
+class MonetaryBase(models.Model):
+    _name = 'test_new_api.monetary_base'
+    _description = 'Monetary Base'
+
+    base_currency_id = fields.Many2one('res.currency')
+    amount = fields.Monetary(currency_field='base_currency_id')
+
+
+class MonetaryRelated(models.Model):
+    _name = 'test_new_api.monetary_related'
+    _description = 'Monetary Related'
+
+    monetary_id = fields.Many2one('test_new_api.monetary_base')
+    currency_id = fields.Many2one('res.currency', related='monetary_id.base_currency_id')
+    amount = fields.Monetary(related='monetary_id.amount')
+
+
+class MonetaryCustom(models.Model):
+    _name = 'test_new_api.monetary_custom'
+    _description = 'Monetary Related Custom'
+
+    monetary_id = fields.Many2one('test_new_api.monetary_base')
+    x_currency_id = fields.Many2one('res.currency', related='monetary_id.base_currency_id')
+    x_amount = fields.Monetary(related='monetary_id.amount')
+
+
+class MonetaryInherits(models.Model):
+    _name = 'test_new_api.monetary_inherits'
+    _description = 'Monetary Inherits'
+    _inherits = {'test_new_api.monetary_base': 'monetary_id'}
+
+    monetary_id = fields.Many2one('test_new_api.monetary_base', required=True, ondelete='cascade')
+    currency_id = fields.Many2one('res.currency')
+
+
+class FieldWithCaps(models.Model):
+    _name = 'test_new_api.field_with_caps'
+    _description = 'Model with field defined with capital letters'
+
+    pArTneR_321_id = fields.Many2one('res.partner')

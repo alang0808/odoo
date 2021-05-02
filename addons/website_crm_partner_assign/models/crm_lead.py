@@ -5,7 +5,9 @@ import random
 
 from odoo import api, fields, models, _
 from odoo.addons.base_geolocalize.models.res_partner import geo_find, geo_query_address
-from odoo.exceptions import AccessDenied
+from odoo.exceptions import AccessDenied, AccessError
+from odoo.tools import html_escape
+
 
 class CrmLead(models.Model):
     _inherit = "crm.lead"
@@ -181,7 +183,7 @@ class CrmLead(models.Model):
     def partner_interested(self, comment=False):
         message = _('<p>I am interested by this lead.</p>')
         if comment:
-            message += '<p>%s</p>' % comment
+            message += '<p>%s</p>' % html_escape(comment)
         for lead in self:
             lead.message_post(body=message, subtype="mail.mt_note")
             lead.sudo().convert_opportunity(lead.partner_id.id)  # sudo required to convert partner data
@@ -196,7 +198,7 @@ class CrmLead(models.Model):
             [('id', 'child_of', self.env.user.partner_id.commercial_partner_id.id)])
         self.message_unsubscribe(partner_ids=partner_ids.ids)
         if comment:
-            message += '<p>%s</p>' % comment
+            message += '<p>%s</p>' % html_escape(comment)
         self.message_post(body=message, subtype="mail.mt_note")
         values = {
             'partner_assigned_id': False,
@@ -270,3 +272,35 @@ class CrmLead(models.Model):
         return {
             'id': lead.id
         }
+
+    #
+    #   DO NOT FORWARD PORT IN MASTER
+    #   instead, crm.lead should implement portal.mixin
+    #
+    @api.multi
+    def get_access_action(self, access_uid=None):
+        """ Instead of the classic form view, redirect to the online document for
+        portal users or if force_website=True in the context. """
+        self.ensure_one()
+
+        user, record = self.env.user, self
+        if access_uid:
+            try:
+                record.check_access_rights('read')
+                record.check_access_rule("read")
+            except AccessError:
+                return super(CrmLead, self).get_access_action(access_uid)
+            user = self.env['res.users'].sudo().browse(access_uid)
+            record = self.sudo(user)
+        if user.share or self.env.context.get('force_website'):
+            try:
+                record.check_access_rights('read')
+                record.check_access_rule('read')
+            except AccessError:
+                pass
+            else:
+                return {
+                    'type': 'ir.actions.act_url',
+                    'url': '/my/opportunity/%s' % record.id,
+                }
+        return super(CrmLead, self).get_access_action(access_uid)

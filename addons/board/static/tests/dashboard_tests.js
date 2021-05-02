@@ -5,7 +5,9 @@ var BoardView = require('board.BoardView');
 
 var ListController = require('web.ListController');
 var testUtils = require('web.test_utils');
+var testUtilsDom = require('web.test_utils_dom');
 var ListRenderer = require('web.ListRenderer');
+var pyUtils = require('web.py_utils');
 
 var createActionManager = testUtils.createActionManager;
 var createView = testUtils.createView;
@@ -23,6 +25,7 @@ QUnit.module('Dashboard', {
                 fields: {
                     display_name: {string: "Displayed name", type: "char", searchable: true},
                     foo: {string: "Foo", type: "char", default: "My little Foo Value", searchable: true},
+                    bar: {string: "Bar", type: "boolean"},
                 },
                 records: [{
                     id: 1,
@@ -696,6 +699,121 @@ QUnit.test('save actions to dashboard', function (assert) {
     actionManager.destroy();
 });
 
+QUnit.test('save two searches to dashboard', function (assert) {
+    // the second search saved should not be influenced by the first
+    assert.expect(2);
+
+    var actionManager = createActionManager({
+        data: this.data,
+        archs: {
+            'partner,false,list': '<list><field name="foo"/></list>',
+            'partner,false,search': '<search></search>',
+        },
+        mockRPC: function (route, args) {
+            if (route === '/board/add_to_dashboard') {
+                if (filter_count === 0) {
+                    assert.deepEqual(args.domain, [["display_name", "ilike", "a"]],
+                        "the correct domain should be sent");
+                }
+                if (filter_count === 1) {
+                    assert.deepEqual(args.domain, [["display_name", "ilike", "b"]],
+                        "the correct domain should be sent");
+                }
+
+                filter_count += 1;
+                return $.when(true);
+            }
+            return this._super.apply(this, arguments);
+        },
+    });
+
+    actionManager.doAction({
+        id: 1,
+        res_model: 'partner',
+        type: 'ir.actions.act_window',
+        views: [[false, 'list']],
+    });
+
+    var filter_count = 0;
+    // Add a first filter
+    $('span.fa-filter').click();
+    $('.o_add_custom_filter:visible').click();
+    $('.o_searchview_extended_prop_value .o_input').val('a')
+    $('.o_apply_filter').click();
+    // Add it to dashboard
+    testUtilsDom.click($('.o_search_options button:contains(Favorites)'));
+    $('.o_search_options .dropdown-menu.o_favorites_menu').one('click', function (ev) {
+        // This handler is on the webClient
+        // But since the test suite doesn't have one
+        // We manually set it here
+        ev.stopPropagation();
+    });
+    testUtilsDom.click($('.o_search_options .o_add_to_dashboard_link'));
+    testUtilsDom.click($('.o_add_to_dashboard_button'));
+    // Remove it
+    $('.o_facet_remove').click();
+
+    // Add the second filter
+    $('span.fa-filter').click();
+    $('.o_add_custom_filter:visible').click();
+    $('.o_searchview_extended_prop_value .o_input').val('b')
+    $('.o_apply_filter').click();
+    // Add it to dashboard
+    testUtilsDom.click($('.o_search_options button:contains(Favorites)'));
+    $('.o_search_options .dropdown-menu.o_favorites_menu').one('click', function (ev) {
+        // This handler is on the webClient
+        // But since the test suite doesn't have one
+        // We manually set it here
+        ev.stopPropagation();
+    });
+    testUtilsDom.click($('.o_search_options .o_add_to_dashboard_link'));
+    testUtilsDom.click($('.o_add_to_dashboard_button'));
+
+    actionManager.destroy();
+});
+
+QUnit.test('save a action domain to dashboard', function (assert) {
+    // View domains are to be added to the dashboard domain
+    assert.expect(1);
+
+    var view_domain = ["display_name", "ilike", "a"];
+    var filter_domain = ["display_name", "ilike", "b"];
+
+    var actionManager = createActionManager({
+        data: this.data,
+        archs: {
+            'partner,false,list': '<list><field name="foo"/></list>',
+            'partner,false,search': '<search></search>',
+        },
+        mockRPC: function (route, args) {
+            if (route === '/board/add_to_dashboard') {
+                assert.deepEqual(args.domain, [view_domain, filter_domain],
+                    "the correct domain should be sent");
+                return $.when(true);
+            }
+            return this._super.apply(this, arguments);
+        },
+    });
+
+    actionManager.doAction({
+        id: 1,
+        res_model: 'partner',
+        type: 'ir.actions.act_window',
+        views: [[false, 'list']],
+        domain: [view_domain],
+    });
+
+    // Add a filter
+    $('span.fa-filter').click();
+    $('.o_add_custom_filter:visible').click();
+    $('.o_searchview_extended_prop_value .o_input').val('b')
+    $('.o_apply_filter').click();
+    // Add it to dashboard
+    $('.o_add_to_dashboard_button').click();
+
+    actionManager.destroy();
+});
+
 QUnit.test('save to dashboard actions with flag keepSearchView', function (assert) {
     assert.expect(4);
 
@@ -746,4 +864,81 @@ QUnit.test('save to dashboard actions with flag keepSearchView', function (asser
     actionManager.destroy();
 });
 
+QUnit.test("Views should be loaded in the user's language", function (assert) {
+    assert.expect(2);
+    var form = createView({
+        View: BoardView,
+        model: 'board',
+        data: this.data,
+        session: {user_context: {lang: 'fr_FR'}},
+        arch: '<form string="My Dashboard">' +
+                '<board style="2-1">' +
+                    '<column>' +
+                        '<action context="{\'lang\': \'en_US\'}" view_mode="list" string="ABC" name="51" domain="[]"></action>' +
+                    '</column>' +
+                '</board>' +
+            '</form>',
+        mockRPC: function (route, args) {
+            if (args.method === 'load_views') {
+                assert.deepEqual(pyUtils.eval('context', args.kwargs.context), {lang: 'fr_FR'},
+                    'The views should be loaded with the correct context');
+            }
+            if (route === "/web/dataset/search_read") {
+                assert.deepEqual(args.context, {lang: 'fr_FR'},
+                    'The data should be loaded with the correct context');
+            }
+            if (route === '/web/action/load') {
+                return $.when({
+                    res_model: 'partner',
+                    views: [[4, 'list']],
+                });
+            }
+            return this._super.apply(this, arguments);
+        },
+        archs: {
+            'partner,4,list':
+                '<list string="Partner"><field name="foo"/></list>',
+        },
+    });
+
+    form.destroy();
+});
+
+QUnit.test("Dashboard should use correct groupby", function (assert) {
+    assert.expect(1);
+    var form = createView({
+        View: BoardView,
+        model: 'board',
+        data: this.data,
+        arch: '<form string="My Dashboard">' +
+                '<board style="2-1">' +
+                    '<column>' +
+                        '<action context="{\'group_by\': [\'bar\']}" string="ABC" name="51"></action>' +
+                    '</column>' +
+                '</board>' +
+            '</form>',
+        mockRPC: function (route, args) {
+            if (args.method === 'read_group') {
+                assert.deepEqual(args.kwargs.groupby, ['bar'],
+                    'user defined groupby should have precedence on action groupby');
+            }
+            if (route === '/web/action/load') {
+                return $.when({
+                    res_model: 'partner',
+                    context: {
+                        group_by: 'some_field',
+                    },
+                    views: [[4, 'list']],
+                });
+            }
+            return this._super.apply(this, arguments);
+        },
+        archs: {
+            'partner,4,list':
+                '<list string="Partner"><field name="foo"/></list>',
+        },
+    });
+
+    form.destroy();
+});
 });

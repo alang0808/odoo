@@ -103,6 +103,7 @@ def force_demo(cr):
     Forces the `demo` flag on all modules, and installs demo data for all installed modules.
     """
     graph = odoo.modules.graph.Graph()
+    cr.execute('UPDATE ir_module_module SET demo=True')
     cr.execute(
         "SELECT name FROM ir_module_module WHERE state IN ('installed', 'to upgrade', 'to remove')"
     )
@@ -112,7 +113,6 @@ def force_demo(cr):
     for package in graph:
         load_demo(cr, package, {}, 'init')
 
-    cr.execute('update ir_module_module set demo=%s', (True,))
     env = api.Environment(cr, SUPERUSER_ID, {})
     env['ir.module.module'].invalidate_cache(['demo'])
 
@@ -150,8 +150,6 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
     migrations = odoo.modules.migration.MigrationManager(cr, graph)
     module_count = len(graph)
     _logger.info('loading %d modules...', module_count)
-
-    registry.clear_caches()
 
     # register, instantiate and initialize models for each modules
     t0 = time.time()
@@ -277,9 +275,6 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
             registry._init_modules.add(package.name)
 
     _logger.log(25, "%s modules loaded in %.2fs, %s queries", len(graph), time.time() - t0, odoo.sql_db.sql_counter - t0_sql)
-
-    registry.clear_caches()
-
 
     return loaded_modules, processed_modules
 
@@ -425,6 +420,12 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
                     ['to install'], force, status, report,
                     loaded_modules, update_module, models_to_check)
 
+        # check that all installed modules have been loaded by the registry after a migration/upgrade
+        cr.execute("SELECT name from ir_module_module WHERE state = 'installed' and name != 'studio_customization'")
+        module_list = [name for (name,) in cr.fetchall() if name not in graph]
+        if module_list:
+            _logger.error("Some modules are not loaded, some dependencies or manifest may be missing: %s", sorted(module_list))
+
         registry.loaded = True
         registry.setup_models(cr)
 
@@ -432,6 +433,18 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
         migrations = odoo.modules.migration.MigrationManager(cr, graph)
         for package in graph:
             migrations.migrate_module(package, 'end')
+
+        # check that new module dependencies have been properly installed after a migration/upgrade
+        cr.execute("SELECT name from ir_module_module WHERE state IN ('to install', 'to upgrade')")
+        module_list = [name for (name,) in cr.fetchall()]
+        if module_list:
+            _logger.error("Some modules have inconsistent states, some dependencies may be missing: %s", sorted(module_list))
+
+        # STEP 3.6: warn about missing NOT NULL constraints
+        for (table, column), err_msg in registry._notnull_errors.items():
+            msg = "Table %r: column %r: unable to set constraint NOT NULL\n%s"
+            _logger.warning(msg, table, column, err_msg)
+        registry._notnull_errors.clear()
 
         # STEP 4: Finish and cleanup installations
         if processed_modules:
@@ -454,7 +467,7 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
                 if model in registry:
                     env[model]._check_removed_columns(log=True)
                 elif _logger.isEnabledFor(logging.INFO):    # more an info that a warning...
-                    _logger.warning("Model %s is declared but cannot be loaded! (Perhaps a module was partially removed or renamed)", model)
+                    _logger.log(25, "Model %s is declared but cannot be loaded! (Perhaps a module was partially removed or renamed)", model)
 
             # Cleanup orphan records
             env['ir.model.data']._process_end(processed_modules)
@@ -517,6 +530,10 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
             _logger.info('Modules loaded.')
 
         # STEP 8: call _register_hook on every model
+        # This is done *exactly once* when the registry is being loaded. See the
+        # management of those hooks in `Registry.setup_models`: all the calls to
+        # setup_models() done here do not mess up with hooks, as registry.ready
+        # is False.
         env = api.Environment(cr, SUPERUSER_ID, {})
         for model in env.values():
             model._register_hook()

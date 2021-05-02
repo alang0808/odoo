@@ -395,6 +395,12 @@ class AssetsBundle(object):
             })("%s");
         """ % message.replace('"', '\\"').replace('\n', '&NewLine;')
 
+    def _get_assets_domain_for_already_processed_css(self, assets):
+        """ Method to compute the attachments' domain to search the already process assets (css).
+        This method was created to be overridden.
+        """
+        return [('url', 'in', list(assets.keys()))]
+
     def is_css_preprocessed(self):
         preprocessed = True
         attachments = None
@@ -406,7 +412,7 @@ class AssetsBundle(object):
             outdated = False
             assets = dict((asset.html_url, asset) for asset in self.stylesheets if isinstance(asset, atype))
             if assets:
-                assets_domain = [('url', 'in', list(assets.keys()))]
+                assets_domain = self._get_assets_domain_for_already_processed_css(assets)
                 attachments = self.env['ir.attachment'].sudo().search(assets_domain)
                 for attachment in attachments:
                     asset = assets[attachment.url]
@@ -439,7 +445,7 @@ class AssetsBundle(object):
                 assets = [asset for asset in self.stylesheets if isinstance(asset, atype)]
                 if assets:
                     source = '\n'.join([asset.get_source() for asset in assets])
-                    compiled = self.compile_css(assets[0].compile, source)
+                    compiled += self.compile_css(assets[0].compile, source)
 
             # We want to run rtlcss on normal css, so merge it in compiled
             if self.user_direction == 'rtl':
@@ -513,20 +519,25 @@ class AssetsBundle(object):
         compiled = compiled.strip()
 
         # Post process the produced css to add required vendor prefixes here
-        compiled = re.sub(r'(appearance: (\w+);)', r'-webkit-appearance: \2; -moz-appearance: \2; \1', compiled);
+        compiled = re.sub(r'(appearance: (\w+);)', r'-webkit-appearance: \2; -moz-appearance: \2; \1', compiled)
 
-        compiled = re.sub(r'(display: ((?:inline-)?)flex((?: ?!important)?);)', r'display: -webkit-\2box\3; display: -webkit-\2flex\3; \1', compiled)  # For PhantomJS tests and wkhtmltopdf
-        compiled = re.sub(r'(justify-content: flex-(\w+)((?: ?!important)?);)', r'-webkit-box-pack: \2\3; \1', compiled)  # For wkhtmltopdf
-        compiled = re.sub(r'(flex-flow: (\w+ \w+);)', r'-webkit-flex-flow: \2; \1', compiled) # For PhantomJS tests
-        compiled = re.sub(r'(flex-direction: (column);)', r'-webkit-box-orient: vertical; -webkit-box-direction: normal; -webkit-flex-direction: \2; \1', compiled)  # For wkhtmltopdf
-        compiled = re.sub(r'(flex: ((\d)+ \d+ (?:\d+|auto));)', r'-webkit-box-flex: \3; -webkit-flex: \2; \1', compiled)  # For PhantomJS tests and wkhtmltopdf
+        # Most of those are only useful for wkhtmltopdf (some for old PhantomJS)
+        compiled = re.sub(r'(display: ((?:inline-)?)flex((?: ?!important)?);)', r'display: -webkit-\2box\3; display: -webkit-\2flex\3; \1', compiled)
+        compiled = re.sub(r'(justify-content: flex-(\w+)((?: ?!important)?);)', r'-webkit-box-pack: \2\3; \1', compiled)
+        compiled = re.sub(r'(flex-flow: (\w+ \w+);)', r'-webkit-flex-flow: \2; \1', compiled)
+        compiled = re.sub(r'(flex-direction: (column);)', r'-webkit-box-orient: vertical; -webkit-box-direction: normal; -webkit-flex-direction: \2; \1', compiled)
+        compiled = re.sub(r'(flex-wrap: (\w+);)', r'-webkit-flex-wrap: \2; \1', compiled)
+        compiled = re.sub(r'(flex: ((\d)+ \d+ (?:\d+|auto));)', r'-webkit-box-flex: \3; -webkit-flex: \2; \1', compiled)
 
         return compiled
 
     def run_rtlcss(self, source):
         rtlcss = 'rtlcss'
         if os.name == 'nt':
-            rtlcss = misc.find_in_path('rtlcss.cmd')
+            try:
+                rtlcss = misc.find_in_path('rtlcss.cmd')
+            except IOError:
+                rtlcss = 'rtlcss'
         cmd = [rtlcss, '-']
 
 

@@ -2,6 +2,7 @@ odoo.define('web.bus_tests', function (require) {
 "use strict";
 
 var BusService = require('bus.BusService');
+var CrossTabBus = require('bus.CrossTab');
 var AbstractStorageService = require('web.AbstractStorageService');
 var RamStorage = require('web.RamStorage');
 var testUtils = require('web.test_utils');
@@ -214,4 +215,183 @@ QUnit.module('Bus', {
 
         }, 3);
     });
-});});
+
+    QUnit.test('cross tab bus elect new master on master unload', function (assert) {
+        var done = assert.async();
+        assert.expect(8);
+
+        // master
+        var pollDeferredMaster = $.Deferred();
+
+        var parentMaster = new Widget();
+        testUtils.addMockEnvironment(parentMaster, {
+            data: {},
+            services: {
+                bus_service: BusService,
+                local_storage: LocalStorageServiceMock,
+            },
+            mockRPC: function (route, args) {
+                if (route === '/longpolling/poll') {
+                    assert.step(['master', route, args.channels.join(',')]);
+
+                    pollDeferredMaster = $.Deferred();
+                    pollDeferredMaster.abort = (function () {
+                        this.reject({message: "XmlHttpRequestError abort"}, $.Event());
+                    }).bind(pollDeferredMaster);
+                    return pollDeferredMaster;
+                }
+                return this._super.apply(this, arguments);
+            }
+        });
+
+        var master = new Widget(parentMaster);
+        master.appendTo($('#qunit-fixture'));
+
+        master.call('bus_service', 'onNotification', master, function (notifications) {
+            assert.step(['master', 'notification', notifications]);
+        });
+        master.call('bus_service', 'addChannel', 'lambda');
+
+        // slave
+        setTimeout(function () {
+            var parentSlave = new Widget();
+            var pollDeferredSlave = $.Deferred();
+            testUtils.addMockEnvironment(parentSlave, {
+                data: {},
+                services: {
+                    bus_service: BusService,
+                    local_storage: LocalStorageServiceMock,
+                },
+                mockRPC: function (route, args) {
+                    if (route === '/longpolling/poll') {
+                        assert.step(['slave', route, args.channels.join(',')]);
+
+                        pollDeferredSlave = $.Deferred();
+                        pollDeferredSlave.abort = (function () {
+                            this.reject({message: "XmlHttpRequestError abort"}, $.Event());
+                        }).bind(pollDeferredSlave);
+                        return pollDeferredSlave;
+                    }
+                    return this._super.apply(this, arguments);
+                }
+            });
+
+            var slave = new Widget(parentSlave);
+            slave.appendTo($('#qunit-fixture'));
+
+            slave.call('bus_service', 'onNotification', slave, function (notifications) {
+                assert.step(['slave', 'notification', notifications]);
+            });
+            slave.call('bus_service', 'addChannel', 'lambda');
+
+            pollDeferredMaster.resolve([{
+                id: 1,
+                channel: 'lambda',
+                message: 'beta',
+            }]);
+
+            // simulate unloading master
+            master.call('bus_service', '_onUnload');
+
+            pollDeferredSlave.resolve([{
+                id: 2,
+                channel: 'lambda',
+                message: 'gamma',
+            }]);
+
+            assert.verifySteps([
+                ["master", "/longpolling/poll", "lambda"],
+                ["master", "notification", [["lambda", "beta"]]],
+                ["slave", "notification", [["lambda", "beta"]]],
+                ["master", "/longpolling/poll", "lambda"],
+                ["slave", "/longpolling/poll", "lambda"],
+                ["slave", "notification", [["lambda", "gamma"]]],
+                ["slave", "/longpolling/poll", "lambda"],
+            ]);
+
+            parentMaster.destroy();
+            parentSlave.destroy();
+
+            done();
+
+        }, 3);
+    });
+
+    QUnit.test('two tabs calling addChannel simultaneously', function (assert) {
+        assert.expect(5);
+
+        var id = 1;
+        testUtils.patch(CrossTabBus, {
+            init: function () {
+                this._super.apply(this, arguments);
+                this.__tabId__ = id++;
+            },
+            addChannel: function (channel) {
+                assert.step('Tab ' + this.__tabId__ + ': addChannel ' + channel);
+                this._super.apply(this, arguments);
+            },
+            deleteChannel: function (channel) {
+                assert.step('Tab ' + this.__tabId__ + ': deleteChannel ' + channel);
+                this._super.apply(this, arguments);
+            },
+        });
+
+        var pollDeferred;
+        var parentTab1 = new Widget();
+        testUtils.addMockEnvironment(parentTab1, {
+            data: {},
+            services: {
+                local_storage: LocalStorageServiceMock,
+            },
+            mockRPC: function (route) {
+                if (route === '/longpolling/poll') {
+                    pollDeferred = $.Deferred();
+                    pollDeferred.abort = (function () {
+                        this.reject({message: "XmlHttpRequestError abort"}, $.Event());
+                    }).bind(pollDeferred);
+                    return pollDeferred;
+                }
+                return this._super.apply(this, arguments);
+            }
+        });
+        var parentTab2 = new Widget();
+        testUtils.addMockEnvironment(parentTab2, {
+            data: {},
+            services: {
+                local_storage: LocalStorageServiceMock,
+            },
+            mockRPC: function (route) {
+                if (route === '/longpolling/poll') {
+                    pollDeferred = $.Deferred();
+                    pollDeferred.abort = (function () {
+                        this.reject({message: "XmlHttpRequestError abort"}, $.Event());
+                    }).bind(pollDeferred);
+                    return pollDeferred;
+                }
+                return this._super.apply(this, arguments);
+            }
+        });
+
+        var tab1 = new CrossTabBus(parentTab1);
+        var tab2 = new CrossTabBus(parentTab2);
+
+        tab1.addChannel("alpha");
+        tab2.addChannel("alpha");
+        tab1.addChannel("beta");
+        tab2.addChannel("beta");
+
+        assert.verifySteps([
+            "Tab 1: addChannel alpha",
+            "Tab 2: addChannel alpha",
+            "Tab 1: addChannel beta",
+            "Tab 2: addChannel beta",
+        ]);
+
+        testUtils.unpatch(CrossTabBus);
+        parentTab1.destroy();
+        parentTab2.destroy();
+    });
+
+});
+
+});

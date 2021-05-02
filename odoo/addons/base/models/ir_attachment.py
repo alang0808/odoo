@@ -442,6 +442,19 @@ class IrAttachment(models.Model):
 
         # sort result according to the original sort ordering
         result = [id for id in orig_ids if id in ids]
+
+        # If the original search reached the limit, it is important the
+        # filtered record set does so too. When a JS view receive a
+        # record set whose length is below the limit, it thinks it
+        # reached the last page. To avoid an infinite recursion due to the
+        # permission checks the sub-call need to be aware of the number of
+        # expected records to retrieve
+        if len(orig_ids) == limit and len(result) < self._context.get('need', limit):
+            need = self._context.get('need', limit) - len(result)
+            result.extend(self.with_context(need=need)._search(args, offset=offset + len(orig_ids),
+                                       limit=limit, order=order, count=count,
+                                       access_rights_uid=access_rights_uid)[:limit - len(result)])
+
         return len(result) if count else list(result)
 
     @api.multi
@@ -506,6 +519,10 @@ class IrAttachment(models.Model):
             self.browse().check('write', values=values)
         return super(IrAttachment, self).create(vals_list)
 
+    @api.multi
+    def _post_add_create(self):
+        pass
+
     @api.one
     def generate_access_token(self):
         if self.access_token:
@@ -547,9 +564,9 @@ class IrAttachment(models.Model):
         with io.BytesIO(base64.b64decode(self.datas)) as stream:
             try:
                 input_pdf = PdfFileReader(stream)
+                max_page = input_pdf.getNumPages()
             except Exception:
                 raise exceptions.ValidationError(_("ERROR: Invalid PDF file!"))
-            max_page = input_pdf.getNumPages()
             remainder_set = set(range(0, max_page))
             new_pdf_ids = []
             if not pdf_groups:

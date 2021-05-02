@@ -15,7 +15,7 @@ var AbstractThread = Class.extend(Mixins.EventDispatcherMixin, {
      * @param {Object} params
      * @param {Object} params.data
      * @param {integer|string} params.data.id the ID of this thread
-     * @param {string} params.data.name the name of this thread
+     * @param {string} params.data.name the server name of this thread
      * @param {string} [params.data.status=''] the status of this thread
      * @param {Object} params.parent Object with the event-dispatcher mixin
      *   (@see {web.mixins.EventDispatcherMixin})
@@ -147,6 +147,7 @@ var AbstractThread = Class.extend(Mixins.EventDispatcherMixin, {
      */
     resetUnreadCounter: function () {
         this._unreadCounter = 0;
+        this._warnUpdatedUnreadCounter();
     },
 
     //--------------------------------------------------------------------------
@@ -177,7 +178,6 @@ var AbstractThread = Class.extend(Mixins.EventDispatcherMixin, {
      */
     _markAsRead: function () {
         this.resetUnreadCounter();
-        this._warnUpdatedUnreadCounter();
         return $.when();
     },
     /**

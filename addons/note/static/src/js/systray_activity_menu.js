@@ -75,6 +75,8 @@ ActivityMenu.include({
                     name: data.model_name,
                     res_model:  data.res_model,
                     views: [[false, 'kanban'], [false, 'form'], [false, 'list']]
+                }, {
+                    clear_breadcrumbs: true,
                 });
             } else {
                 this._super.apply(this, arguments);
@@ -118,7 +120,7 @@ ActivityMenu.include({
     _onNoteDateTimeSetClick: function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        this.noteDateTimeWidget.$input.click();
+        this.noteDateTimeWidget.$input.select();
     },
     /**
      * Saving note (quick create) and updating activity preview

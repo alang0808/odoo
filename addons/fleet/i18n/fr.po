@@ -3,25 +3,30 @@
 # * fleet
 # 
 # Translators:
-# Martin Trigaux, 2018
+# bb76cd9ac0cb7e20167a14728edb858b, 2018
 # Eloïse Stilmant <est@odoo.com>, 2018
-# fr rev <e2ffr02@hotmail.com>, 2018
 # Laura Piraux <lap@odoo.com>, 2018
 # Nathan Grognet <ngr@odoo.com>, 2018
 # Christophe CHAUVET <christophe.chauvet@gmail.com>, 2018
 # Maxime Chambreuil <mchambreuil@ursainfosystems.com>, 2018
 # Agathe Mollé <molleagathe@gmail.com>, 2018
 # Richard Mathot <rim@odoo.com>, 2018
-# Adriana Ierfino <adriana.ierfino@savoirfairelinux.com>, 2018
 # Maxime Solinas <msolinas@t2o.ca>, 2018
 # Xavier Symons <xsy@openerp.com>, 2018
+# Adriana Ierfino <adriana.ierfino@savoirfairelinux.com>, 2018
+# Martin Trigaux, 2019
+# Olivier de Witte <odw@taktik.com>, 2019
+# Daniel Deyris <daniel.deyris@phidias.fr>, 2019
+# Cécile Collart <cco@odoo.com>, 2020
+# Julien Goergen <jgo@odoo.com>, 2020
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:49+0000\n"
-"PO-Revision-Date: 2018-10-08 06:49+0000\n"
-"Last-Translator: Xavier Symons <xsy@openerp.com>, 2018\n"
+"POT-Creation-Date: 2019-03-29 10:10+0000\n"
+"PO-Revision-Date: 2018-08-24 09:18+0000\n"
+"Last-Translator: Julien Goergen <jgo@odoo.com>, 2020\n"
 "Language-Team: French (https://www.transifex.com/odoo/teams/41243/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -674,6 +679,11 @@ msgid "Doors Number"
 msgstr "Nombre de portes"
 
 #. module: fleet
+#: model:fleet.vehicle.state,name:fleet.fleet_vehicle_state_downgraded
+msgid "Downgraded"
+msgstr "Déclassé"
+
+#. module: fleet
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle__driver_id
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle_assignation_log__driver_id
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle_log_contract__purchaser_id
@@ -802,7 +812,7 @@ msgstr "Parc automobile"
 #. module: fleet
 #: model:ir.model,name:fleet.model_fleet_service_type
 msgid "Fleet Service Type"
-msgstr ""
+msgstr "Type de Service de Parc Automobile"
 
 #. module: fleet
 #: model:ir.actions.server,name:fleet.ir_cron_contract_costs_generator_ir_actions_server
@@ -1113,6 +1123,11 @@ msgid "Km"
 msgstr "Km"
 
 #. module: fleet
+#: selection:fleet.vehicle,fuel_type:0
+msgid "LPG"
+msgstr "LPG"
+
+#. module: fleet
 #: model:ir.model.fields,field_description:fleet.field_fleet_service_type____last_update
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle____last_update
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle_assignation_log____last_update
@@ -1388,6 +1403,11 @@ msgid "Name of contract to renew soon"
 msgstr "Nom du contrat à renouveler prochainement"
 
 #. module: fleet
+#: model:fleet.vehicle.state,name:fleet.fleet_vehicle_state_new_request
+msgid "New Request"
+msgstr "Nouvelle demande"
+
+#. module: fleet
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle__activity_date_deadline
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle_log_contract__activity_date_deadline
 msgid "Next Activity Deadline"
@@ -1577,6 +1597,11 @@ msgid "Options"
 msgstr "Options"
 
 #. module: fleet
+#: model:fleet.vehicle.state,name:fleet.fleet_vehicle_state_ordered
+msgid "Ordered"
+msgstr "Commandée"
+
+#. module: fleet
 #: selection:fleet.vehicle.cost,cost_type:0
 msgid "Other"
 msgstr "Autre"
@@ -1695,6 +1720,11 @@ msgid "Refueling Details"
 msgstr "Détails du ravitaillement en carburant"
 
 #. module: fleet
+#: model:fleet.vehicle.state,name:fleet.fleet_vehicle_state_registered
+msgid "Registered"
+msgstr "Inscrit"
+
+#. module: fleet
 #: code:addons/fleet/models/fleet_vehicle_cost.py:209
 #: model:ir.actions.act_window,name:fleet.act_renew_contract
 #: model_terms:ir.ui.view,arch_db:fleet.fleet_vehicle_log_contract_view_form
@@ -1726,6 +1756,11 @@ msgstr "Replacement du véhicule"
 #: model:ir.ui.menu,name:fleet.menu_fleet_reporting
 msgid "Reporting"
 msgstr "Analyse"
+
+#. module: fleet
+#: model:fleet.vehicle.state,name:fleet.fleet_vehicle_state_reserve
+msgid "Reserve"
+msgstr "Réserver"
 
 #. module: fleet
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle__residual_value
@@ -2165,7 +2200,7 @@ msgstr "Statut du véhicule"
 #. module: fleet
 #: model:ir.model,name:fleet.model_fleet_vehicle_tag
 msgid "Vehicle Tag"
-msgstr ""
+msgstr "Étiquette véhicule"
 
 #. module: fleet
 #: model:ir.actions.act_window,name:fleet.fleet_vehicle_tag_action
@@ -2205,7 +2240,7 @@ msgstr "Contrats des véhicules"
 #: model:ir.actions.act_window,name:fleet.fleet_vehicle_costs_action
 #: model:ir.ui.menu,name:fleet.fleet_vehicle_costs_menu
 msgid "Vehicles Costs"
-msgstr ""
+msgstr "Coûts des véhicules"
 
 #. module: fleet
 #: model:ir.actions.act_window,name:fleet.fleet_vehicle_log_fuel_action
@@ -2218,7 +2253,7 @@ msgstr "Suivi du niveau d'essence"
 #: model:ir.actions.act_window,name:fleet.fleet_vehicle_model_action
 #: model:ir.ui.menu,name:fleet.fleet_vehicle_model_menu
 msgid "Vehicles Model"
-msgstr ""
+msgstr "Modèle des Véhicules"
 
 #. module: fleet
 #: model:ir.actions.act_window,name:fleet.fleet_vehicle_odometer_action
@@ -2262,6 +2297,11 @@ msgid "Vendors"
 msgstr "Fournisseurs"
 
 #. module: fleet
+#: model:fleet.vehicle.state,name:fleet.fleet_vehicle_state_waiting_list
+msgid "Waiting List"
+msgstr "Liste d'attente"
+
+#. module: fleet
 #: model:ir.model.fields,field_description:fleet.field_fleet_vehicle_log_contract__days_left
 msgid "Warning Date"
 msgstr "Date d'alerte"
@@ -2275,6 +2315,18 @@ msgstr "Attention: renouvellement dû bientôt"
 #: model:fleet.service.type,name:fleet.type_service_50
 msgid "Water Pump Replacement"
 msgstr "Remplacement de la pompe à eau"
+
+#. module: fleet
+#: model:ir.model.fields,field_description:fleet.field_fleet_vehicle__website_message_ids
+#: model:ir.model.fields,field_description:fleet.field_fleet_vehicle_log_contract__website_message_ids
+msgid "Website Messages"
+msgstr "Messages du site web"
+
+#. module: fleet
+#: model:ir.model.fields,help:fleet.field_fleet_vehicle__website_message_ids
+#: model:ir.model.fields,help:fleet.field_fleet_vehicle_log_contract__website_message_ids
+msgid "Website communication history"
+msgstr "Historique de communication du site web"
 
 #. module: fleet
 #: selection:fleet.vehicle.log.contract,cost_frequency:0

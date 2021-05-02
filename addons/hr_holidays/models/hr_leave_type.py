@@ -8,6 +8,7 @@ import logging
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.osv import expression
 from odoo.tools.translate import _
 from odoo.tools.float_utils import float_round
 
@@ -65,6 +66,15 @@ class HolidaysType(models.Model):
         ('hr', 'Human Resource officer'),
         ('manager', 'Employee Manager'),
         ('both', 'Double Validation')], default='hr', string='Validation By')
+    
+    # TODO: remove me in master, the behavior is exactly the same if you choose 'hr' or 'manager'
+    # in the validation_type field. This field is used only to hide this possibility to the user
+    # to avoid misunderstandings. This field and its corresponding's functions must be removed once
+    # the functional part is implemented.
+    double_validation = fields.Boolean(string='Apply Double Validation',
+        compute='_compute_validation_type', inverse='_inverse_validation_type',
+        help="When selected, the Allocation/Leave Requests for this type require a second validation to be approved.")
+    
     allocation_type = fields.Selection([
         ('fixed', 'Fixed by HR'),
         ('fixed_allocation', 'Fixed by HR + allocation request'),
@@ -84,6 +94,25 @@ class HolidaysType(models.Model):
         default='day', string='Take Leaves in', required=True)
     unpaid = fields.Boolean('Is Unpaid', default=False)
 
+    # TODO: remove me in master
+    @api.depends('validation_type')
+    def _compute_validation_type(self):
+        for holiday_type in self:
+            if holiday_type.validation_type == 'both':
+                holiday_type.double_validation = True
+            else:
+                holiday_type.double_validation = False
+
+    # TODO: remove me in master
+    def _inverse_validation_type(self):
+        for holiday_type in self:
+            if holiday_type.double_validation == True:
+                holiday_type.validation_type = 'both'
+            else:
+                #IF to preserve the information (hr or manager)
+                if holiday_type.validation_type == 'both':
+                    holiday_type.validation_type = 'hr'
+
     @api.multi
     @api.constrains('validity_start', 'validity_stop')
     def _check_validity_dates(self):
@@ -95,7 +124,7 @@ class HolidaysType(models.Model):
     @api.multi
     @api.depends('validity_start', 'validity_stop')
     def _compute_valid(self):
-        dt = self._context.get('default_date_from') or fields.Datetime.now()
+        dt = self._context.get('default_date_from') or fields.Date.context_today(self)
 
         for holiday_type in self:
             if holiday_type.validity_start and holiday_type.validity_stop:
@@ -106,7 +135,7 @@ class HolidaysType(models.Model):
                 holiday_type.valid = True
 
     def _search_valid(self, operator, value):
-        dt = self._context.get('default_date_from') or fields.Datetime.now()
+        dt = self._context.get('default_date_from') or fields.Date.context_today(self)
 
         signs = ['>=', '<='] if operator == '=' else ['<=', '>=']
 
@@ -133,20 +162,32 @@ class HolidaysType(models.Model):
 
         for request in requests:
             status_dict = result[request.holiday_status_id.id]
-            status_dict['virtual_remaining_leaves'] -= request.number_of_days
+            status_dict['virtual_remaining_leaves'] -= (request.number_of_hours_display
+                                                    if request.leave_type_request_unit == 'hour'
+                                                    else request.number_of_days)
             if request.state == 'validate':
-                status_dict['leaves_taken'] += request.number_of_days
-                status_dict['remaining_leaves'] -= request.number_of_days
+                status_dict['leaves_taken'] += (request.number_of_hours_display
+                                            if request.leave_type_request_unit == 'hour'
+                                            else request.number_of_days)
+                status_dict['remaining_leaves'] -= (request.number_of_hours_display
+                                                if request.leave_type_request_unit == 'hour'
+                                                else request.number_of_days)
 
-        for allocation in allocations:
+        for allocation in allocations.sudo():
             status_dict = result[allocation.holiday_status_id.id]
             if allocation.state == 'validate':
                 # note: add only validated allocation even for the virtual
                 # count; otherwise pending then refused allocation allow
                 # the employee to create more leaves than possible
-                status_dict['virtual_remaining_leaves'] += allocation.number_of_days
-                status_dict['max_leaves'] += allocation.number_of_days
-                status_dict['remaining_leaves'] += allocation.number_of_days
+                status_dict['virtual_remaining_leaves'] += (allocation.number_of_hours_display
+                                                          if allocation.type_request_unit == 'hour'
+                                                          else allocation.number_of_days)
+                status_dict['max_leaves'] += (allocation.number_of_hours_display
+                                            if allocation.type_request_unit == 'hour'
+                                            else allocation.number_of_days)
+                status_dict['remaining_leaves'] += (allocation.number_of_hours_display
+                                                  if allocation.type_request_unit == 'hour'
+                                                  else allocation.number_of_days)
 
         return result
 
@@ -176,9 +217,18 @@ class HolidaysType(models.Model):
 
     @api.multi
     def _compute_group_days_allocation(self):
+        domain = [
+            ('holiday_status_id', 'in', self.ids),
+            ('holiday_type', '!=', 'employee'),
+            ('state', '=', 'validate'),
+        ]
+        domain2 = [
+            '|',
+            ('date_from', '>=', fields.Datetime.to_string(datetime.datetime.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0))),
+            ('date_from', '=', False),
+        ]
         grouped_res = self.env['hr.leave.allocation'].read_group(
-            [('holiday_status_id', 'in', self.ids), ('holiday_type', '!=', 'employee'), ('state', '=', 'validate'),
-             ('date_from', '>=', fields.Datetime.to_string(datetime.datetime.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)))],
+            expression.AND([domain, domain2]),
             ['holiday_status_id', 'number_of_days'],
             ['holiday_status_id'],
         )
@@ -209,7 +259,10 @@ class HolidaysType(models.Model):
             if record.allocation_type != 'no':
                 name = "%(name)s (%(count)s)" % {
                     'name': name,
-                    'count': _('%g remaining out of %g') % (float_round(record.virtual_remaining_leaves, precision_digits=2) or 0.0, float_round(record.max_leaves, precision_digits=2) or 0.0)
+                    'count': _('%g remaining out of %g') % (
+                        float_round(record.virtual_remaining_leaves, precision_digits=2) or 0.0,
+                        float_round(record.max_leaves, precision_digits=2) or 0.0,
+                    ) + (_(' hours') if record.request_unit == 'hour' else _(' days'))
                 }
             res.append((record.id, name))
         return res
@@ -219,8 +272,11 @@ class HolidaysType(models.Model):
         """ Override _search to order the results, according to some employee.
         The order is the following
 
-         - allocation fixed first, then allowing allocation, then free allocation
-         - virtual remaining leaves (higher the better, so using reverse on sorted)
+         - allocation fixed (with remaining leaves),
+         - allowing allocation (with remaining leaves),
+         - no allocation,
+         - allocation fixed (without remaining leaves),
+         - allowing allocation (without remaining leaves).
 
         This override is necessary because those fields are not stored and depends
         on an employee_id given in context. This sort will be done when there
@@ -228,22 +284,34 @@ class HolidaysType(models.Model):
         to the method.
         """
         employee_id = self._get_contextual_employee_id()
-        leave_ids = super(HolidaysType, self)._search(args, offset=offset, limit=limit, order=order, count=count, access_rights_uid=access_rights_uid)
-        if not count and not order and employee_id:
-            leaves = self.browse(leave_ids)
-            sort_key = lambda l: (l.allocation_type == 'fixed', l.allocation_type == 'fixed_allocation', l.virtual_remaining_leaves)
-            return leaves.sorted(key=sort_key, reverse=True).ids
+        post_sort = (not count and not order and employee_id)
+        leave_ids = super(HolidaysType, self)._search(args, offset=offset, limit=(None if post_sort else limit), order=order, count=count, access_rights_uid=access_rights_uid)
+        leaves = self.browse(leave_ids)
+        if post_sort:
+            sort_key = lambda l: (
+                l.allocation_type == 'fixed' and l.virtual_remaining_leaves > 0 and l.max_leaves > 0,
+                l.allocation_type == 'fixed_allocation' and l.virtual_remaining_leaves > 0 and l.max_leaves > 0,
+                l.allocation_type == 'no',
+                l.allocation_type == 'fixed',
+                l.allocation_type == 'fixed_allocation'
+            )
+            return leaves.sorted(key=sort_key, reverse=True).ids[:limit]
         return leave_ids
 
     @api.multi
     def action_see_days_allocated(self):
         self.ensure_one()
         action = self.env.ref('hr_holidays.hr_leave_allocation_action_all').read()[0]
-        action['domain'] = [
+        domain = [
+            ('holiday_status_id', 'in', self.ids),
             ('holiday_type', '!=', 'employee'),
-            ('holiday_status_id', '=', self.ids[0]),
-            ('date_from', '>=', fields.Datetime.to_string(datetime.datetime.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)))
         ]
+        domain2 = [
+            '|',
+            ('date_from', '>=', fields.Datetime.to_string(datetime.datetime.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0))),
+            ('date_from', '=', False),
+        ]
+        action['domain'] = expression.AND([domain, domain2])
         action['context'] = {
             'default_holiday_type': 'department',
             'default_holiday_status_id': self.ids[0],

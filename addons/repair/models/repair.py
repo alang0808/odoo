@@ -306,6 +306,7 @@ class Repair(models.Model):
                 else:
                     if not repair.partner_id.property_account_receivable_id:
                         raise UserError(_('No account defined for partner "%s".') % repair.partner_id.name)
+                    fp_id = repair.partner_id.property_account_position_id.id or self.env['account.fiscal.position'].get_fiscal_position(repair.partner_id.id, delivery_id=repair.address_id.id)
                     invoice = Invoice.create({
                         'name': repair.name,
                         'origin': repair.name,
@@ -314,7 +315,7 @@ class Repair(models.Model):
                         'partner_id': repair.partner_invoice_id.id or repair.partner_id.id,
                         'currency_id': repair.pricelist_id.currency_id.id,
                         'comment': repair.quotation_notes,
-                        'fiscal_position_id': repair.partner_id.property_account_position_id.id
+                        'fiscal_position_id': fp_id
                     })
                     invoices_group[repair.partner_invoice_id.id] = invoice
                 repair.write({'invoiced': True, 'invoice_id': invoice.id})
@@ -505,7 +506,7 @@ class RepairLine(models.Model):
         index=True, ondelete='cascade')
     type = fields.Selection([
         ('add', 'Add'),
-        ('remove', 'Remove')], 'Type', required=True)
+        ('remove', 'Remove')], 'Type', default='add', required=True)
     product_id = fields.Many2one('product.product', 'Product', required=True)
     invoiced = fields.Boolean('Invoiced', copy=False, readonly=True)
     price_unit = fields.Float('Unit Price', required=True, digits=dp.get_precision('Product Price'))
@@ -587,28 +588,43 @@ class RepairLine(models.Model):
             else:
                 self.name = self.product_id.display_name
             if self.product_id.description_sale:
-                self.name += '\n' + self.product_id.description_sale
+                if partner:
+                    self.name += '\n' + self.product_id.with_context(lang=partner.lang).description_sale
+                else:
+                    self.name += '\n' + self.product_id.description_sale
             self.product_uom = self.product_id.uom_id.id
         if self.type != 'remove':
             if partner and self.product_id:
-                self.tax_id = partner.property_account_position_id.map_tax(self.product_id.taxes_id, self.product_id, partner).ids
+                fp = partner.property_account_position_id
+                if not fp:
+                    # Check automatic detection
+                    fp_id = self.env['account.fiscal.position'].get_fiscal_position(partner.id, delivery_id=self.repair_id.address_id.id)
+                    fp = self.env['account.fiscal.position'].browse(fp_id)
+                self.tax_id = fp.map_tax(self.product_id.taxes_id, self.product_id, partner).ids
             warning = False
             if not pricelist:
                 warning = {
                     'title': _('No pricelist found.'),
                     'message':
                         _('You have to select a pricelist in the Repair form !\n Please set one before choosing a product.')}
-            else:
-                price = pricelist.get_product_price(self.product_id, self.product_uom_qty, partner)
-                if price is False:
-                    warning = {
-                        'title': _('No valid pricelist line found.'),
-                        'message':
-                            _("Couldn't find a pricelist line matching this product and quantity.\nYou have to change either the product, the quantity or the pricelist.")}
-                else:
-                    self.price_unit = price
-            if warning:
                 return {'warning': warning}
+            else:
+                self._onchange_product_uom()
+
+    @api.onchange('product_uom')
+    def _onchange_product_uom(self):
+        partner = self.repair_id.partner_id
+        pricelist = self.repair_id.pricelist_id
+        if pricelist and self.product_id and self.type != 'remove':
+            price = pricelist.get_product_price(self.product_id, self.product_uom_qty, partner, uom_id=self.product_uom.id)
+            if price is False:
+                warning = {
+                    'title': _('No valid pricelist line found.'),
+                    'message':
+                        _("Couldn't find a pricelist line matching this product and quantity.\nYou have to change either the product, the quantity or the pricelist.")}
+                return {'warning': warning}
+            else:
+                self.price_unit = price
 
 
 class RepairFee(models.Model):
@@ -645,12 +661,23 @@ class RepairFee(models.Model):
         pricelist = self.repair_id.pricelist_id
 
         if partner and self.product_id:
-            self.tax_id = partner.property_account_position_id.map_tax(self.product_id.taxes_id, self.product_id, partner).ids
+            fp = partner.property_account_position_id
+            if not fp:
+                # Check automatic detection
+                fp_id = self.env['account.fiscal.position'].get_fiscal_position(partner.id, delivery_id=self.repair_id.address_id.id)
+                fp = self.env['account.fiscal.position'].browse(fp_id)
+            self.tax_id = fp.map_tax(self.product_id.taxes_id, self.product_id, partner).ids
         if self.product_id:
-            self.name = self.product_id.display_name
+            if partner:
+                self.name = self.product_id.with_context(lang=partner.lang).display_name
+            else:
+                self.name = self.product_id.display_name
             self.product_uom = self.product_id.uom_id.id
             if self.product_id.description_sale:
-                self.name += '\n' + self.product_id.description_sale
+                if partner:
+                    self.name += '\n' + self.product_id.with_context(lang=partner.lang).description_sale
+                else:
+                    self.name += '\n' + self.product_id.description_sale
 
         warning = False
         if not pricelist:
@@ -658,14 +685,21 @@ class RepairFee(models.Model):
                 'title': _('No pricelist found.'),
                 'message':
                     _('You have to select a pricelist in the Repair form !\n Please set one before choosing a product.')}
+            return {'warning': warning}
         else:
-            price = pricelist.get_product_price(self.product_id, self.product_uom_qty, partner)
+            self._onchange_product_uom()
+
+    @api.onchange('product_uom')
+    def _onchange_product_uom(self):
+        partner = self.repair_id.partner_id
+        pricelist = self.repair_id.pricelist_id
+        if pricelist and self.product_id:
+            price = pricelist.get_product_price(self.product_id, self.product_uom_qty, partner, uom_id=self.product_uom.id)
             if price is False:
                 warning = {
                     'title': _('No valid pricelist line found.'),
                     'message':
                         _("Couldn't find a pricelist line matching this product and quantity.\nYou have to change either the product, the quantity or the pricelist.")}
+                return {'warning': warning}
             else:
                 self.price_unit = price
-        if warning:
-            return {'warning': warning}

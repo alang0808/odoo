@@ -360,9 +360,6 @@ var ActionManager = Widget.extend({
                 // update the internal state and the DOM
                 self._pushController(controller, options);
 
-                // toggle the fullscreen mode for actions in target='fullscreen'
-                self._toggleFullscreen();
-
                 // store the action into the sessionStorage so that it can be
                 // fully restored on F5
                 self.call('session_storage', 'setItem', 'current_action', action._originalAction);
@@ -751,6 +748,9 @@ var ActionManager = Widget.extend({
             action: this.getCurrentAction(),
             controller: controller,
         });
+
+        // toggle the fullscreen mode for actions in target='fullscreen'
+        this._toggleFullscreen();
     },
     /**
      * Pushes the given state, with additional information about the given
@@ -810,6 +810,29 @@ var ActionManager = Widget.extend({
 
         action.jsID = _.uniqueId('action_');
         action.pushState = options.pushState;
+    },
+    /**
+     * @private
+     * @param {string} resModel
+     * @param {integer} resID
+     */
+    _redirectDefault: function (resModel, resID) {
+        var self = this;
+        this._rpc({
+                model: resModel,
+                method: 'get_formview_id',
+                args: [[resID], self.user_context],
+            })
+            .then(function (viewID) {
+                self.do_action({
+                    type: 'ir.actions.act_window',
+                    view_type: 'form',
+                    view_mode: 'form',
+                    res_model: resModel,
+                    views: [[viewID || false, 'form']],
+                    res_id: resID,
+                });
+            });
     },
     /**
      * Unlinks the given action and its controller from the internal structures
@@ -964,14 +987,7 @@ var ActionManager = Widget.extend({
      * @param {string} ev.data.res_model
      */
     _onRedirect: function (ev) {
-        this.do_action({
-            type:'ir.actions.act_window',
-            view_type: 'form',
-            view_mode: 'form',
-            res_model: ev.data.res_model,
-            views: [[false, 'form']],
-            res_id: ev.data.res_id,
-        });
+        this._redirectDefault(ev.data.res_model, ev.data.res_id);
     },
 });
 

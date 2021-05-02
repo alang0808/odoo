@@ -14,6 +14,7 @@ from werkzeug import urls, utils
 from odoo import models, fields, api, _
 from odoo.tools import ustr
 
+URL_MAX_SIZE = 10 * 1024 * 1024
 URL_REGEX = r'(\bhref=[\'"](?!mailto:|tel:|sms:)([^\'"]+)[\'"])'
 
 def VALIDATE_URL(url):
@@ -111,7 +112,15 @@ class link_tracker(models.Model):
     @api.depends('url')
     def _get_title_from_url(self, url):
         try:
-            page = requests.get(url, timeout=5)
+            head = requests.head(url, timeout=5)
+            if (
+                    int(head.headers.get('Content-Length', 0)) > URL_MAX_SIZE
+                    or
+                    'text/html' not in head.headers.get('Content-Type', 'text/html')
+            ):
+                return url
+            # HTML parser can work with a part of page, so ask server to limit downloading to 50 KB
+            page = requests.get(url, timeout=5, headers={"range": "bytes=0-50000"})
             p = html.fromstring(page.text.encode('utf-8'), parser=html.HTMLParser(encoding='utf-8'))
             title = p.find('.//title').text
         except:
@@ -185,7 +194,7 @@ class link_tracker(models.Model):
         link = super(link_tracker, self).create(create_vals)
 
         code = self.env['link.tracker.code'].get_random_code_string()
-        self.env['link.tracker.code'].create({'code': code, 'link_id': link.id})
+        self.env['link.tracker.code'].sudo().create({'code': code, 'link_id': link.id})
 
         return link
 

@@ -2,6 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import base64
+import binascii
+import codecs
 import collections
 import unicodedata
 
@@ -24,14 +26,20 @@ from odoo.tools.translate import _
 from odoo.tools.mimetypes import guess_mimetype
 from odoo.tools import config, DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT, pycompat
 
-FIELDS_RECURSION_LIMIT = 2
+FIELDS_RECURSION_LIMIT = 3
 ERROR_PREVIEW_BYTES = 200
 DEFAULT_IMAGE_TIMEOUT = 3
 DEFAULT_IMAGE_MAXBYTES = 10 * 1024 * 1024
-DEFAULT_IMAGE_REGEX = r"(?:http|https)://.*(?:png|jpe?g|tiff?|gif|bmp)"
+DEFAULT_IMAGE_REGEX = r"^(?:http|https)://"
 DEFAULT_IMAGE_CHUNK_SIZE = 32768
 IMAGE_FIELDS = ["icon", "image", "logo", "picture"]
 _logger = logging.getLogger(__name__)
+BOM_MAP = {
+    'utf-16le': codecs.BOM_UTF16_LE,
+    'utf-16be': codecs.BOM_UTF16_BE,
+    'utf-32le': codecs.BOM_UTF32_LE,
+    'utf-32be': codecs.BOM_UTF32_BE,
+}
 
 try:
     import xlrd
@@ -321,6 +329,13 @@ class Import(models.TransientModel):
         encoding = options.get('encoding')
         if not encoding:
             encoding = options['encoding'] = chardet.detect(csv_data)['encoding'].lower()
+            # some versions of chardet (e.g. 2.3.0 but not 3.x) will return
+            # utf-(16|32)(le|be), which for python means "ignore / don't strip
+            # BOM". We don't want that, so rectify the encoding to non-marked
+            # IFF the guessed encoding is LE/BE and csv_data starts with a BOM
+            bom = BOM_MAP.get(encoding)
+            if bom and csv_data.startswith(bom):
+                encoding = options['encoding'] = encoding[:-2]
 
         if encoding != 'utf-8':
             csv_data = csv_data.decode(encoding).encode('utf-8')
@@ -383,6 +398,7 @@ class Import(models.TransientModel):
             return ['boolean']
 
         # If all values can be cast to float, type is either float or monetary
+        results = []
         try:
             thousand_separator = decimal_separator = False
             for val in preview_values:
@@ -415,11 +431,11 @@ class Import(models.TransientModel):
             if thousand_separator and not options.get('float_decimal_separator'):
                 options['float_thousand_separator'] = thousand_separator
                 options['float_decimal_separator'] = decimal_separator
-            return ['float', 'monetary']
+            results = ['float', 'monetary']
         except ValueError:
             pass
 
-        results = self._try_match_date_time(preview_values, options)
+        results += self._try_match_date_time(preview_values, options)
         if results:
             return results
 
@@ -430,6 +446,13 @@ class Import(models.TransientModel):
         # Or a date/datetime if it matches the pattern
         date_patterns = [options['date_format']] if options.get(
             'date_format') else []
+        user_date_format = self.env['res.lang']._lang_get(self.env.user.lang).date_format
+        if user_date_format:
+            try:
+                to_re(user_date_format)
+                date_patterns.append(user_date_format)
+            except KeyError:
+                pass
         date_patterns.extend(DATE_PATTERNS)
         match = check_patterns(date_patterns, preview_values)
         if match:
@@ -748,7 +771,8 @@ class Import(models.TransientModel):
                 # We should be able to manage both case
                 index = import_fields.index(name)
                 self._parse_float_from_data(data, index, name, options)
-            elif field['type'] == 'binary' and field.get('attachment') and any(f in name for f in IMAGE_FIELDS) and name in import_fields:
+            # DON'T Forward port in >= saas-12.2
+            elif field['type'] == 'binary' and (field.get('attachment') or field.get('manual')) and any(f in name for f in IMAGE_FIELDS) and name in import_fields:
                 index = import_fields.index(name)
 
                 with requests.Session() as session:
@@ -760,6 +784,11 @@ class Import(models.TransientModel):
                                 raise AccessError(_("You can not import images via URL, check with your administrator or support for the reason."))
 
                             line[index] = self._import_image_by_url(line[index], session, name, num)
+                        else:
+                            try:
+                                base64.b64decode(line[index], validate=True)
+                            except binascii.Error:
+                                raise ValueError(_("Found invalid image data, images should be imported as either URLs or base64-encoded data."))
 
         return data
 
@@ -800,6 +829,7 @@ class Import(models.TransientModel):
         :rtype: bytes
         """
         maxsize = int(config.get("import_image_maxbytes", DEFAULT_IMAGE_MAXBYTES))
+        _logger.debug("Trying to import image from URL: %s into field %s, at line %s" % (url, field, line_number))
         try:
             response = session.get(url, timeout=int(config.get("import_image_timeout", DEFAULT_IMAGE_TIMEOUT)))
             response.raise_for_status()
@@ -822,6 +852,7 @@ class Import(models.TransientModel):
 
             return base64.b64encode(content)
         except Exception as e:
+            _logger.exception(e)
             raise ValueError(_("Could not retrieve URL: %(url)s [%(field_name)s: L%(line_number)d]: %(error)s") % {
                 'url': url,
                 'field_name': field,
@@ -885,6 +916,9 @@ class Import(models.TransientModel):
         try:
             if dryrun:
                 self._cr.execute('ROLLBACK TO SAVEPOINT import')
+                # cancel all changes done to the registry/ormcache
+                self.pool.clear_caches()
+                self.pool.reset_changes()
             else:
                 self._cr.execute('RELEASE SAVEPOINT import')
         except psycopg2.InternalError:
@@ -896,9 +930,11 @@ class Import(models.TransientModel):
             for index, column_name in enumerate(columns):
                 if column_name:
                     # Update to latest selected field
-                    exist_records = BaseImportMapping.search([('res_model', '=', self.res_model), ('column_name', '=', column_name)])
-                    if exist_records:
-                        exist_records.write({'field_name': fields[index]})
+                    mapping_domain = [('res_model', '=', self.res_model), ('column_name', '=', column_name)]
+                    column_mapping = BaseImportMapping.search(mapping_domain, limit=1)
+                    if column_mapping:
+                        if column_mapping.field_name != fields[index]:
+                            column_mapping.field_name = fields[index]
                     else:
                         BaseImportMapping.create({
                             'res_model': self.res_model,

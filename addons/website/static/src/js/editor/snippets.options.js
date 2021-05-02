@@ -159,7 +159,6 @@ options.registry.carousel = options.Class.extend({
     onBuilt: function () {
         this.id = 'myCarousel' + new Date().getTime();
         this.$target.attr('id', this.id);
-        this.$target.find('[data-slide]').attr('data-cke-saved-href', '#' + this.id);
         this.$target.find('[data-target]').attr('data-target', '#' + this.id);
         this._rebindEvents();
     },
@@ -179,8 +178,14 @@ options.registry.carousel = options.Class.extend({
     onClone: function () {
         var id = 'myCarousel' + new Date().getTime();
         this.$target.attr('id', id);
-        this.$target.find('[data-slide]').attr('href', '#' + id);
-        this.$target.find('[data-slide-to]').attr('data-target', '#' + id);
+        _.each(this.$target.find('[data-slide], [data-slide-to]'), function (el) {
+            var $el = $(el);
+            if ($el.attr('data-target')) {
+                $el.attr('data-target', '#' + id);
+            } else if ($el.attr('href')) {
+                $el.attr('href', '#' + id);
+            }
+        });
     },
     /**
      * @override
@@ -209,8 +214,9 @@ options.registry.carousel = options.Class.extend({
         var $active = this.$inner.find('.carousel-item.active, .carousel-item.prev, .carousel-item.next').first();
         var index = $active.index();
         this.$('.carousel-control-prev, .carousel-control-next, .carousel-indicators').removeClass('d-none');
-        this.$indicators.append('<li data-target="#' + this.id + '" data-slide-to="' + cycle + '"></li>');
-        var $clone = this.$('.carousel-item:first').clone(true);
+        // we added a space after the <li> in the line below to keep the same space between the indicators
+        this.$indicators.append('<li data-target="#' + this.id + '" data-slide-to="' + cycle + '"></li> ');
+        var $clone = $active.clone(true);
         $clone.removeClass('active').insertAfter($active);
         _.defer(function () {
             self.$target.carousel().carousel(++index);
@@ -272,6 +278,7 @@ options.registry.carousel = options.Class.extend({
      * @override
      */
     _setActive: function () {
+        this._super.apply(this, arguments);
         this.$el.find('[data-interval]').removeClass('active')
             .filter('[data-interval=' + this.$target.attr('data-interval') + ']').addClass('active');
     },
@@ -497,8 +504,8 @@ options.registry.layout_column = options.Class.extend({
 
         if (count > 0) {
             var $lastColumn = this.$target.children().last();
-            for (var i = 0 ; i < count ; i++) {
-                $lastColumn.clone().insertAfter($lastColumn);
+            for (var i = 0; i < count; i++) {
+                this.trigger_up('clone_snippet', {$snippet: $lastColumn});
             }
         } else {
             var self = this;
@@ -642,11 +649,11 @@ var FacebookPageDialog = weWidgets.Dialog.extend({
      */
     _renderPreview: function () {
         var self = this;
-        var match = this.fbData.href.match(/^(?:https?:\/\/)?(?:www\.)?(?:fb|facebook)\.com\/(\w+)/);
+        var match = this.fbData.href.match(/^(?:https?:\/\/)?(?:www\.)?(?:fb|facebook)\.com\/(?:([\w.]+)|[^/?#]+-([0-9]{15,16}))(?:$|[\/?# ])/);
         if (match) {
             // Check if the page exists on Facebook or not
             $.ajax({
-                url: 'https://graph.facebook.com/' + match[1] + '/picture',
+                url: 'https://graph.facebook.com/' + (match[2] || match[1]) + '/picture',
                 statusCode: {
                     200: function () {
                         self._toggleWarning(true);
@@ -966,9 +973,13 @@ options.registry.gallery = options.Class.extend({
      * @override
      */
     onBuilt: function () {
-        var uuid = new Date().getTime();
-        this.$target.find('.carousel').attr('id', 'slideshow_' + uuid);
-        this.$target.find('[data-target]').attr('data-target', '#slideshow_' + uuid);
+        this._adaptNavigationIDs();
+    },
+    /**
+     * @override
+     */
+    onClone: function () {
+        this._adaptNavigationIDs();
     },
     /**
      * @override
@@ -1090,10 +1101,10 @@ options.registry.gallery = options.Class.extend({
      */
     mode: function (previewMode, value, $opt) {
         this.$target.css('height', '');
-        this[value]();
         this.$target
             .removeClass('o_nomode o_masonry o_grid o_slideshow')
             .addClass('o_' + value);
+        this[value]();
     },
     /**
      * Displays the images with the standard layout: floating images.
@@ -1219,6 +1230,21 @@ options.registry.gallery = options.Class.extend({
     // Private
     //--------------------------------------------------------------------------
 
+    /**
+     * @private
+     */
+    _adaptNavigationIDs: function () {
+        var uuid = new Date().getTime();
+        this.$target.find('.carousel').attr('id', 'slideshow_' + uuid);
+        _.each(this.$target.find('[data-slide], [data-slide-to]'), function (el) {
+            var $el = $(el);
+            if ($el.attr('data-target')) {
+                $el.attr('data-target', '#slideshow_' + uuid);
+            } else if ($el.attr('href')) {
+                $el.attr('href', '#slideshow_' + uuid);
+            }
+        });
+    },
     /**
      * Returns the images, sorted by index.
      *
@@ -1410,6 +1436,9 @@ options.registry.topMenuColor = options.registry.colorpicker.extend({
             },
         });
         this.$el.toggleClass('d-none', !enabled);
+        if (!enabled) {
+            this.$el.find('button.selected').removeClass('selected');
+        }
     },
 
     //--------------------------------------------------------------------------
@@ -1427,6 +1456,16 @@ options.registry.topMenuColor = options.registry.colorpicker.extend({
         this.trigger_up('action_demand', {
             actionName: 'toggle_page_option',
             params: [{name: 'header_color', value: color}],
+        });
+    },
+    /**
+     * @override
+     */
+    _onColorResetButtonClick: function () {
+        this._super.apply(this, arguments);
+        this.trigger_up('action_demand', {
+            actionName: 'toggle_page_option',
+            params: [{name: 'header_color', value: ''}],
         });
     },
 });

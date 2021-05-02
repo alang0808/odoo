@@ -3,17 +3,21 @@
 # * hr_payroll
 # 
 # Translators:
-# Martin Trigaux, 2018
 # Diego de cos <diegodecos@hotmail.com>, 2018
 # Cristopher Cravioto <ccr@odoo.com>, 2018
 # Israel Cevallos <israel.cevallos1792@gmail.com>, 2018
+# nle_odoo, 2018
+# Mariana Santos Romo <msn@odoo.com>, 2019
+# Martin Trigaux, 2019
+# Pedro M. Baeza <pedro.baeza@gmail.com>, 2020
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-10-08 06:48+0000\n"
-"PO-Revision-Date: 2018-10-08 06:48+0000\n"
-"Last-Translator: Israel Cevallos <israel.cevallos1792@gmail.com>, 2018\n"
+"POT-Creation-Date: 2019-11-14 07:33+0000\n"
+"PO-Revision-Date: 2018-08-24 09:19+0000\n"
+"Last-Translator: Pedro M. Baeza <pedro.baeza@gmail.com>, 2020\n"
 "Language-Team: Spanish (https://www.transifex.com/odoo/teams/41243/es/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -49,7 +53,7 @@ msgstr ""
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.res_config_settings_view_form
 msgid "<span class=\"o_form_label\">Payroll Rules</span>"
-msgstr ""
+msgstr "<span class=\"o_form_label\">Reglas salariales</span>"
 
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.view_hr_payslip_by_employees
@@ -58,6 +62,9 @@ msgid ""
 " selected employee(s) based on the dates and credit note specified on "
 "Payslips Run.</span>"
 msgstr ""
+"<span colspan=\"4\" nolabel=\"1\">Este asistente generará nóminas para todos"
+" los empleados seleccionados en función de las fechas y facturas "
+"rectificativas especificadas en la ejecución de nóminas.</span>"
 
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.report_payslip
@@ -149,8 +156,8 @@ msgstr ""
 
 #. module: hr_payroll
 #: model:ir.model.fields,field_description:hr_payroll.field_res_config_settings__module_account_accountant
-msgid "Account Accountant"
-msgstr "Contabilidad completa"
+msgid "Account"
+msgstr "Cuenta"
 
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.res_config_settings_view_form
@@ -488,7 +495,7 @@ msgstr "Creado el"
 #: model:ir.model.fields,field_description:hr_payroll.field_hr_payslip__credit_note
 #: model:ir.model.fields,field_description:hr_payroll.field_hr_payslip_run__credit_note
 msgid "Credit Note"
-msgstr "Abono"
+msgstr "Factura rectificativa"
 
 #. module: hr_payroll
 #: model:ir.model.fields,field_description:hr_payroll.field_hr_payslip__date_from
@@ -726,6 +733,12 @@ msgid "Get 1% of sales"
 msgstr "Obtenga el 1% de las ventas"
 
 #. module: hr_payroll
+#: code:addons/hr_payroll/models/hr_payslip.py:182
+#, python-format
+msgid "Global Leaves"
+msgstr "Permisos globales"
+
+#. module: hr_payroll
 #: model:hr.salary.rule,name:hr_payroll.hr_rule_taxable
 #: model:hr.salary.rule.category,name:hr_payroll.GROSS
 msgid "Gross"
@@ -789,7 +802,7 @@ msgstr "Nomina de la India"
 #. module: hr_payroll
 #: model:ir.model.fields,help:hr_payroll.field_hr_payslip__credit_note
 msgid "Indicates this payslip has a refund of another"
-msgstr "Indica que esta nómina incluye un abono de otra"
+msgstr "Indica que esta nómina incluye una factura rectificativa de otra"
 
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.hr_salary_rule_form
@@ -1082,7 +1095,7 @@ msgstr "Estructuras de sueldos"
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.res_config_settings_view_form
 msgid "Payroll rules that apply to your country"
-msgstr "Reglas de nómina que aplican a su país"
+msgstr "Reglas salariales que aplican a su país"
 
 #. module: hr_payroll
 #: model:ir.actions.report,name:hr_payroll.action_report_payslip
@@ -1094,7 +1107,7 @@ msgstr "Nómina"
 #: code:addons/hr_payroll/models/hr_payslip.py:82
 #, python-format
 msgid "Payslip 'Date From' must be earlier 'Date To'."
-msgstr ""
+msgstr "La nómina \"Fecha de\" debe ser anterior \"Fecha hasta\"."
 
 #. module: hr_payroll
 #: model:ir.model,name:hr_payroll.model_hr_payslip_run
@@ -1113,7 +1126,7 @@ msgstr "Detalles de cálculo de nómina"
 #. module: hr_payroll
 #: model:ir.model.fields,field_description:hr_payroll.field_hr_employee__payslip_count
 msgid "Payslip Count"
-msgstr ""
+msgstr "Recuento de Nóminas"
 
 #. module: hr_payroll
 #: model:ir.model,name:hr_payroll.model_report_hr_payroll_report_payslipdetails
@@ -1298,7 +1311,7 @@ msgstr "Referencia"
 #. module: hr_payroll
 #: model_terms:ir.ui.view,arch_db:hr_payroll.view_hr_payslip_form
 msgid "Refund"
-msgstr "Abono"
+msgstr "Factura rectificativa"
 
 #. module: hr_payroll
 #: code:addons/hr_payroll/models/hr_payslip.py:102
@@ -1334,7 +1347,7 @@ msgstr "Cálculo de la nómina"
 #. module: hr_payroll
 #: model:ir.model,name:hr_payroll.model_hr_salary_rule
 msgid "Salary Rule"
-msgstr ""
+msgstr "Regla de Salario"
 
 #. module: hr_payroll
 #: model:ir.actions.act_window,name:hr_payroll.action_hr_salary_rule_category
@@ -1507,7 +1520,7 @@ msgid ""
 " but you can also use categories code fields in lowercase as a variable "
 "names (hra, ma, lta, etc.) and the variable basic."
 msgstr ""
-"Se usará para calcular el valor de los campos %s; en general se utiliza lo "
+"Se usará para calcular el valor de los campos %; en general se utiliza lo "
 "básico, pero también puede usar campos de código de categorías en minúscula "
 "como nombres de variables (hra, ma, lta, etc.) y las variables básicas."
 
@@ -1610,6 +1623,12 @@ msgstr "Rango de condición erróneo para la regla de salario %s (%s)."
 #: code:addons/hr_payroll/models/hr_salary_rule.py:36
 #, python-format
 msgid "You cannot create a recursive salary structure."
+msgstr ""
+
+#. module: hr_payroll
+#: code:addons/hr_payroll/models/hr_payslip.py:608
+#, python-format
+msgid "You cannot delete a payslip batch which is not draft!"
 msgstr ""
 
 #. module: hr_payroll

@@ -34,7 +34,7 @@ class PosSession(models.Model):
                         _("You cannot confirm all orders of this session, because they have not the 'paid' status.\n"
                           "{reference} is in state {state}, total amount: {total}, paid: {paid}").format(
                             reference=order.pos_reference or order.name,
-                            state=order.state,
+                            state=dict(order._fields['state']._description_selection(self.env)).get(order.state),
                             total=order.amount_total,
                             paid=order.amount_paid,
                         ))
@@ -188,6 +188,8 @@ class PosSession(models.Model):
                 journals = Journal.with_context(ctx).search([('type', '=', 'cash')])
                 if not journals:
                     journals = Journal.with_context(ctx).search([('journal_user', '=', True)])
+            if not journals:
+                raise ValidationError(_("No payment method configured! \nEither no Chart of Account is installed or no payment method is configured for this POS."))
             journals.sudo().write({'journal_user': True})
             pos_config.sudo().write({'journal_ids': [(6, 0, journals.ids)]})
 
@@ -206,7 +208,8 @@ class PosSession(models.Model):
             st_values = {
                 'journal_id': journal.id,
                 'user_id': self.env.user.id,
-                'name': pos_name
+                'name': pos_name,
+                'balance_start': self.env["account.bank.statement"]._get_opening_balance(journal.id) if journal.type == 'cash' else 0
             }
 
             statements.append(ABS.with_context(ctx).sudo(uid).create(st_values).id)
@@ -256,6 +259,7 @@ class PosSession(models.Model):
             session.write({'state': 'closing_control', 'stop_at': fields.Datetime.now()})
             if not session.config_id.cash_control:
                 session.action_pos_session_close()
+        return True
 
     @api.multi
     def _check_pos_session_balance(self):
@@ -268,6 +272,7 @@ class PosSession(models.Model):
     def action_pos_session_validate(self):
         self._check_pos_session_balance()
         self.action_pos_session_close()
+        return True
 
     @api.multi
     def action_pos_session_close(self):
@@ -275,6 +280,7 @@ class PosSession(models.Model):
         for session in self:
             company_id = session.config_id.company_id.id
             ctx = dict(self.env.context, force_company=company_id, company_id=company_id)
+            ctx_notrack = dict(ctx, mail_notrack=True)
             for st in session.statement_ids:
                 if abs(st.difference) > st.journal_id.amount_authorized_diff:
                     # The pos manager can close statements with maximums.
@@ -282,7 +288,7 @@ class PosSession(models.Model):
                         raise UserError(_("Your ending balance is too different from the theoretical cash closing (%.2f), the maximum allowed is: %.2f. You can contact your manager to force it.") % (st.difference, st.journal_id.amount_authorized_diff))
                 if (st.journal_id.type not in ['bank', 'cash']):
                     raise UserError(_("The journal type for your payment method should be bank or cash."))
-                st.with_context(ctx).sudo().button_confirm_bank()
+                st.with_context(ctx_notrack).sudo().button_confirm_bank()
         self.with_context(ctx)._confirm_orders()
         self.write({'state': 'closed'})
         return {

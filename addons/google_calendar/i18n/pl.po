@@ -3,21 +3,24 @@
 # * google_calendar
 # 
 # Translators:
-# Piotr Szlązak <szlazakpiotr@gmail.com>, 2018
 # Martin Trigaux, 2018
-# zbik2607 <darek@krokus.com.pl>, 2018
+# Dariusz Żbikowski <darek@krokus.com.pl>, 2018
 # Grzegorz Grzelak <grzegorz.grzelak@openglobe.pl>, 2018
 # Grażyna Grzelak <grazyna.grzelak@openglobe.pl>, 2018
 # Tomasz Leppich <t.leppich@gmail.com>, 2018
+# Piotr Szlązak <szlazakpiotr@gmail.com>, 2018
 # Marcin Młynarczyk <mlynarczyk@gmail.com>, 2018
 # Radosław Biegalski <radoslaw.biegalski@openglobe.pl>, 2018
+# Maksym <ms@myodoo.pl>, 2018
+# Piotr Strębski <strebski@gmail.com>, 2021
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server saas~11.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-09-21 13:17+0000\n"
-"PO-Revision-Date: 2018-09-21 13:17+0000\n"
-"Last-Translator: Radosław Biegalski <radoslaw.biegalski@openglobe.pl>, 2018\n"
+"PO-Revision-Date: 2018-08-24 09:18+0000\n"
+"Last-Translator: Piotr Strębski <strebski@gmail.com>, 2021\n"
 "Language-Team: Polish (https://www.transifex.com/odoo/teams/41243/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -78,7 +81,7 @@ msgstr "Kalendarz"
 #. module: google_calendar
 #: model:ir.model,name:google_calendar.model_calendar_attendee
 msgid "Calendar Attendee Information"
-msgstr ""
+msgstr "Kalendarzowa informacja dla uczestników"
 
 #. module: google_calendar
 #: model:ir.model.fields,field_description:google_calendar.field_res_users__google_calendar_cal_id
@@ -108,7 +111,7 @@ msgstr "Client_key"
 #. module: google_calendar
 #: model:ir.model,name:google_calendar.model_res_config_settings
 msgid "Config Settings"
-msgstr ""
+msgstr "Ustawienia konfiguracji"
 
 #. module: google_calendar
 #. openerp-web
@@ -268,6 +271,14 @@ msgid ""
 msgstr ""
 "Konto, które próbujesz zsynchronizować: (%s) , jest inne niż poprzednio "
 "używane: (%s)!"
+
+#. module: google_calendar
+#: code:addons/google_calendar/models/google_calendar.py:278
+#, python-format
+msgid ""
+"The event \"%s\", %s (ID: %s) cannot be synchronized because of the "
+"following error: %s"
+msgstr ""
 
 #. module: google_calendar
 #: model:ir.model.fields,field_description:google_calendar.field_res_users__google_calendar_token_validity

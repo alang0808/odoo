@@ -122,6 +122,27 @@ QUnit.module('Views', {
         graph.destroy();
     });
 
+    QUnit.test('field id not in groupBy', function (assert) {
+        assert.expect(1);
+
+        var graph = createView({
+            View: GraphView,
+            model: "foo",
+            data: this.data,
+            arch: '<graph string="Partners">' +
+                        '<field name="id"/>' +
+                '</graph>',
+            mockRPC: function (route, args) {
+                if (args.method === 'read_group') {
+                    assert.deepEqual(args.kwargs.groupby, [],
+                        'groupby should not contain id field');
+                }
+                return this._super.apply(this, arguments);
+            }
+        });
+        graph.destroy();
+    });
+
     QUnit.test('switching mode', function (assert) {
         assert.expect(6);
 
@@ -185,7 +206,7 @@ QUnit.module('Views', {
             "should contain a text element with product xphone on X axis");
         assert.strictEqual(graph.$('.nv-x text:contains(xpad)').length, 1,
             "should contain a text element with product xpad on X axis");
-        assert.strictEqual(graph.$('text:contains(true)').length, 1,
+        assert.strictEqual(graph.$('text:contains("True")').length, 1,
             "should have an entry for each value of field 'bar' in the legend");
 
         graph.destroy();
@@ -762,7 +783,7 @@ QUnit.module('Views', {
 
     QUnit.test('Undefined should appear in bar, pie graph but not in line graph', function (assert) {
         assert.expect(4);
-        
+
         var graph = createView({
             View: GraphView,
             model: "foo",
@@ -773,13 +794,40 @@ QUnit.module('Views', {
                 '</graph>',
         });
 
-        assert.strictEqual(graph.$("svg.nvd3-svg:contains('Undefined')").length, 0);
-        assert.strictEqual(graph.$("svg.nvd3-svg:contains('March')").length, 1);
-
-        graph.$buttons.find('.o_graph_button[data-mode=bar]').click();
-        assert.strictEqual(graph.$("svg.nvd3-svg:contains('Undefined')").length, 1);
+        assert.strictEqual(graph.$("svg.nvd3-svg .nv-x:contains('Undefined')").length, 0);
         assert.strictEqual(graph.$("svg.nvd3-svg:contains('January')").length, 1);
 
+        graph.$buttons.find('.o_graph_button[data-mode=bar]').click();
+        assert.strictEqual(graph.$("svg.nvd3-svg .nv-x:contains('Undefined')").length, 1);
+        assert.strictEqual(graph.$("svg.nvd3-svg:contains('January')").length, 1);
+
+        graph.destroy();
+    });
+
+    QUnit.test('Undefined should appear in bar, pie graph but not in line graph with multiple groupbys', function (assert) {
+        assert.expect(6);
+
+        var graph = createView({
+            View: GraphView,
+            model: "foo",
+            groupBy:['date', 'color_id'],
+            data: this.data,
+            arch: '<graph string="Partners" type="line">' +
+                        '<field name="bar"/>' +
+                '</graph>',
+        });
+
+        assert.strictEqual(graph.$("svg.nvd3-svg .nv-x:contains('Undefined')").length, 0);
+        assert.strictEqual(graph.$("svg.nvd3-svg:contains('January')").length, 1);
+
+        graph.$buttons.find('.o_graph_button[data-mode=bar]').click();
+        assert.strictEqual(graph.$("svg.nvd3-svg .nv-x:contains('Undefined')").length, 1);
+        assert.strictEqual(graph.$("svg.nvd3-svg:contains('January')").length, 1);
+
+        // Undefined should not appear after switching back to line chart
+        graph.$buttons.find('.o_graph_button[data-mode=line]').click();
+        assert.strictEqual(graph.$("svg.nvd3-svg .nv-x:contains('Undefined')").length, 0);
+        assert.strictEqual(graph.$("svg.nvd3-svg:contains('January')").length, 1);
         graph.destroy();
     });
 });

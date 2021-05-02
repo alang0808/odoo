@@ -3,6 +3,8 @@
 import base64
 import uuid
 
+from datetime import timedelta
+
 from odoo import api, fields, models, tools, _
 
 from odoo.modules.module import get_resource_path
@@ -66,9 +68,18 @@ class Rating(models.Model):
     @api.multi
     @api.depends('rating')
     def _compute_rating_image(self):
+        # Due to some new widgets, we may have ratings different from 0/1/5/10 (e.g. slide.channel review)
+        # Let us have some custom rounding while finding a better solution for images.
         for rating in self:
+            rating_for_img = 0
+            if rating.rating >= 8:
+                rating_for_img = 10
+            elif rating.rating > 3:
+                rating_for_img = 5
+            elif rating.rating >= 1:
+                rating_for_img = 1
             try:
-                image_path = get_resource_path('rating', 'static/src/img', 'rating_%s.png' % (int(rating.rating),))
+                image_path = get_resource_path('rating', 'static/src/img', 'rating_%s.png' % rating_for_img)
                 rating.rating_image = base64.b64encode(open(image_path, 'rb').read())
             except (IOError, OSError):
                 rating.rating_image = False
@@ -166,13 +177,18 @@ class RatingMixin(models.AbstractModel):
     def write(self, values):
         """ If the rated ressource name is modified, we should update the rating res_name too.
             If the rated ressource parent is changed we should update the parent_res_id too"""
-        result = super(RatingMixin, self).write(values)
-        for record in self:
-            if record._rec_name in values:
-                record.rating_ids._compute_res_name()
-            if record.rating_get_parent() in values:
-                for rating in record.rating_ids:
-                    rating.parent_res_id = record[record.rating_get_parent()].id
+        with self.env.norecompute():
+            result = super(RatingMixin, self).write(values)
+            for record in self:
+                if record._rec_name in values:  # set the res_name of ratings to be recomputed
+                    res_name_field = self.env['rating.rating']._fields['res_name']
+                    record.rating_ids._recompute_todo(res_name_field)
+                if record.rating_get_parent() in values:
+                    record.rating_ids.write({'parent_res_id': record[record.rating_get_parent()].id})
+
+        if self.env.recompute and self._context.get('recompute', True):  # trigger the recomputation of all field marked as "to recompute"
+            self.recompute()
+
         return result
 
     def unlink(self):
@@ -347,3 +363,31 @@ class RatingMixin(models.AbstractModel):
         for rate in data['repartition']:
             result['percent'][rate] = (data['repartition'][rate] * 100) / data['total'] if data['total'] > 0 else 0
         return result
+
+    @api.model
+    def _compute_parent_rating_percentage_satisfaction(self, parent_records, rating_satisfaction_days=None):
+        # build domain and fetch data
+        domain = [('parent_res_model', '=', parent_records._name), ('parent_res_id', 'in', parent_records.ids), ('rating', '>=', 1), ('consumed', '=', True)]
+        if rating_satisfaction_days:
+            domain += [('write_date', '>=', fields.Datetime.to_string(fields.datetime.now() - timedelta(days=rating_satisfaction_days)))]
+        data = self.env['rating.rating'].read_group(domain, ['parent_res_id', 'rating'], ['parent_res_id', 'rating'], lazy=False)
+
+        # get repartition of grades per parent id
+        default_grades = {'great': 0, 'okay': 0, 'bad': 0}
+        grades_per_parent = dict((parent_id, dict(default_grades)) for parent_id in parent_records.ids)  # map: {parent_id: {'great': 0, 'bad': 0, 'ok': 0}}
+        for item in data:
+            parent_id = item['parent_res_id']
+            rating = item['rating']
+            if rating >= RATING_LIMIT_SATISFIED:
+                grades_per_parent[parent_id]['great'] += item['__count']
+            elif rating > RATING_LIMIT_OK:
+                grades_per_parent[parent_id]['okay'] += item['__count']
+            else:
+                grades_per_parent[parent_id]['bad'] += item['__count']
+
+        # compute percentage per parent
+        res = {}
+        for record in parent_records:
+            repartition = grades_per_parent.get(record.id)
+            res[record.id] = repartition['great'] * 100 / sum(repartition.values()) if sum(repartition.values()) else -1
+        return res

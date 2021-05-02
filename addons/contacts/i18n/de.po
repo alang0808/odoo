@@ -4,13 +4,16 @@
 # 
 # Translators:
 # Martin Trigaux, 2018
+# Chris Egal <sodaswed@web.de>, 2019
+# Ermin Trevisan <trevi@twanda.com>, 2020
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server saas~11.5\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-09-18 09:49+0000\n"
-"PO-Revision-Date: 2018-09-18 09:49+0000\n"
-"Last-Translator: Martin Trigaux, 2018\n"
+"PO-Revision-Date: 2018-08-24 09:17+0000\n"
+"Last-Translator: Ermin Trevisan <trevi@twanda.com>, 2020\n"
 "Language-Team: German (https://www.transifex.com/odoo/teams/41243/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -37,12 +40,12 @@ msgstr "Konfiguration"
 #. module: contacts
 #: model:ir.ui.menu,name:contacts.menu_partner_category_form
 msgid "Contact Tags"
-msgstr "Kontakt Tags"
+msgstr "Kontakt-Stichwörter"
 
 #. module: contacts
 #: model:ir.ui.menu,name:contacts.menu_partner_title_contact
 msgid "Contact Titles"
-msgstr "Partner-Kontaktanrede"
+msgstr "Kontaktanrede"
 
 #. module: contacts
 #: model:ir.actions.act_window,name:contacts.action_contacts
@@ -66,7 +69,7 @@ msgstr "Ländergruppe"
 #: model_terms:ir.actions.act_window,help:contacts.action_contacts
 #: model_terms:ir.actions.act_window,help:contacts.action_contacts_summary
 msgid "Create a contact in your address book"
-msgstr ""
+msgstr "Erstellen Sie einen Kontakt in Ihrem Adressbuch"
 
 #. module: contacts
 #: model:ir.ui.menu,name:contacts.menu_country_state_partner
@@ -83,6 +86,8 @@ msgstr "Lokalisierung"
 #: model_terms:ir.actions.act_window,help:contacts.action_contacts_summary
 msgid "Odoo helps you to easily track all activities related to a customer."
 msgstr ""
+"Mit Odoo können Sie alle Aktivitäten, die mit einem Kunden zu tun haben, "
+"einfach nachverfolgen."
 
 #. module: contacts
 #: model:ir.ui.menu,name:contacts.res_partner_industry_menu

@@ -10,8 +10,8 @@ import pytz
 
 from odoo import exceptions, tests
 from odoo.addons.test_mail.tests.common import BaseFunctionalTest
+from odoo.addons.test_mail.tests.common import mail_new_test_user
 from odoo.addons.test_mail.models.test_mail_models import MailTestActivity
-from odoo.tools import mute_logger
 
 
 class TestActivityCommon(BaseFunctionalTest):
@@ -19,7 +19,7 @@ class TestActivityCommon(BaseFunctionalTest):
     @classmethod
     def setUpClass(cls):
         super(TestActivityCommon, cls).setUpClass()
-        cls.test_record = cls.env['mail.test.activity'].with_context(cls._quick_create_ctx).create({'name': 'Test'})
+        cls.test_record = cls.env['mail.test.activity'].with_context(BaseFunctionalTest._test_context).create({'name': 'Test'})
         # reset ctx
         cls.test_record = cls.test_record.with_context(
             mail_create_nolog=False,
@@ -39,8 +39,23 @@ class TestActivityRights(TestActivityCommon):
         activity2 = self.test_record.activity_schedule('test_mail.mail_act_test_todo')
         activity2.write({'user_id': self.user_employee.id})
 
-    def test_activity_security_user_noaccess(self):
+    def test_activity_security_user_noaccess_automated(self):
+        def _employee_crash(*args, **kwargs):
+            """ If employee is test employee, consider he has no access on document """
+            recordset = args[0]
+            if recordset.env.uid == self.user_employee.id:
+                raise exceptions.AccessError('Hop hop hop Ernest, please step back.')
+            return DEFAULT
 
+        with patch.object(MailTestActivity, 'check_access_rights', autospec=True, side_effect=_employee_crash):
+            activity = self.test_record.activity_schedule(
+                'test_mail.mail_act_test_todo',
+                user_id=self.user_employee.id)
+
+            activity2 = self.test_record.activity_schedule('test_mail.mail_act_test_todo')
+            activity2.write({'user_id': self.user_employee.id})
+
+    def test_activity_security_user_noaccess_manual(self):
         def _employee_crash(*args, **kwargs):
             """ If employee is test employee, consider he has no access on document """
             recordset = args[0]
@@ -50,11 +65,18 @@ class TestActivityRights(TestActivityCommon):
 
         with patch.object(MailTestActivity, 'check_access_rights', autospec=True, side_effect=_employee_crash):
             with self.assertRaises(exceptions.UserError):
-                activity = self.test_record.activity_schedule(
-                    'test_mail.mail_act_test_todo',
-                    user_id=self.user_employee.id)
+                activity = self.env['mail.activity'].create({
+                    'activity_type_id': self.env.ref('test_mail.mail_act_test_todo').id,
+                    'res_model_id': self.env.ref('test_mail.model_mail_test_activity').id,
+                    'res_id': self.test_record.id,
+                    'user_id': self.user_employee.id,
+                })
 
-            activity2 = self.test_record.activity_schedule('test_mail.mail_act_test_todo')
+            activity2 = self.env['mail.activity'].create({
+                'activity_type_id': self.env.ref('test_mail.mail_act_test_todo').id,
+                'res_model_id': self.env.ref('test_mail.model_mail_test_activity').id,
+                'res_id': self.test_record.id,
+            })
             with self.assertRaises(exceptions.UserError):
                 activity2.write({'user_id': self.user_employee.id})
 
@@ -92,12 +114,7 @@ class TestActivityFlow(TestActivityCommon):
             self.assertEqual(test_record.message_ids[0].subtype_id, self.env.ref('mail.mt_activities'))
 
     def test_activity_flow_portal(self):
-        portal_user = self.env['res.users'].with_context(self._quick_create_user_ctx).create({
-            'name': 'Chell Gladys',
-            'login': 'chell',
-            'email': 'chell@gladys.portal',
-            'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])],
-        })
+        portal_user = mail_new_test_user(self.env, login='chell', groups='base.group_portal', name='Chell Gladys')
 
         with self.sudoAs('chell'):
             test_record = self.env['mail.test.activity'].browse(self.test_record.id)
@@ -129,6 +146,52 @@ class TestActivityFlow(TestActivityCommon):
         self.assertEqual(activity.create_user_id, self.user_employee)
         self.assertEqual(activity.user_id, self.user_employee)
 
+    def test_action_feedback_attachment(self):
+        Partner = self.env['res.partner']
+        Activity = self.env['mail.activity']
+        Attachment = self.env['ir.attachment']
+        Message = self.env['mail.message']
+
+        partner = self.env['res.partner'].create({
+            'name': 'Tester',
+        })
+
+        activity = Activity.create({
+            'summary': 'Test',
+            'activity_type_id': 1,
+            'res_model_id': self.env.ref('base.model_res_partner').id,
+            'res_id': partner.id,
+        })
+
+        attachments = Attachment
+        attachments += Attachment.create({
+            'name': 'test',
+            'res_name': 'test',
+            'res_model': 'mail.activity',
+            'res_id': activity.id,
+            'datas': 'test',
+            'datas_fname': 'test.pdf',
+        })
+        attachments += Attachment.create({
+            'name': 'test2',
+            'res_name': 'test',
+            'res_model': 'mail.activity',
+            'res_id': activity.id,
+            'datas': 'testtest',
+            'datas_fname': 'test2.pdf',
+        })
+
+        # Adding the attachments to the activity
+        activity.attachment_ids = attachments
+
+        # Checking if the attachment has been forwarded to the message
+        # when marking an activity as "Done"
+        activity.action_feedback()
+        activity_message = Message.search([], order='id desc', limit=1)
+        self.assertEqual(set(activity_message.attachment_ids.ids), set(attachments.ids))
+        for attachment in attachments:
+            self.assertEqual(attachment.res_id, activity_message.id)
+            self.assertEqual(attachment.res_model, activity_message._name)
 
 @tests.tagged('mail_activity')
 class TestActivityMixin(TestActivityCommon):

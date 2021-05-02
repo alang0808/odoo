@@ -13,6 +13,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">ir.module.module</field>
             <field name="view_mode">kanban,tree,form</field>
+            <field name="domain">['!', ('name', '=like', 'theme_%')]</field>
             <field name="context" eval="{'search_default_category_id': ref('base.module_category_website')}"/>
         </record>
 
@@ -319,6 +320,11 @@
             name="Dashboard"
             sequence="1"
             parent="website.menu_website_configuration"/>
+
+        <!-- Force empty action, to ease upgrade -->
+        <record id="menu_dashboard" model="ir.ui.menu">
+            <field name="action" eval="False"/>
+        </record>
 
         <menuitem id="menu_website_dashboard" parent="menu_dashboard"
             sequence="10" name="eCommerce Dashboard"

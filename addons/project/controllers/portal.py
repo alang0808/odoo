@@ -131,7 +131,7 @@ class CustomerPortal(CustomerPortal):
 
         # extends filterby criteria with project (criteria name is the project id)
         # Note: portal users can't view projects they don't follow
-        project_groups = request.env['project.task'].read_group([('project_id', 'not in', project.ids)],
+        project_groups = request.env['project.task'].read_group([('project_id', 'not in', projects.ids)],
                                                                 ['project_id'], ['project_id'])
         for group in project_groups:
             proj_id = group['project_id'][0] if group['project_id'] else False
@@ -180,7 +180,7 @@ class CustomerPortal(CustomerPortal):
         # content according to pager and archive selected
         if groupby == 'project':
             order = "project_id, %s" % order  # force sort on project first to group by project in view
-        tasks = request.env['project.task'].search(domain, order=order, limit=self._items_per_page, offset=pager['offset'])
+        tasks = request.env['project.task'].search(domain, order=order, limit=self._items_per_page, offset=(page - 1) * self._items_per_page)
         request.session['my_tasks_history'] = tasks.ids[:100]
         if groupby == 'project':
             grouped_tasks = [request.env['project.task'].concat(*g) for k, g in groupbyelem(tasks, itemgetter('project_id'))]
@@ -213,5 +213,8 @@ class CustomerPortal(CustomerPortal):
         except (AccessError, MissingError):
             return request.redirect('/my')
 
+        # ensure attachment are accessible with access token inside template
+        for attachment in task_sudo.attachment_ids:
+            attachment.generate_access_token()
         values = self._task_get_page_view_values(task_sudo, access_token, **kw)
         return request.render("project.portal_my_task", values)

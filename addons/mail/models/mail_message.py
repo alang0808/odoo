@@ -4,17 +4,17 @@
 import logging
 import re
 
+from binascii import Error as binascii_error
 from operator import itemgetter
-from email.utils import formataddr
 from openerp.http import request
 
 from odoo import _, api, fields, models, modules, SUPERUSER_ID, tools
 from odoo.exceptions import UserError, AccessError
 from odoo.osv import expression
-from odoo.tools import groupby
+from odoo.tools import groupby, formataddr
 
 _logger = logging.getLogger(__name__)
-_image_dataurl = re.compile(r'(data:image/[a-z]+?);base64,([a-z0-9+/\n]{3,}=*)\n*([\'"])', re.I)
+_image_dataurl = re.compile(r'(data:image/[a-z]+?);base64,([a-z0-9+/\n]{3,}=*)\n*([\'"])(?: data-filename="([^"]*)")?', re.I)
 
 
 class Message(models.Model):
@@ -106,7 +106,7 @@ class Message(models.Model):
     tracking_value_ids = fields.One2many(
         'mail.tracking.value', 'mail_message_id',
         string='Tracking values',
-        groups="base.group_no_one",
+        groups="base.group_system",
         help='Tracked values are stored in a separate model. This field allow to reconstruct '
              'the tracking and to generate statistics on the model.')
     # mail gateway
@@ -154,8 +154,8 @@ class Message(models.Model):
     @api.multi
     def _search_has_error(self, operator, operand):
         if operator == '=' and operand:
-            return ['&', ('notification_ids.email_status', 'in', ('bounce', 'exception')), ('author_id', '=', self.env.user.partner_id.id)]
-        return ['!', '&', ('notification_ids.email_status', 'in', ('bounce', 'exception')), ('author_id', '=', self.env.user.partner_id.id)]  # this wont work and will be equivalent to "not in" beacause of orm restrictions. Dont use "has_error = False"
+            return [('notification_ids.email_status', 'in', ('bounce', 'exception'))]
+        return ['!', ('notification_ids.email_status', 'in', ('bounce', 'exception'))]  # this wont work and will be equivalent to "not in" beacause of orm restrictions. Dont use "has_error = False"
 
     @api.depends('starred_partner_ids')
     def _get_starred(self):
@@ -185,7 +185,7 @@ class Message(models.Model):
                     ('res_id', 'in', self.env.user.moderation_channel_ids.ids)]
 
         # no support for other operators
-        return ValueError(_('Unsupported search filter on moderation status'))
+        raise UserError(_('Unsupported search filter on moderation status'))
 
     #------------------------------------------------------
     # Notification API
@@ -320,7 +320,9 @@ class Message(models.Model):
         partners = self.env['res.partner'].sudo()
         attachments = self.env['ir.attachment']
         message_ids = list(message_tree.keys())
-        for message in message_tree.values():
+        # By rebrowsing all the messages at once, we ensure all the messages
+        # to be on the same prefetch group, enhancing that way the performances 
+        for message in self.sudo().browse(message_ids):
             if message.author_id:
                 partners |= message.author_id
             if message.subtype_id and message.partner_ids:  # take notified people of message with a subtype
@@ -342,7 +344,7 @@ class Message(models.Model):
             'id': attachment['id'],
             'filename': attachment['datas_fname'],
             'name': attachment['name'],
-            'mimetype': 'application/octet-stream' if safari and 'video' in attachment['mimetype'] else attachment['mimetype'],
+            'mimetype': 'application/octet-stream' if safari and attachment['mimetype'] and 'video' in attachment['mimetype'] else attachment['mimetype'],
         }) for attachment in attachments_data)
 
         # 3. Tracking values
@@ -390,12 +392,14 @@ class Message(models.Model):
             for notification in message.notification_ids.filtered(filter_notification):
                 customer_email_data.append((partner_tree[notification.res_partner_id.id][0], partner_tree[notification.res_partner_id.id][1], notification.email_status))
 
-            main_attachment = message.model and message.res_id and getattr(self.env[message.model].browse(message.res_id), 'message_main_attachment_id')
             attachment_ids = []
-            for attachment in message.attachment_ids:
-                if attachment.id in attachments_tree:
-                    attachments_tree[attachment.id]['is_main'] = main_attachment == attachment
-                    attachment_ids.append(attachments_tree[attachment.id])
+            if message.attachment_ids:
+                has_access_to_model = message.model and self.env[message.model].check_access_rights('read', raise_exception=False)
+                main_attachment = has_access_to_model and message.res_id and self.env[message.model].search_count([('id', '=',message.res_id)]) and getattr(self.env[message.model].browse(message.res_id), 'message_main_attachment_id')
+                for attachment in message.attachment_ids:
+                    if attachment.id in attachments_tree:
+                        attachments_tree[attachment.id]['is_main'] = main_attachment == attachment
+                        attachment_ids.append(attachments_tree[attachment.id])
             tracking_value_ids = []
             for tracking_value_id in message_to_tracking.get(message_id, list()):
                 if tracking_value_id in tracking_tree:
@@ -533,6 +537,16 @@ class Message(models.Model):
         failures_infos = []
         # for each channel, build the information header and include the logged partner information
         for message in self:
+            # Check if user has access to the record before displaying a notification about it.
+            # In case the user switches from one company to another, it might happen that he doesn't
+            # have access to the record related to the notification. In this case, we skip it.
+            if message.model and message.res_id:
+                record = self.env[message.model].browse(message.res_id)
+                try:
+                    record.check_access_rights('read')
+                    record.check_access_rule('read')
+                except AccessError:
+                    continue
             info = {
                 'message_id': message.id,
                 'record_name': message.record_name,
@@ -542,7 +556,7 @@ class Message(models.Model):
                 'model': message.model,
                 'last_message_date': message.date,
                 'module_icon': '/mail/static/src/img/smiley/mailfailure.jpg',
-                'notifications': dict((notif.res_partner_id.id, (notif.email_status, notif.res_partner_id.name)) for notif in message.notification_ids)
+                'notifications': dict((notif.res_partner_id.id, (notif.email_status, notif.res_partner_id.name)) for notif in message.notification_ids.sudo())
             }
             failures_infos.append(info)
         return failures_infos
@@ -622,32 +636,32 @@ class Message(models.Model):
         # check read access rights before checking the actual rules on the given ids
         super(Message, self.sudo(access_rights_uid or self._uid)).check_access_rights('read')
 
-        self._cr.execute("""
-            SELECT DISTINCT m.id, m.model, m.res_id, m.author_id,
-                            COALESCE(partner_rel.res_partner_id, needaction_rel.res_partner_id),
-                            channel_partner.channel_id as channel_id
-            FROM "%s" m
-            LEFT JOIN "mail_message_res_partner_rel" partner_rel
-            ON partner_rel.mail_message_id = m.id AND partner_rel.res_partner_id = %%(pid)s
-            LEFT JOIN "mail_message_res_partner_needaction_rel" needaction_rel
-            ON needaction_rel.mail_message_id = m.id AND needaction_rel.res_partner_id = %%(pid)s
-            LEFT JOIN "mail_message_mail_channel_rel" channel_rel
-            ON channel_rel.mail_message_id = m.id
-            LEFT JOIN "mail_channel" channel
-            ON channel.id = channel_rel.mail_channel_id
-            LEFT JOIN "mail_channel_partner" channel_partner
-            ON channel_partner.channel_id = channel.id AND channel_partner.partner_id = %%(pid)s
-
-            WHERE m.id = ANY (%%(ids)s)""" % self._table, dict(pid=pid, ids=ids))
-        for id, rmod, rid, author_id, partner_id, channel_id in self._cr.fetchall():
-            if author_id == pid:
-                author_ids.add(id)
-            elif partner_id == pid:
-                partner_ids.add(id)
-            elif channel_id:
-                channel_ids.add(id)
-            elif rmod and rid:
-                model_ids.setdefault(rmod, {}).setdefault(rid, set()).add(id)
+        for sub_ids in self._cr.split_for_in_conditions(ids):
+            self._cr.execute("""
+                SELECT DISTINCT m.id, m.model, m.res_id, m.author_id,
+                                COALESCE(partner_rel.res_partner_id, needaction_rel.res_partner_id),
+                                channel_partner.channel_id as channel_id
+                FROM "%s" m
+                LEFT JOIN "mail_message_res_partner_rel" partner_rel
+                ON partner_rel.mail_message_id = m.id AND partner_rel.res_partner_id = %%(pid)s
+                LEFT JOIN "mail_message_res_partner_needaction_rel" needaction_rel
+                ON needaction_rel.mail_message_id = m.id AND needaction_rel.res_partner_id = %%(pid)s
+                LEFT JOIN "mail_message_mail_channel_rel" channel_rel
+                ON channel_rel.mail_message_id = m.id
+                LEFT JOIN "mail_channel" channel
+                ON channel.id = channel_rel.mail_channel_id
+                LEFT JOIN "mail_channel_partner" channel_partner
+                ON channel_partner.channel_id = channel.id AND channel_partner.partner_id = %%(pid)s
+                WHERE m.id = ANY (%%(ids)s)""" % self._table, dict(pid=pid, ids=list(sub_ids)))
+            for id, rmod, rid, author_id, partner_id, channel_id in self._cr.fetchall():
+                if author_id == pid:
+                    author_ids.add(id)
+                elif partner_id == pid:
+                    partner_ids.add(id)
+                elif channel_id:
+                    channel_ids.add(id)
+                elif rmod and rid:
+                    model_ids.setdefault(rmod, {}).setdefault(rid, set()).add(id)
 
         allowed_ids = self._find_allowed_doc_ids(model_ids)
 
@@ -712,8 +726,9 @@ class Message(models.Model):
                                 WHERE message.message_type = %%s AND (message.subtype_id IS NULL OR subtype.internal IS TRUE) AND message.id = ANY (%%s)''' % (self._table), ('comment', self.ids,))
             if self._cr.fetchall():
                 raise AccessError(
-                    _('The requested operation cannot be completed due to security restrictions. Please contact your system administrator.\n\n(Document type: %s, Operation: %s)') %
-                    (self._description, operation))
+                    _('The requested operation cannot be completed due to security restrictions. Please contact your system administrator.\n\n(Document type: %s, Operation: %s)') % (self._description, operation)
+                    + ' - ({} {}, {} {})'.format(_('Records:'), self.ids[:6], _('User:'), self._uid)
+                )
 
         # Read mail_message.ids to have their values
         message_values = dict((res_id, {}) for res_id in self.ids)
@@ -882,8 +897,9 @@ class Message(models.Model):
         if not (other_ids and self.browse(other_ids).exists()):
             return
         raise AccessError(
-            _('The requested operation cannot be completed due to security restrictions. Please contact your system administrator.\n\n(Document type: %s, Operation: %s)') %
-            (self._description, operation))
+            _('The requested operation cannot be completed due to security restrictions. Please contact your system administrator.\n\n(Document type: %s, Operation: %s)') % (self._description, operation)
+            + ' - ({} {}, {} {})'.format(_('Records:'), list(other_ids)[:6], _('User:'), self._uid)
+        )
 
     @api.model
     def _get_record_name(self, values):
@@ -916,7 +932,7 @@ class Message(models.Model):
     def _invalidate_documents(self):
         """ Invalidate the cache of the documents followed by ``self``. """
         for record in self:
-            if record.model and record.res_id and 'message_ids' in self.env[record.model]:
+            if record.model and record.res_id and issubclass(self.pool[record.model], self.pool['mail.thread']):
                 self.env[record.model].invalidate_cache(fnames=[
                     'message_ids',
                     'message_unread',
@@ -929,7 +945,7 @@ class Message(models.Model):
     def create(self, values):
         # coming from mail.js that does not have pid in its values
         if self.env.context.get('default_starred'):
-            self = self.with_context({'default_starred_partner_ids': [(4, self.env.user.partner_id.id)]})
+            self = self.with_context(default_starred_partner_ids=[(4, self.env.user.partner_id.id)])
 
         if 'email_from' not in values:  # needed to compute reply_to
             values['email_from'] = self._get_default_from()
@@ -950,22 +966,32 @@ class Message(models.Model):
             def base64_to_boundary(match):
                 key = match.group(2)
                 if not data_to_url.get(key):
-                    name = 'image%s' % len(data_to_url)
-                    attachment = Attachments.create({
-                        'name': name,
-                        'datas': match.group(2),
-                        'datas_fname': name,
-                        'res_model': 'mail.message',
-                    })
-                    attachment.generate_access_token()
-                    values['attachment_ids'].append((4, attachment.id))
-                    data_to_url[key] = ['/web/image/%s?access_token=%s' % (attachment.id, attachment.access_token), name]
+                    name = match.group(4) if match.group(4) else 'image%s' % len(data_to_url)
+                    try:
+                        attachment = Attachments.create({
+                            'name': name,
+                            'datas': match.group(2),
+                            'datas_fname': name,
+                            'res_model': values.get('model'),
+                            'res_id': values.get('res_id'),
+                        })
+                    except binascii_error:
+                        _logger.warning("Impossible to create an attachment out of badly formated base64 embedded image. Image has been removed.")
+                        return match.group(3)  # group(3) is the url ending single/double quote matched by the regexp
+                    else:
+                        attachment.generate_access_token()
+                        values['attachment_ids'].append((4, attachment.id))
+                        data_to_url[key] = ['/web/image/%s?access_token=%s' % (attachment.id, attachment.access_token), name]
                 return '%s%s alt="%s"' % (data_to_url[key][0], match.group(3), data_to_url[key][1])
             values['body'] = _image_dataurl.sub(base64_to_boundary, tools.ustr(values['body']))
 
         # delegate creation of tracking after the create as sudo to avoid access rights issues
         tracking_values_cmd = values.pop('tracking_value_ids', False)
         message = super(Message, self).create(values)
+
+        if values.get('attachment_ids'):
+            message.attachment_ids.check(mode='read')
+
         if tracking_values_cmd:
             vals_lst = [dict(cmd[2], mail_message_id=message.id) for cmd in tracking_values_cmd if len(cmd) == 3 and cmd[0] == 0]
             other_cmd = [cmd for cmd in tracking_values_cmd if len(cmd) != 3 or cmd[0] != 0]
@@ -991,6 +1017,9 @@ class Message(models.Model):
         if 'model' in vals or 'res_id' in vals:
             self._invalidate_documents()
         res = super(Message, self).write(vals)
+        if vals.get('attachment_ids'):
+            for mail in self:
+                mail.attachment_ids.check(mode='read')
         if 'notification_ids' in vals or 'model' in vals or 'res_id' in vals:
             self._invalidate_documents()
         return res
@@ -1007,6 +1036,22 @@ class Message(models.Model):
         ).unlink()
         self._invalidate_documents()
         return super(Message, self).unlink()
+
+    @api.model
+    def _read_group_raw(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
+        if not self.env.user._is_admin():
+            raise AccessError(_("Only administrators are allowed to use grouped read on message model"))
+
+        return super(Message, self)._read_group_raw(
+            domain=domain, fields=fields, groupby=groupby, offset=offset,
+            limit=limit, orderby=orderby, lazy=lazy,
+        )
+
+    def export_data(self, fields_to_export, raw_data=False):
+        if not self.env.user._is_admin():
+            raise AccessError(_("Only administrators are allowed to export mail message"))
+
+        return super(Message, self).export_data(fields_to_export, raw_data)
 
     #------------------------------------------------------
     # Messaging API
@@ -1060,6 +1105,9 @@ class Message(models.Model):
             if pid and pid == author_id and not self.env.context.get('mail_notify_author'):  # do not notify the author of its own messages
                 continue
             if pid:
+                if active is False:
+                    # avoid to notify inactive partner by email (odoobot)
+                    continue
                 pdata = {'id': pid, 'active': active, 'share': pshare, 'groups': groups}
                 if notif == 'inbox':
                     recipient_data['partners'].append(dict(pdata, notif=notif, type='user'))

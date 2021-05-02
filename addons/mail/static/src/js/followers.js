@@ -28,7 +28,9 @@ var Followers = AbstractField.extend({
         'click .o_remove_follower': '_onRemoveFollower',
         'click .o_mail_redirect': '_onRedirect',
     },
-    supportedFieldTypes: ['one2many'],
+    // this widget only supports one2many but is not generic enough to claim
+    // that it supports all one2many fields
+    // supportedFieldTypes: ['one2many'],
 
     // inherited
     init: function (parent, name, record, options) {
@@ -217,7 +219,7 @@ var Followers = AbstractField.extend({
         });
     },
     _reload: function () {
-        this.trigger_up('reload', {fieldNames: [this.name]});
+        this.trigger_up('reload', { fieldNames: [this.name], keepChanges: true });
     },
     _follow: function () {
         var kwargs = {

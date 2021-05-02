@@ -13,7 +13,6 @@ from hashlib import md5
 from PIL import Image
 from xml.etree import ElementTree as ET
 
-from odoo.tools import pycompat
 
 try:
     import jcconv
@@ -30,7 +29,7 @@ from .exceptions import *
 
 def utfstr(stuff):
     """ converts stuff to string and does without failing if stuff is a utf8 string """
-    if isinstance(stuff,pycompat.string_types):
+    if isinstance(stuff, str):
         return stuff
     else:
         return str(stuff)
@@ -895,7 +894,12 @@ class Escpos:
 
 
     def cashdraw(self, pin):
-        """ Send pulse to kick the cash drawer """
+        """ Send pulse to kick the cash drawer
+
+        For some reason, with some printers (ex: Epson TM-m30), the cash drawer
+        only opens 50% of the time if you just send the pulse. But if you read
+        the status afterwards, it opens all the time.
+        """
         if pin == 2:
             self._raw(CD_KICK_2)
         elif pin == 5:
@@ -903,6 +907,7 @@ class Escpos:
         else:
             raise CashDrawerError()
 
+        self.get_printer_status()
 
     def hw(self, hw):
         """ Hardware operations """

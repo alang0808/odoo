@@ -37,14 +37,17 @@ class AuthSignupHome(Home):
                 self.do_signup(qcontext)
                 # Send an account creation confirmation email
                 if qcontext.get('token'):
-                    user_sudo = request.env['res.users'].sudo().search([('login', '=', qcontext.get('login'))])
+                    User = request.env['res.users']
+                    user_sudo = User.sudo().search(
+                        User._get_login_domain(qcontext.get('login')), order=User._get_login_order(), limit=1
+                    )
                     template = request.env.ref('auth_signup.mail_template_user_signup_account_created', raise_if_not_found=False)
                     if user_sudo and template:
                         template.sudo().with_context(
                             lang=user_sudo.lang,
                             auth_login=werkzeug.url_encode({'auth_login': user_sudo.email}),
                         ).send_mail(user_sudo.id, force_send=True)
-                return super(AuthSignupHome, self).web_login(*args, **kw)
+                return self.web_login(*args, **kw)
             except UserError as e:
                 qcontext['error'] = e.name or e.value
             except (SignupError, AssertionError) as e:
@@ -69,7 +72,7 @@ class AuthSignupHome(Home):
             try:
                 if qcontext.get('token'):
                     self.do_signup(qcontext)
-                    return super(AuthSignupHome, self).web_login(*args, **kw)
+                    return self.web_login(*args, **kw)
                 else:
                     login = qcontext.get('login')
                     assert login, _("No login provided.")

@@ -4,17 +4,18 @@
 # 
 # Translators:
 # Martin Trigaux, 2018
-# Yoshi Tashiro <tashiro@roomsfor.hk>, 2018
 # Manami Hashi <manami@roomsfor.hk>, 2018
 # Norimichi Sugimoto <norimichi.sugimoto@tls-ltd.co.jp>, 2018
-# Tim Siu Lai <tl@roomsfor.hk>, 2018
+# Yoshi Tashiro <tashiro@roomsfor.hk>, 2018
+# Noma Yuki, 2020
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~11.5\n"
+"Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-21 13:17+0000\n"
-"PO-Revision-Date: 2018-09-21 13:17+0000\n"
-"Last-Translator: Tim Siu Lai <tl@roomsfor.hk>, 2018\n"
+"POT-Creation-Date: 2019-03-29 10:09+0000\n"
+"PO-Revision-Date: 2018-08-24 09:16+0000\n"
+"Last-Translator: Noma Yuki, 2020\n"
 "Language-Team: Japanese (https://www.transifex.com/odoo/teams/41243/ja/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -83,7 +84,7 @@ msgstr "アプリのインポート"
 #. module: base_import_module
 #: model:ir.model.fields,field_description:base_import_module.field_base_import_module__import_message
 msgid "Import Message"
-msgstr "インポートメーセージ"
+msgstr "インポートメッセージ"
 
 #. module: base_import_module
 #: model:ir.actions.act_window,name:base_import_module.action_view_base_module_import
@@ -135,6 +136,11 @@ msgid "No file sent."
 msgstr "ファイルが送られていません"
 
 #. module: base_import_module
+#: model_terms:ir.ui.view,arch_db:base_import_module.view_base_module_import
+msgid "Note: you can only import data modules (.xml files and static assets)"
+msgstr "注：インポートできるのはデータモジュール（.xmlファイルと静的アセット）のみです。"
+
+#. module: base_import_module
 #: code:addons/base_import_module/controllers/main.py:25
 #, python-format
 msgid "Only administrators can upload a module"
@@ -144,7 +150,7 @@ msgstr "管理者のみモジュールアップロードが可能です。"
 #: code:addons/base_import_module/models/ir_module.py:115
 #, python-format
 msgid "Only zip files are supported."
-msgstr ""
+msgstr "Zipファイルのみがサポートされています。"
 
 #. module: base_import_module
 #: model_terms:ir.ui.view,arch_db:base_import_module.view_base_module_import
@@ -165,13 +171,13 @@ msgstr "ステータス"
 #: code:addons/base_import_module/models/ir_module.py:50
 #, python-format
 msgid "Studio customizations require Studio"
-msgstr ""
+msgstr "StudioのカスタマイズにはStudioが必要です"
 
 #. module: base_import_module
 #: code:addons/base_import_module/models/ir_module.py:57
 #, python-format
 msgid "Studio customizations require the Odoo Studio app."
-msgstr ""
+msgstr "StudioのカスタマイズにはOdoo Studioアプリが必要です"
 
 #. module: base_import_module
 #: code:addons/base_import_module/models/ir_module.py:52

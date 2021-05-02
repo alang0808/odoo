@@ -7,6 +7,7 @@ odoo.define('website.content.snippets.animation', function (require) {
 
 var Class = require('web.Class');
 var core = require('web.core');
+var dom = require('web.dom');
 var mixins = require('web.mixins');
 var utils = require('web.utils');
 var Widget = require('web.Widget');
@@ -256,6 +257,29 @@ var Animation = Widget.extend({
      */
     selector: false,
     /**
+     * Extension of @see Widget.events
+     *
+     * A description of the event handlers to bind/delegate once the widget
+     * has been rendered::
+     *
+     *   'click .hello .world': 'async _onHelloWorldClick',
+     *     _^_      _^_           _^_        _^_
+     *      |        |             |          |
+     *      |  (Optional) jQuery   |  Handler method name
+     *      |  delegate selector   |
+     *      |                      |_ (Optional) space separated options
+     *      |                          * async: use the automatic system
+     *      |_ Event name with           making handlers promise-ready (see
+     *         potential jQuery          makeButtonHandler, makeAsyncHandler)
+     *         namespaces
+     *
+     * Note: the values may be replaced by a function declaration. This is
+     * however a deprecated behavior.
+     *
+     * @type {Object}
+     */
+    events: {},
+    /**
      * Acts as @see Widget.events except that the events are only binded if the
      * Animation instance is instanciated in edit mode.
      */
@@ -372,6 +396,54 @@ var Animation = Widget.extend({
     //--------------------------------------------------------------------------
 
     /**
+     * @see this.events
+     * @override
+     */
+    _delegateEvents: function () {
+        var self = this;
+        var originalEvents = this.events;
+
+        var events = {};
+        _.each(this.events, function (method, event) {
+            // If the method is a function, use the default Widget system
+            if (typeof method !== 'string') {
+                events[event] = method;
+                return;
+            }
+            // If the method is only a function name without options, use the
+            // default Widget system
+            var methodOptions = method.split(' ');
+            if (methodOptions.length <= 1) {
+                events[event] = method;
+                return;
+            }
+            // If the method has no meaningful options, use the default Widget
+            // system
+            var isAsync = _.contains(methodOptions, 'async');
+            if (!isAsync) {
+                events[event] = method;
+                return;
+            }
+
+            method = self.proxy(methodOptions[methodOptions.length - 1]);
+            if (_.str.startsWith(event, 'click')) {
+                // Protect click handler to be called multiple times by
+                // mistake by the user and add a visual disabling effect
+                // for buttons.
+                method = dom.makeButtonHandler(method);
+            } else {
+                // Protect all handlers to be recalled while the previous
+                // async handler call is not finished.
+                method = dom.makeAsyncHandler(method);
+            }
+            events[event] = method;
+        });
+
+        this.events = events;
+        this._super.apply(this, arguments);
+        this.events = originalEvents;
+    },
+    /**
      * Registers `AnimationEffect` instances.
      *
      * This can be done by extending this method and calling the @see _addEffect
@@ -435,6 +507,7 @@ registry.slider = Animation.extend({
      */
     start: function () {
         if (!this.editableMode) {
+            this.$('img').on('load.slider', this._onImageLoaded.bind(this));
             this._computeHeights();
         }
         this.$target.carousel();
@@ -445,6 +518,7 @@ registry.slider = Animation.extend({
      */
     destroy: function () {
         this._super.apply(this, arguments);
+        this.$('img').off('.slider');
         this.$target.carousel('pause');
         this.$target.removeData('bs.carousel');
         _.each(this.$('.carousel-item'), function (el) {
@@ -485,6 +559,12 @@ registry.slider = Animation.extend({
      * @private
      */
     _onEditionSlide: function () {
+        this._computeHeights();
+    },
+    /**
+     * @private
+     */
+    _onImageLoaded: function () {
         this._computeHeights();
     },
 });
@@ -543,11 +623,13 @@ registry.parallax = Animation.extend({
 
         // Reset offset if parallax effect will not be performed and leave
         this.$target.toggleClass('s_parallax_is_fixed', this.speed === 1);
-        if (this.speed === 0 || this.speed === 1) {
+        var noParallaxSpeed = (this.speed === 0 || this.speed === 1);
+        this.$target.toggleClass('s_parallax_no_overflow_hidden', noParallaxSpeed);
+        if (noParallaxSpeed) {
             this.$bg.css({
                 transform: '',
                 top: '',
-                bottom: ''
+                bottom: '',
             });
             return;
         }
@@ -850,6 +932,10 @@ registry.gallerySlider = Animation.extend({
     destroy: function () {
         this._super.apply(this, arguments);
 
+        if (!this.$indicator) {
+            return;
+        }
+
         this.$prev.prependTo(this.$indicator);
         this.$next.appendTo(this.$indicator);
         this.$carousel.off('.gallery_slider');
@@ -953,11 +1039,12 @@ registry.facebookPage = Animation.extend({
         if (!params.href) {
             return def;
         }
-        params.width = utils.confine(this.$el.width(), 180, 500);
+        params.width = utils.confine(Math.floor(this.$el.width()), 180, 500);
 
         var src = $.param.querystring('https://www.facebook.com/plugins/page.php', params);
         this.$iframe = $('<iframe/>', {
             src: src,
+            class: 'o_temp_auto_element',
             width: params.width,
             height: params.height,
             css: {

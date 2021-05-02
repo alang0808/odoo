@@ -3,12 +3,16 @@
 import time
 import math
 import re
+import logging
 
 from odoo.osv import expression
 from odoo.tools.float_utils import float_round as round
-from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT, remove_accents
 from odoo.exceptions import UserError, ValidationError
 from odoo import api, fields, models, _
+
+
+_logger = logging.getLogger(__name__)
 
 
 class AccountAccountType(models.Model):
@@ -66,9 +70,13 @@ class AccountAccount(models.Model):
     @api.multi
     @api.constrains('user_type_id')
     def _check_user_type_id(self):
-        account_unaffected_earnings = self.search([('company_id', '=', self.company_id.id), ('user_type_id', '=', self.env.ref('account.data_unaffected_earnings').id)])
-        if len(account_unaffected_earnings) >= 2:
-            raise ValidationError(_('You cannot have more than one account with "Current Year Earnings" as type. (accounts: %s)') % [a.code for a in account_unaffected_earnings])
+        data_unaffected_earnings = self.env.ref('account.data_unaffected_earnings')
+        result = self.read_group([('user_type_id', '=', data_unaffected_earnings.id)], ['company_id'], ['company_id'])
+        for res in result:
+            if res.get('company_id_count', 0) >= 2:
+                account_unaffected_earnings = self.search([('company_id', '=', res['company_id'][0]),
+                                                           ('user_type_id', '=', data_unaffected_earnings.id)])
+                raise ValidationError(_('You cannot have more than one account with "Current Year Earnings" as type. (accounts: %s)') % [a.code for a in account_unaffected_earnings])
 
     name = fields.Char(required=True, index=True)
     currency_id = fields.Many2one('res.currency', string='Account Currency',
@@ -103,7 +111,7 @@ class AccountAccount(models.Model):
 
     @api.model
     def _search_new_account_code(self, company, digits, prefix):
-        for num in range(1, 100):
+        for num in range(1, 10000):
             new_code = str(prefix.ljust(digits - 1, '0')) + str(num)
             rec = self.search([('code', '=', new_code), ('company_id', '=', company.id)], limit=1)
             if not rec:
@@ -116,11 +124,10 @@ class AccountAccount(models.Model):
             if record.company_id.account_opening_move_id:
                 for line in self.env['account.move.line'].search([('account_id', '=', record.id),
                                                                  ('move_id','=', record.company_id.account_opening_move_id.id)]):
-                    #could be executed at most twice: once for credit, once for debit
                     if line.debit:
-                        opening_debit = line.debit
+                        opening_debit += line.debit
                     elif line.credit:
-                        opening_credit = line.credit
+                        opening_credit += line.credit
             record.opening_debit = opening_debit
             record.opening_credit = opening_credit
 
@@ -143,24 +150,33 @@ class AccountAccount(models.Model):
 
         if opening_move.state == 'draft':
             # check whether we should create a new move line or modify an existing one
-            opening_move_line = self.env['account.move.line'].search([('account_id', '=', self.id),
+            account_op_lines = self.env['account.move.line'].search([('account_id', '=', self.id),
                                                                       ('move_id','=', opening_move.id),
                                                                       (field,'!=', False),
                                                                       (field,'!=', 0.0)]) # 0.0 condition important for import
 
-            counter_part_map = {'debit': opening_move_line.credit, 'credit': opening_move_line.debit}
-            # No typo here! We want the credit value when treating debit and debit value when treating credit
+            if account_op_lines:
+                op_aml_debit = sum(account_op_lines.mapped('debit'))
+                op_aml_credit = sum(account_op_lines.mapped('credit'))
 
-            if opening_move_line:
+                # There might be more than one line on this account if the opening entry was manually edited
+                # If so, we need to merge all those lines into one before modifying its balance
+                opening_move_line = account_op_lines[0]
+                if len(account_op_lines) > 1:
+                    merge_write_cmd = [(1, opening_move_line.id, {'debit': op_aml_debit, 'credit': op_aml_credit, 'partner_id': None ,'name': _("Opening balance")})]
+                    unlink_write_cmd = [(2, line.id) for line in account_op_lines[1:]]
+                    opening_move.write({'line_ids': merge_write_cmd + unlink_write_cmd})
+
                 if amount:
                     # modify the line
-                    setattr(opening_move_line.with_context({'check_move_validity': False}), field, amount)
-                elif counter_part_map[field]:
+                    opening_move_line.with_context(check_move_validity=False)[field] = amount
+                else:
                     # delete the line (no need to keep a line with value = 0)
-                    opening_move_line.with_context({'check_move_validity': False}).unlink()
+                    opening_move_line.with_context(check_move_validity=False).unlink()
+
             elif amount:
                 # create a new line, as none existed before
-                self.env['account.move.line'].with_context({'check_move_validity': False}).create({
+                self.env['account.move.line'].with_context(check_move_validity=False).create({
                         'name': _('Opening balance'),
                         field: amount,
                         'move_id': opening_move.id,
@@ -197,7 +213,7 @@ class AccountAccount(models.Model):
             domain = ['|', ('code', '=ilike', name.split(' ')[0] + '%'), ('name', operator, name)]
             if operator in expression.NEGATIVE_TERM_OPERATORS:
                 domain = ['&', '!'] + domain[1:]
-        account_ids = self._search(domain + args, limit=limit, access_rights_uid=name_get_uid)
+        account_ids = self._search(expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid)
         return self.browse(account_ids).name_get()
 
     @api.onchange('internal_type')
@@ -223,7 +239,6 @@ class AccountAccount(models.Model):
         self.group_id = group
 
     @api.multi
-    @api.depends('name', 'code')
     def name_get(self):
         result = []
         for account in self:
@@ -268,6 +283,8 @@ class AccountAccount(models.Model):
 
         Note that: lines with debit = credit = amount_currency = 0 are set to `reconciled´ = True
         '''
+        if not self.ids:
+            return None
         query = """
             UPDATE account_move_line SET
                 reconciled = CASE WHEN debit = 0 AND credit = 0 AND amount_currency = 0
@@ -283,6 +300,8 @@ class AccountAccount(models.Model):
 
         Note that it is disallowed if some lines are partially reconciled.
         '''
+        if not self.ids:
+            return None
         partial_lines_count = self.env['account.move.line'].search_count([
             ('account_id', 'in', self.ids),
             ('full_reconcile_id', '=', False),
@@ -375,11 +394,13 @@ class AccountGroup(models.Model):
 
     @api.model
     def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
-        if not args:
-            args = []
-        criteria_operator = ['|'] if operator not in expression.NEGATIVE_TERM_OPERATORS else ['&', '!']
-        domain = criteria_operator + [('code_prefix', '=ilike', name + '%'), ('name', operator, name)]
-        group_ids = self._search(domain + args, limit=limit, access_rights_uid=name_get_uid)
+        args = args or []
+        if operator == 'ilike' and not (name or '').strip():
+            domain = []
+        else:
+            criteria_operator = ['|'] if operator not in expression.NEGATIVE_TERM_OPERATORS else ['&', '!']
+            domain = criteria_operator + [('code_prefix', '=ilike', name + '%'), ('name', operator, name)]
+        group_ids = self._search(expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid)
         return self.browse(group_ids).name_get()
 
 
@@ -472,7 +493,7 @@ class AccountJournal(models.Model):
     post_at_bank_rec = fields.Boolean(string="Post At Bank Reconciliation", help="Whether or not the payments made in this journal should be generated in draft state, so that the related journal entries are only posted when performing bank reconciliation.")
 
     # alias configuration for 'purchase' type journals
-    alias_id = fields.Many2one('mail.alias', string='Alias')
+    alias_id = fields.Many2one('mail.alias', string='Alias', copy=False)
     alias_domain = fields.Char('Alias domain', compute='_compute_alias_domain', default=lambda self: self.env["ir.config_parameter"].sudo().get_param("mail.catchall.domain"))
     alias_name = fields.Char('Alias Name for Vendor Bills', related='alias_id.alias_name', help="It creates draft vendor bill by sending an email.", readonly=False)
 
@@ -532,7 +553,7 @@ class AccountJournal(models.Model):
         for journal in self:
             if journal.refund_sequence_id and journal.refund_sequence and journal.refund_sequence_number_next:
                 sequence = journal.refund_sequence_id._get_current_sequence()
-                sequence.number_next = journal.refund_sequence_number_next
+                sequence.sudo().number_next = journal.refund_sequence_number_next
 
     @api.one
     @api.constrains('currency_id', 'default_credit_account_id', 'default_debit_account_id')
@@ -552,7 +573,10 @@ class AccountJournal(models.Model):
             # A bank account can belong to a customer/supplier, in which case their partner_id is the customer/supplier.
             # Or they are part of a bank journal and their partner_id must be the company's partner_id.
             if self.bank_account_id.partner_id != self.company_id.partner_id:
-                raise ValidationError(_('The holder of a journal\'s bank account must be the company (%s).') % self.company_id.name)
+                raise ValidationError(_('The holder of the bank account of a "Bank" type journal must be the company (%s).\n'
+                                        'However, the holder of "%s" is "%s".\n'
+                                        'Please select another bank account or change the holder of "%s".'
+                                        ) % (self.company_id.name, self.bank_account_id.acc_number, self.bank_account_id.partner_id.name, self.bank_account_id.acc_number))
 
     @api.onchange('default_debit_account_id')
     def onchange_debit_account_id(self):
@@ -570,9 +594,21 @@ class AccountJournal(models.Model):
             alias_name = self.name
             if self.company_id != self.env.ref('base.main_company'):
                 alias_name += '-' + str(self.company_id.name)
+
+        try:
+            remove_accents(alias_name).encode('ascii')
+        except UnicodeEncodeError:
+            try:
+                remove_accents(self.code).encode('ascii')
+                safe_alias_name = self.code
+            except UnicodeEncodeError:
+                safe_alias_name = self.type
+            _logger.warning("Cannot use '%s' as email alias, fallback to '%s'",
+                alias_name, safe_alias_name)
+            alias_name = safe_alias_name
+
         return {
-            'alias_defaults': {'type': 'in_invoice'},
-            'alias_user_id': self.env.user.id,
+            'alias_defaults': {'type': 'in_invoice', 'company_id': self.company_id.id},
             'alias_parent_thread_id': self.id,
             'alias_name': re.sub(r'[^\w]+', '-', alias_name)
         }
@@ -616,11 +652,11 @@ class AccountJournal(models.Model):
         for journal in self:
             company = journal.company_id
             if ('company_id' in vals and journal.company_id.id != vals['company_id']):
-                if self.env['account.move'].search([('journal_id', 'in', self.ids)], limit=1):
+                if self.env['account.move'].search([('journal_id', '=', journal.id)], limit=1):
                     raise UserError(_('This journal already contains items, therefore you cannot modify its company.'))
                 company = self.env['res.company'].browse(vals['company_id'])
-                if self.bank_account_id.company_id and self.bank_account_id.company_id != company:
-                    self.bank_account_id.write({
+                if journal.bank_account_id.company_id and journal.bank_account_id.company_id != company:
+                    journal.bank_account_id.write({
                         'company_id': company.id,
                         'partner_id': company.partner_id.id,
                     })
@@ -633,12 +669,12 @@ class AccountJournal(models.Model):
                     new_prefix = self._get_sequence_prefix(vals['code'], refund=True)
                     journal.refund_sequence_id.write({'prefix': new_prefix})
             if 'currency_id' in vals:
-                if not 'default_debit_account_id' in vals and self.default_debit_account_id:
-                    self.default_debit_account_id.currency_id = vals['currency_id']
-                if not 'default_credit_account_id' in vals and self.default_credit_account_id:
-                    self.default_credit_account_id.currency_id = vals['currency_id']
-                if self.bank_account_id:
-                    self.bank_account_id.currency_id = vals['currency_id']
+                if not 'default_debit_account_id' in vals and journal.default_debit_account_id:
+                    journal.default_debit_account_id.currency_id = vals['currency_id']
+                if not 'default_credit_account_id' in vals and journal.default_credit_account_id:
+                    journal.default_credit_account_id.currency_id = vals['currency_id']
+                if journal.bank_account_id:
+                    journal.bank_account_id.currency_id = vals['currency_id']
             if 'bank_account_id' in vals:
                 if not vals.get('bank_account_id'):
                     raise UserError(_('You cannot remove the bank account from the journal once set.'))
@@ -646,8 +682,8 @@ class AccountJournal(models.Model):
                     bank_account = self.env['res.partner.bank'].browse(vals['bank_account_id'])
                     if bank_account.partner_id != company.partner_id:
                         raise UserError(_("The partners of the journal's company and the related bank account mismatch."))
-            if vals.get('type') == 'purchase':
-                self._update_mail_alias(vals)
+            if vals.get('type') == 'purchase' or (journal.type == 'purchase' and 'alias_name' in vals):
+                journal._update_mail_alias(vals)
         result = super(AccountJournal, self).write(vals)
 
         # Create the bank_account_id if necessary
@@ -666,7 +702,7 @@ class AccountJournal(models.Model):
                 journal.refund_sequence_id = self.sudo()._create_sequence(journal_vals, refund=True).id
         # Changing the 'post_at_bank_rec' option will post the draft payment moves and change the related invoices' state.
         if 'post_at_bank_rec' in vals and not vals['post_at_bank_rec']:
-            draft_moves = self.env['account.move'].search([('journal_id', '=', self.id), ('state', '=', 'draft')])
+            draft_moves = self.env['account.move'].search([('journal_id', 'in', self.ids), ('state', '=', 'draft')])
             pending_payments = draft_moves.mapped('line_ids.payment_id')
             pending_payments.mapped('move_line_ids.move_id').post()
             pending_payments.mapped('reconciled_invoice_ids').filtered(lambda x: x.state == 'in_payment').write({'state': 'paid'})
@@ -792,7 +828,6 @@ class AccountJournal(models.Model):
         }).id
 
     @api.multi
-    @api.depends('name', 'currency_id', 'company_id', 'company_id.currency_id')
     def name_get(self):
         res = []
         for journal in self:
@@ -804,17 +839,20 @@ class AccountJournal(models.Model):
     @api.model
     def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
         args = args or []
-        connector = '|'
-        if operator in expression.NEGATIVE_TERM_OPERATORS:
-            connector = '&'
-        journal_ids = self._search([connector, ('code', operator, name), ('name', operator, name)] + args, limit=limit, access_rights_uid=name_get_uid)
+
+        if operator == 'ilike' and not (name or '').strip():
+            domain = []
+        else:
+            connector = '&' if operator in expression.NEGATIVE_TERM_OPERATORS else '|'
+            domain = [connector, ('code', operator, name), ('name', operator, name)]
+        journal_ids = self._search(expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid)
         return self.browse(journal_ids).name_get()
 
     @api.multi
     @api.depends('company_id')
     def _belong_to_company(self):
         for journal in self:
-            journal.belong_to_company = (journal.company_id.id == self.env.user.company_id.id)
+            journal.belongs_to_company = (journal.company_id.id == self.env.user.company_id.id)
 
     @api.multi
     def _search_company_journals(self, operator, value):
@@ -937,7 +975,6 @@ class AccountTax(models.Model):
         default = dict(default or {}, name=_("%s (Copy)") % self.name)
         return super(AccountTax, self).copy(default=default)
 
-    @api.depends('name', 'type_tax_use')
     def name_get(self):
         if not self._context.get('append_type_to_tax_name'):
             return super(AccountTax, self).name_get()
@@ -949,10 +986,11 @@ class AccountTax(models.Model):
             result format: {[(id, name), (id, name), ...]}
         """
         args = args or []
-        if operator in expression.NEGATIVE_TERM_OPERATORS:
-            domain = [('description', operator, name), ('name', operator, name)]
+        if operator == 'ilike' and not (name or '').strip():
+            domain = []
         else:
-            domain = ['|', ('description', operator, name), ('name', operator, name)]
+            connector = '&' if operator in expression.NEGATIVE_TERM_OPERATORS else '|'
+            domain = [connector, ('description', operator, name), ('name', operator, name)]
         tax_ids = self._search(expression.AND([domain, args]), limit=limit, access_rights_uid=name_get_uid)
         return self.browse(tax_ids).name_get()
 
@@ -977,6 +1015,13 @@ class AccountTax(models.Model):
     def onchange_amount(self):
         if self.amount_type in ('percent', 'division') and self.amount != 0.0 and not self.description:
             self.description = "{0:.4g}%".format(self.amount)
+
+    @api.onchange('amount_type')
+    def onchange_amount_type(self):
+        if self.amount_type is not 'group':
+            self.children_tax_ids = [(5,)]
+        if self.amount_type == 'group':
+            self.description = None
 
     @api.onchange('account_id')
     def onchange_account_id(self):
@@ -1014,7 +1059,10 @@ class AccountTax(models.Model):
             else:
                 return quantity * self.amount
 
-        price_include = self.price_include or self._context.get('force_price_include')
+        if self._context.get('handle_price_include', True):
+            price_include = (self.price_include or self._context.get('force_price_include'))
+        else:
+            price_include = False
 
         if (self.amount_type == 'percent' and not price_include) or (self.amount_type == 'division' and price_include):
             return base_amount * self.amount / 100
@@ -1098,7 +1146,10 @@ class AccountTax(models.Model):
         for tax in self.sorted(key=lambda r: r.sequence):
             # Allow forcing price_include/include_base_amount through the context for the reconciliation widget.
             # See task 24014.
-            price_include = self._context.get('force_price_include', tax.price_include)
+            if self._context.get('handle_price_include', True):
+                price_include = self._context.get('force_price_include', tax.price_include)
+            else:
+                price_include = False
 
             if tax.amount_type == 'group':
                 children = tax.children_tax_ids.with_context(base_values=(total_excluded, total_included, base))
